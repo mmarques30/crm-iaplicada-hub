@@ -33,7 +33,7 @@ export default function Dashboard() {
     queryKey: ["stage_conversion", product],
     queryFn: async () => {
       let q = supabase.from("stage_conversion").select("*").order("display_order");
-      if (product !== "all") q = q.eq("product", product);
+      if (product !== "all") q = q.eq("product", product as "business" | "skills" | "academy");
       const { data } = await q;
       return data || [];
     },
