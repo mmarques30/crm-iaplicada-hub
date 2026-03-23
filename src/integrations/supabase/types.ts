@@ -552,6 +552,45 @@ export type Database = {
         }
         Relationships: []
       }
+      receita_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          metric: string | null
+          priority: string | null
+          product: string | null
+          source_context: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metric?: string | null
+          priority?: string | null
+          product?: string | null
+          source_context?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metric?: string | null
+          priority?: string | null
+          product?: string | null
+          source_context?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       stages: {
         Row: {
           created_at: string | null
