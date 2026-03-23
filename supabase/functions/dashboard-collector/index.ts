@@ -17,88 +17,6 @@ async function getSecret(supabase: any, name: string): Promise<string | null> {
   return Deno.env.get(name) || null
 }
 
-async function updateSecret(supabase: any, name: string, value: string) {
-  try {
-    await supabase.rpc('update_secret', { secret_name: name, new_secret: value })
-  } catch (err) {
-    console.warn(`Could not update secret ${name}:`, err)
-  }
-}
-
-// Tenta refresh do token Meta usando APP_ID + APP_SECRET
-// Se falhar, tenta tokens de fallback (V3, V2)
-async function resolveMetaToken(supabase: any): Promise<string | null> {
-  const mainToken = await getSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN')
-  const appId = await getSecret(supabase, 'META_APP_ID')
-  const appSecret = await getSecret(supabase, 'META_APP_SECRET')
-
-  // Testar token principal
-  if (mainToken) {
-    const valid = await testMetaToken(mainToken)
-    if (valid) return mainToken
-
-    // Token expirado — tentar refresh via app credentials
-    if (appId && appSecret) {
-      console.log('Main token expired, attempting refresh...')
-      const refreshed = await refreshMetaToken(mainToken, appId, appSecret)
-      if (refreshed) {
-        console.log('Token refreshed successfully!')
-        await updateSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN', refreshed)
-        return refreshed
-      }
-    }
-  }
-
-  // Fallback: tentar tokens V3, V2
-  for (const suffix of ['V3', 'V2']) {
-    const fallback = await getSecret(supabase, `INSTAGRAM_ACCESS_TOKEN_${suffix}`)
-    if (fallback) {
-      const valid = await testMetaToken(fallback)
-      if (valid) {
-        console.log(`Fallback token ${suffix} is valid, promoting to main`)
-        await updateSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN', fallback)
-        return fallback
-      }
-      // Tentar refresh do fallback
-      if (appId && appSecret) {
-        const refreshed = await refreshMetaToken(fallback, appId, appSecret)
-        if (refreshed) {
-          console.log(`Fallback ${suffix} refreshed successfully!`)
-          await updateSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN', refreshed)
-          return refreshed
-        }
-      }
-    }
-  }
-
-  return null
-}
-
-async function testMetaToken(token: string): Promise<boolean> {
-  try {
-    const res = await fetch(`https://graph.facebook.com/v21.0/me?access_token=${token}`)
-    const data = await res.json()
-    return !data.error
-  } catch {
-    return false
-  }
-}
-
-async function refreshMetaToken(token: string, appId: string, appSecret: string): Promise<string | null> {
-  try {
-    const res = await fetch(
-      `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${token}`
-    )
-    const data = await res.json()
-    if (data.access_token) return data.access_token
-    console.warn('Token refresh failed:', data.error?.message || JSON.stringify(data))
-    return null
-  } catch (err) {
-    console.warn('Token refresh error:', err)
-    return null
-  }
-}
-
 // ============ INSTAGRAM COLLECTOR (otimizado — sem insights por post) ============
 // Usa Page Token (permanente) + IG Account ID direto
 async function collectInstagram(accessToken: string, igAccountId: string) {
@@ -229,7 +147,7 @@ async function collectAndImportHubspot(supabase: any, accessToken: string) {
   const headers = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }
 
   // Fetch contacts e deals em PARALELO
-  const contactProps = 'lifecyclestage,hs_analytics_source,createdate,email,firstname,lastname,phone,company,cargo,numero_de_liderados,faixa_de_faturamento,renda_mensal,utm_source,utm_medium,utm_campaign,utm_term'
+  const contactProps = 'lifecyclestage,hs_lead_status,hs_marketable_status,hs_analytics_source,createdate,email,firstname,lastname,phone,company,cargo,numero_de_liderados,faixa_de_faturamento,renda_mensal,utm_source,utm_medium,utm_campaign,utm_term,mobilephone,city,state,address,zip,country,website,hs_linkedinbio,area_de_atuacao,notes_last_updated,hs_analytics_first_timestamp,first_conversion_event_name,first_conversion_date,hubspot_owner_id,por_qual_motivo_voce_quer_aprender_ia_,qual_o_seu_objetivo_ao_participar_da_comunidade_'
   const dealProps = 'dealname,dealstage,amount,tipo_do_produto,pipeline,closedate'
 
   // Fetch all contacts (paginated)
@@ -264,12 +182,31 @@ async function collectAndImportHubspot(supabase: any, accessToken: string) {
       first_name: c.properties?.firstname || c.properties?.email || 'Sem nome',
       last_name: c.properties?.lastname || null,
       email: c.properties?.email || null,
-      phone: c.properties?.phone || null,
+      phone: c.properties?.phone || c.properties?.mobilephone || null,
+      whatsapp: c.properties?.mobilephone || c.properties?.phone || null,
       company: c.properties?.company || null,
       cargo: c.properties?.cargo || null,
       numero_de_liderados: c.properties?.numero_de_liderados || null,
       faixa_de_faturamento: c.properties?.faixa_de_faturamento || null,
       renda_mensal: c.properties?.renda_mensal || null,
+      motivo_para_aprender_ia: c.properties?.por_qual_motivo_voce_quer_aprender_ia_ || null,
+      objetivo_com_a_comunidade: c.properties?.qual_o_seu_objetivo_ao_participar_da_comunidade_ || null,
+      lifecycle_stage: c.properties?.lifecyclestage || 'subscriber',
+      lead_status: c.properties?.hs_lead_status || null,
+      marketing_status: c.properties?.hs_marketable_status || null,
+      city: c.properties?.city || null,
+      state: c.properties?.state || null,
+      address: c.properties?.address || null,
+      zip_code: c.properties?.zip || null,
+      country: c.properties?.country || null,
+      website_url: c.properties?.website || null,
+      linkedin_url: c.properties?.hs_linkedinbio || null,
+      area_atuacao: c.properties?.area_de_atuacao || null,
+      fonte_registro: c.properties?.hs_analytics_source || null,
+      first_conversion: c.properties?.first_conversion_event_name || null,
+      first_conversion_date: c.properties?.first_conversion_date || null,
+      last_activity_at: c.properties?.notes_last_updated || null,
+      hubspot_owner: c.properties?.hubspot_owner_id || null,
       utm_source: c.properties?.utm_source || c.properties?.hs_analytics_source || null,
       utm_medium: c.properties?.utm_medium || null,
       utm_campaign: c.properties?.utm_campaign || null,
