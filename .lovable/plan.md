@@ -1,65 +1,65 @@
 
 
-## Redesign de Marca - IAplicada CRM
+## Rebranding Completo + Responsividade
 
-### Contexto (do Brandbook)
-- **Paleta**: Verde #738925 a #F6F7E9 (9 tons), Dark #2F302B, White #FFFFFF, Light #F2F2F2, Warm #FFFFF6
-- **Tipografia**: Sora (Google Fonts) — substituir Inter atual
-- **Território visual**: Executiva-tech, neutra e contemporânea
-- **Logo**: Quatro folhas em tons de verde (já fornecida pelo usuário)
+### Problemas Atuais
+- Páginas usam `max-w-7xl` fixo sem responsividade mobile
+- Header badges no Financeiro/PainelGeral quebram em telas pequenas
+- Grids de 6 colunas (MetricCards) não se adaptam bem
+- Tabelas não scrollam horizontalmente em mobile
+- Pipeline Kanban não tem comportamento mobile
+- Sidebar não mostra logo no mobile
+- Falta consistência visual entre páginas
 
-### Mudancas
+### Plano de Implementação
 
-#### 1. Copiar logo e atualizar tipografia
-- Copiar `Logo_Colorida_fundo_branco.png` para `src/assets/logo.png`
-- Adicionar fonte Sora via Google Fonts no `index.html`
-- Atualizar `src/index.css` para usar Sora no body
+#### 1. CSS Global - Melhorar base visual (`src/index.css`)
+- Adicionar `scroll-smooth` ao html
+- Melhorar background do `main` com gradiente sutil
+- Adicionar utility classes para containers responsivos
 
-#### 2. Atualizar paleta de cores (src/index.css)
-Ajustar os CSS variables para os hex exatos do brandbook:
+#### 2. AppLayout - Header responsivo (`src/components/layout/AppLayout.tsx`)
+- Adicionar busca mobile (ícone que expande)
+- Header sticky com `backdrop-blur`
+- Breadcrumb ou título da página no header mobile
 
-| Token | Hex atual (aprox) | Hex brandbook |
-|-------|-------------------|---------------|
-| brand-900 / primary | ~#738925 | #738925 |
-| brand-800 | ~#889C2D | #889C2D |
-| brand-700 | ~#9EB038 | #9EB038 |
-| brand-600 | ~#AFC040 | #AFC040 |
-| brand-500 | ~#BCC95D | #BCC95D |
-| brand-400 | ~#C8D27B | #C8D27B |
-| brand-300 | ~#D9DFA1 | #D9DFA1 |
-| brand-200 | ~#E9EBC6 | #E9EBC6 |
-| brand-100 | ~#F6F7E9 | #F6F7E9 |
-| sidebar bg | - | #2F302B |
-| background | - | #FFFFFF |
-| muted/secondary bg | - | #F2F2F2 |
+#### 3. Todas as páginas - Container responsivo
+Substituir `p-6 max-w-7xl` por `p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto w-full` em:
 
-#### 3. Modernizar Sidebar (AppSidebar.tsx)
-- Substituir o ícone "IA" pela logo real importada de `src/assets/logo.png`
-- Sidebar dark (#2F302B) com texto claro
-- Melhorar spacing e hover states
+| Pagina | Mudanças adicionais |
+|--------|-------------------|
+| `Index.tsx` | Grid cards: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`. Chart height responsivo |
+| `Contacts.tsx` | Tabela com `overflow-x-auto`, colunas opcionais hidden em mobile |
+| `Pipeline.tsx` | Kanban horizontal scroll com snap em mobile, header flex-wrap |
+| `Settings.tsx` | `max-w-4xl mx-auto`, integrations grid `grid-cols-1 sm:grid-cols-2` |
+| `Financeiro.tsx` | Badges flex-wrap, tabela scroll, grids responsivos |
+| `PainelGeral.tsx` | Metric grid `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6`, header stack em mobile |
+| `InstagramAnalytics.tsx` | Mesma grid responsiva |
+| `FacebookAdsPage.tsx` | Mesma grid responsiva |
+| `CrmAnalytics.tsx` | Mesma grid responsiva |
+| `InstagramAutomations.tsx` | Cards auto-width, dialog full-screen em mobile |
+| `ContactDetail.tsx` | Grid `grid-cols-1 lg:grid-cols-3`, info stack em mobile |
+| `DealDetail.tsx` | Mesma abordagem |
 
-#### 4. Modernizar Header (AppLayout.tsx)
-- Fundo branco limpo com sombra sutil em vez de border-b
-- Busca com bordas arredondadas mais suaves
-- Avatar com iniciais em vez de ícone genérico
+#### 4. Componentes - Refinamento visual
+- **MetricCard**: Padding responsivo `p-4 sm:pt-6`, icon size menor em mobile
+- **Card**: Manter shadow atual, OK
+- **AppLayout header**: `sticky top-0 z-30 backdrop-blur-sm bg-background/95`
 
-#### 5. Modernizar Cards e MetricCards
-- Cards com `shadow-sm hover:shadow-md transition-shadow` e borda mais suave
-- MetricCard: ícone em círculo com fundo verde-100, borda removida
-- Bordas arredondadas maiores (radius de 0.625rem para 0.75rem)
+#### 5. Sidebar mobile
+- Já usa `collapsible="icon"` do shadcn — funciona. Garantir que o trigger esteja visível no mobile
 
-#### 6. Corrigir build errors (edge functions)
-- Os erros de build estao em `supabase/functions/hubspot-import/index.ts` e `instagram-comments/index.ts` — tipos incompatíveis com o Supabase client. Corrigir com type assertions.
+### Arquivos a modificar (13 arquivos)
+`src/index.css`, `src/components/layout/AppLayout.tsx`, `src/components/dashboard/MetricCard.tsx`, `src/pages/Index.tsx`, `src/pages/Contacts.tsx`, `src/pages/Pipeline.tsx`, `src/pages/Settings.tsx`, `src/pages/Financeiro.tsx`, `src/pages/PainelGeral.tsx`, `src/pages/InstagramAnalytics.tsx`, `src/pages/FacebookAdsPage.tsx`, `src/pages/CrmAnalytics.tsx`, `src/pages/InstagramAutomations.tsx`
 
-### Arquivos modificados
-| Arquivo | O que muda |
-|---------|-----------|
-| `index.html` | Link do Google Fonts Sora |
-| `src/index.css` | Paleta de cores exata, fonte Sora, radius maior |
-| `src/components/layout/AppSidebar.tsx` | Logo real, refinamento visual |
-| `src/components/layout/AppLayout.tsx` | Header modernizado |
-| `src/components/dashboard/MetricCard.tsx` | Design mais limpo |
-| `src/components/ui/card.tsx` | Sombra e hover por padrao |
-| `supabase/functions/hubspot-import/index.ts` | Fix type errors |
-| `supabase/functions/instagram-comments/index.ts` | Fix .catch error |
+### Padrão de container usado em todas as páginas
+```tsx
+<div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
+```
+
+### Padrão de grid para MetricCards
+```tsx
+// 6 cards → grid-cols-2 sm:grid-cols-3 lg:grid-cols-6
+// 4 cards → grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
+```
 
