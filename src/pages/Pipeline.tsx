@@ -7,9 +7,11 @@ import { qualificationColor, qualificationBadgeVariant } from "@/lib/format";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Clock, User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, User, Columns3 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { useState, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Deal = Tables<"deals"> & {
   contacts: { first_name: string; last_name: string | null } | null;
@@ -21,7 +23,7 @@ export default function Pipeline() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const { data: pipeline } = useQuery({
+  const { data: pipeline, isLoading: pipelineLoading, isError: pipelineError, refetch: refetchPipeline } = useQuery({
     queryKey: ["pipeline", product],
     queryFn: async () => {
       const { data } = await supabase
@@ -33,7 +35,7 @@ export default function Pipeline() {
     },
   });
 
-  const { data: stages } = useQuery({
+  const { data: stages, isLoading: stagesLoading } = useQuery({
     queryKey: ["stages", pipeline?.id],
     enabled: !!pipeline?.id,
     queryFn: async () => {
@@ -93,6 +95,8 @@ export default function Pipeline() {
   const stageTotal = (stageId: string) =>
     (dealsByStage[stageId] || []).reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
+  const isLoading = pipelineLoading || stagesLoading;
+
   return (
     <div className="p-6 space-y-4 h-full flex flex-col">
       <div className="flex items-center justify-between">
@@ -106,26 +110,53 @@ export default function Pipeline() {
         </Tabs>
       </div>
 
-      <DragDropContext onDragEnd={onDragEnd}>
-        {/* Active stages */}
-        <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
-          {activeStages.map((stage) => (
-            <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} />
+      {pipelineError ? (
+        <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+          <Columns3 className="h-12 w-12 opacity-30" />
+          <p className="text-sm">Erro ao carregar pipeline</p>
+          <Button variant="outline" size="sm" onClick={() => refetchPipeline()}>Tentar novamente</Button>
+        </div>
+      ) : isLoading ? (
+        <div className="flex gap-3 overflow-x-auto pb-4 flex-1">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="flex-shrink-0 w-72 flex flex-col">
+              <Skeleton className="h-14 rounded-t-lg rounded-b-none" />
+              <div className="flex-1 p-2 space-y-2 border border-t-0 rounded-b-lg">
+                <Skeleton className="h-24" />
+                <Skeleton className="h-24" />
+              </div>
+            </div>
           ))}
         </div>
-
-        {/* Closed stages */}
-        {closedStages.length > 0 && (
-          <div>
-            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Estágios Finais</p>
-            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-              {closedStages.map((stage) => (
-                <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} isClosed />
-              ))}
+      ) : (
+        <DragDropContext onDragEnd={onDragEnd}>
+          {activeStages.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+              <Columns3 className="h-12 w-12 opacity-30" />
+              <p className="text-sm">Nenhum estágio configurado para este pipeline</p>
             </div>
-          </div>
-        )}
-      </DragDropContext>
+          ) : (
+            <>
+              <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
+                {activeStages.map((stage) => (
+                  <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} />
+                ))}
+              </div>
+
+              {closedStages.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Estágios Finais</p>
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+                    {closedStages.map((stage) => (
+                      <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} isClosed />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </DragDropContext>
+      )}
     </div>
   );
 }
@@ -154,6 +185,9 @@ function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: 
             {...provided.droppableProps}
             className={`flex-1 p-2 space-y-2 rounded-b-lg border border-t-0 min-h-[80px] transition-colors ${snapshot.isDraggingOver ? 'bg-brand-100/50' : 'bg-card'}`}
           >
+            {deals.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-4 opacity-50">Nenhum deal</p>
+            )}
             {deals.map((deal, i) => (
               <Draggable key={deal.id} draggableId={deal.id} index={i}>
                 {(prov) => (

@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { ArrowRight, MessageSquare, Mail, Calendar, Mic, Database, Instagram } from "lucide-react";
 import { productLabel } from "@/lib/format";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const integrations = [
   { name: "HubSpot", icon: Database, status: "Desconectado", description: "Sincronize contatos e deals" },
@@ -15,7 +16,7 @@ const integrations = [
 ];
 
 export default function Settings() {
-  const { data: pipelines } = useQuery({
+  const { data: pipelines, isLoading } = useQuery({
     queryKey: ["pipelines_with_stages"],
     queryFn: async () => {
       const { data: pips } = await supabase.from("pipelines").select("*").order("product");
@@ -34,35 +35,53 @@ export default function Settings() {
         <p className="text-sm text-muted-foreground">Gerencie pipelines, notificações e integrações</p>
       </div>
 
-      {/* Pipelines */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Pipelines</h2>
-        {pipelines?.map((p) => (
-          <Card key={p.id}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">{p.name}</CardTitle>
-              <CardDescription>{productLabel[p.product] || p.product}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 flex-wrap">
-                {p.stages.map((s, i) => (
-                  <div key={s.id} className="flex items-center gap-1">
-                    <Badge
-                      variant={s.is_won ? "default" : s.is_lost ? "destructive" : "secondary"}
-                      className="text-xs"
-                    >
-                      {s.name}
-                    </Badge>
-                    {i < p.stages.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <Card key={i}>
+              <CardHeader className="pb-3">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-3 w-24 mt-1" />
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  {Array.from({ length: 4 }).map((_, j) => (
+                    <Skeleton key={j} className="h-6 w-20 rounded-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        ) : pipelines?.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Nenhum pipeline configurado</p>
+        ) : (
+          pipelines?.map((p) => (
+            <Card key={p.id}>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-base">{p.name}</CardTitle>
+                <CardDescription>{productLabel[p.product] || p.product}</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {p.stages.map((s, i) => (
+                    <div key={s.id} className="flex items-center gap-1">
+                      <Badge
+                        variant={s.is_won ? "default" : s.is_lost ? "destructive" : "secondary"}
+                        className="text-xs"
+                      >
+                        {s.name}
+                      </Badge>
+                      {i < p.stages.length - 1 && <ArrowRight className="h-3 w-3 text-muted-foreground" />}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
       </section>
 
-      {/* Notifications */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Notificações</h2>
         <Card>
@@ -84,7 +103,6 @@ export default function Settings() {
         </Card>
       </section>
 
-      {/* Integrations */}
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">Integrações</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

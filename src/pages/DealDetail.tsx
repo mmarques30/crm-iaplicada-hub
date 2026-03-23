@@ -6,8 +6,9 @@ import { qualificationBadgeVariant } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Mail, Phone, Building2, FileText, MessageSquare, Video, StickyNote, ArrowRightLeft, Clock } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, FileText, MessageSquare, Video, StickyNote, ArrowRightLeft, Clock, FileX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const activityIcons: Record<string, any> = {
   email: Mail, whatsapp: MessageSquare, call: Phone, meeting: Video, note: StickyNote, stage_change: ArrowRightLeft,
@@ -16,7 +17,7 @@ const activityIcons: Record<string, any> = {
 export default function DealDetail() {
   const { id } = useParams<{ id: string }>();
 
-  const { data: deal } = useQuery({
+  const { data: deal, isLoading, isError } = useQuery({
     queryKey: ["deal", id],
     queryFn: async () => {
       const { data } = await supabase.from("deals_full").select("*").eq("id", id!).single();
@@ -41,7 +42,39 @@ export default function DealDetail() {
     },
   });
 
-  if (!deal) return <div className="p-6 text-muted-foreground">Carregando...</div>;
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded" />
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-56" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-72" />
+          <div className="lg:col-span-2 space-y-6">
+            <Skeleton className="h-32" />
+            <Skeleton className="h-32" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !deal) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center gap-4 min-h-[50vh]">
+        <FileX className="h-16 w-16 text-muted-foreground opacity-30" />
+        <h2 className="text-lg font-semibold text-muted-foreground">Deal não encontrado</h2>
+        <p className="text-sm text-muted-foreground">O deal pode ter sido removido ou você não tem permissão para acessá-lo.</p>
+        <Button variant="outline" asChild>
+          <Link to="/pipeline/business">Voltar para Pipeline</Link>
+        </Button>
+      </div>
+    );
+  }
 
   const totalStages = stages?.filter(s => !s.is_won && !s.is_lost).length || 1;
   const currentOrder = deal.stage_order || 0;
@@ -60,7 +93,6 @@ export default function DealDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Deal info */}
         <Card>
           <CardHeader><CardTitle className="text-base">Informações do Deal</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -95,9 +127,7 @@ export default function DealDetail() {
           </CardContent>
         </Card>
 
-        {/* Progress + Contact */}
         <div className="lg:col-span-2 space-y-6">
-          {/* Pipeline Progress */}
           <Card>
             <CardHeader><CardTitle className="text-base">Progresso no Pipeline</CardTitle></CardHeader>
             <CardContent>
@@ -112,7 +142,6 @@ export default function DealDetail() {
             </CardContent>
           </Card>
 
-          {/* Contact card */}
           {deal.contact_id && (
             <Card>
               <CardHeader><CardTitle className="text-base">Contato</CardTitle></CardHeader>
@@ -137,7 +166,6 @@ export default function DealDetail() {
         </div>
       </div>
 
-      {/* Activities */}
       <Card>
         <CardHeader><CardTitle className="text-base">Atividades</CardTitle></CardHeader>
         <CardContent>

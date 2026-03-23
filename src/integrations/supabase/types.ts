@@ -159,6 +159,30 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_snapshots: {
+        Row: {
+          collected_at: string | null
+          data: Json
+          errors: string[] | null
+          id: string
+          source: string
+        }
+        Insert: {
+          collected_at?: string | null
+          data?: Json
+          errors?: string[] | null
+          id?: string
+          source: string
+        }
+        Update: {
+          collected_at?: string | null
+          data?: Json
+          errors?: string[] | null
+          id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           amount: number | null
@@ -525,6 +549,59 @@ export type Database = {
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendas: {
+        Row: {
+          contact_id: string | null
+          created_at: string | null
+          data_venda: string
+          email: string | null
+          forma_pagamento: string | null
+          hubspot_stage: string | null
+          id: string
+          nome: string
+          parcelas: number | null
+          produto: string
+          status: string
+          valor: number
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string | null
+          data_venda: string
+          email?: string | null
+          forma_pagamento?: string | null
+          hubspot_stage?: string | null
+          id?: string
+          nome: string
+          parcelas?: number | null
+          produto: string
+          status?: string
+          valor?: number
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string | null
+          data_venda?: string
+          email?: string | null
+          forma_pagamento?: string | null
+          hubspot_stage?: string | null
+          id?: string
+          nome?: string
+          parcelas?: number | null
+          produto?: string
+          status?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
         ]
