@@ -120,10 +120,8 @@ export default function Contacts() {
           `utm_source.in.(${SOCIAL_SOURCES.join(",")}),utm_medium.in.(${SOCIAL_MEDIUMS.join(",")}),manychat_id.like.ig_%`
         );
       } else if (leadOrigin === "pipeline") {
-        // Pipeline = NOT social. Exclude social sources/mediums and ig_ manychat_id
-        q = q.not("utm_source", "in", `(${SOCIAL_SOURCES.join(",")})`)
-             .not("utm_medium", "in", `(${SOCIAL_MEDIUMS.join(",")})`)
-             .or("manychat_id.is.null,manychat_id.not.like.ig_%");
+        // Pipeline/Formulário = only contacts that came from HubSpot form submissions
+        q = q.not("first_conversion", "is", "null");
       }
 
       if (filters.produto) {
@@ -231,6 +229,9 @@ export default function Contacts() {
       else if (src === "youtube") label = "YouTube";
       else if (src === "meta") label = "Meta Ads";
       return <Badge className="text-[10px] bg-pink-100 text-pink-700">{label}</Badge>;
+    }
+    if (contact.first_conversion) {
+      return <Badge className="text-[10px] bg-emerald-100 text-emerald-700">Formulário</Badge>;
     }
     return <Badge className="text-[10px] bg-blue-100 text-blue-700">Pipeline</Badge>;
   };
