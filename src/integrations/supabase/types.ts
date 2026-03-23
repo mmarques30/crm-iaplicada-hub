@@ -159,6 +159,30 @@ export type Database = {
         }
         Relationships: []
       }
+      dashboard_snapshots: {
+        Row: {
+          collected_at: string | null
+          data: Json
+          errors: string[] | null
+          id: string
+          source: string
+        }
+        Insert: {
+          collected_at?: string | null
+          data?: Json
+          errors?: string[] | null
+          id?: string
+          source: string
+        }
+        Update: {
+          collected_at?: string | null
+          data?: Json
+          errors?: string[] | null
+          id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           amount: number | null
@@ -276,6 +300,99 @@ export type Database = {
           subject?: string
         }
         Relationships: []
+      }
+      instagram_automations: {
+        Row: {
+          comment_reply: string
+          created_at: string | null
+          dm_link: string | null
+          dm_message: string
+          id: string
+          is_active: boolean
+          keyword: string
+          post_id: string | null
+          post_url: string
+          replies_count: number
+          updated_at: string | null
+        }
+        Insert: {
+          comment_reply: string
+          created_at?: string | null
+          dm_link?: string | null
+          dm_message: string
+          id?: string
+          is_active?: boolean
+          keyword?: string
+          post_id?: string | null
+          post_url: string
+          replies_count?: number
+          updated_at?: string | null
+        }
+        Update: {
+          comment_reply?: string
+          created_at?: string | null
+          dm_link?: string | null
+          dm_message?: string
+          id?: string
+          is_active?: boolean
+          keyword?: string
+          post_id?: string | null
+          post_url?: string
+          replies_count?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      instagram_comment_logs: {
+        Row: {
+          automation_id: string
+          comment_id: string
+          comment_text: string | null
+          commenter_ig_id: string | null
+          commenter_username: string | null
+          contact_id: string | null
+          dm_sent: boolean
+          id: string
+          replied_at: string | null
+        }
+        Insert: {
+          automation_id: string
+          comment_id: string
+          comment_text?: string | null
+          commenter_ig_id?: string | null
+          commenter_username?: string | null
+          contact_id?: string | null
+          dm_sent?: boolean
+          id?: string
+          replied_at?: string | null
+        }
+        Update: {
+          automation_id?: string
+          comment_id?: string
+          comment_text?: string | null
+          commenter_ig_id?: string | null
+          commenter_username?: string | null
+          contact_id?: string | null
+          dm_sent?: boolean
+          id?: string
+          replied_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_comment_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_comment_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -432,6 +549,59 @@ export type Database = {
             columns: ["stage_id"]
             isOneToOne: false
             referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vendas: {
+        Row: {
+          contact_id: string | null
+          created_at: string | null
+          data_venda: string
+          email: string | null
+          forma_pagamento: string | null
+          hubspot_stage: string | null
+          id: string
+          nome: string
+          parcelas: number | null
+          produto: string
+          status: string
+          valor: number
+        }
+        Insert: {
+          contact_id?: string | null
+          created_at?: string | null
+          data_venda: string
+          email?: string | null
+          forma_pagamento?: string | null
+          hubspot_stage?: string | null
+          id?: string
+          nome: string
+          parcelas?: number | null
+          produto: string
+          status?: string
+          valor?: number
+        }
+        Update: {
+          contact_id?: string | null
+          created_at?: string | null
+          data_venda?: string
+          email?: string | null
+          forma_pagamento?: string | null
+          hubspot_stage?: string | null
+          id?: string
+          nome?: string
+          parcelas?: number | null
+          produto?: string
+          status?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vendas_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
         ]

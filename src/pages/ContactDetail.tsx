@@ -5,8 +5,9 @@ import { formatDate, formatCurrency, productLabel, qualificationBadgeVariant } f
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, Building2, Briefcase, Globe, MessageSquare, Video, FileText, ArrowRightLeft, StickyNote, ArrowLeft } from "lucide-react";
+import { Mail, Phone, Building2, Briefcase, Globe, MessageSquare, Video, FileText, ArrowRightLeft, StickyNote, ArrowLeft, UserX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const activityIcons: Record<string, any> = {
   email: Mail,
@@ -20,7 +21,7 @@ const activityIcons: Record<string, any> = {
 export default function ContactDetail() {
   const { id } = useParams<{ id: string }>();
 
-  const { data: contact } = useQuery({
+  const { data: contact, isLoading, isError } = useQuery({
     queryKey: ["contact", id],
     queryFn: async () => {
       const { data } = await supabase.from("contacts").select("*").eq("id", id!).single();
@@ -51,7 +52,36 @@ export default function ContactDetail() {
     },
   });
 
-  if (!contact) return <div className="p-6 text-muted-foreground">Carregando...</div>;
+  if (isLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-10 rounded" />
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-48" />
+            <Skeleton className="h-4 w-32" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-64" />
+          <Skeleton className="h-64 lg:col-span-2" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isError || !contact) {
+    return (
+      <div className="p-6 flex flex-col items-center justify-center gap-4 min-h-[50vh]">
+        <UserX className="h-16 w-16 text-muted-foreground opacity-30" />
+        <h2 className="text-lg font-semibold text-muted-foreground">Contato não encontrado</h2>
+        <p className="text-sm text-muted-foreground">O contato pode ter sido removido ou você não tem permissão para acessá-lo.</p>
+        <Button variant="outline" asChild>
+          <Link to="/contacts">Voltar para Contatos</Link>
+        </Button>
+      </div>
+    );
+  }
 
   const infoItems = [
     { icon: Mail, label: "Email", value: contact.email },
@@ -74,7 +104,6 @@ export default function ContactDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left: Contact info */}
         <Card className="lg:col-span-1">
           <CardHeader><CardTitle className="text-base">Informações</CardTitle></CardHeader>
           <CardContent className="space-y-3">
@@ -115,7 +144,6 @@ export default function ContactDetail() {
           </CardContent>
         </Card>
 
-        {/* Right: Timeline */}
         <Card className="lg:col-span-2">
           <CardHeader><CardTitle className="text-base">Atividades</CardTitle></CardHeader>
           <CardContent>
@@ -146,7 +174,6 @@ export default function ContactDetail() {
         </Card>
       </div>
 
-      {/* Deals */}
       {deals && deals.length > 0 && (
         <Card>
           <CardHeader><CardTitle className="text-base">Deals</CardTitle></CardHeader>
