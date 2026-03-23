@@ -124,6 +124,7 @@ export default function Financeiro() {
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="evolution">Evolução</TabsTrigger>
           <TabsTrigger value="vendas">Vendas</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
