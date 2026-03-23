@@ -216,6 +216,7 @@ export default function FacebookAdsPage() {
             onRetry={() => refetchInsights()}
             title="Insights do Facebook Ads"
             subtitle="Análise de campanhas e performance gerada por IA"
+            context="facebook_ads"
           />
         </TabsContent>
       </Tabs>

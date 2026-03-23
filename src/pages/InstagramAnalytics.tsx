@@ -240,6 +240,7 @@ export default function InstagramAnalytics() {
             onRetry={() => refetchInsights()}
             title="Insights do Instagram"
             subtitle="Análise de performance do perfil gerada por IA"
+            context="instagram"
           />
         </TabsContent>
       </Tabs>

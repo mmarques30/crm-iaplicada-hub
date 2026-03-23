@@ -374,6 +374,7 @@ export default function PainelGeral() {
             onRetry={() => refetchPainelInsights()}
             title="Insights Consolidados"
             subtitle="Análise cruzada entre Instagram, Facebook Ads e CRM gerada por IA"
+            context="painel"
           />
         </TabsContent>
       </Tabs>
