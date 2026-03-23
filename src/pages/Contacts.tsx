@@ -64,7 +64,7 @@ export default function Contacts() {
           <Button variant="outline" size="sm" onClick={() => refetch()}>Tentar novamente</Button>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
