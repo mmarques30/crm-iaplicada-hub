@@ -4,20 +4,27 @@ import { formatDate } from "@/lib/format";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  FileText, Plus, Copy, ExternalLink, BarChart3, Eye, Settings2,
-  Code, Link2, ClipboardCopy, CheckCircle2, Clock, TrendingUp
+  FileText, Plus, Copy, Eye, Settings2,
+  Code, Link2, ClipboardCopy, CheckCircle2, Clock, TrendingUp,
+  BarChart3, Pencil, Trash2, MoreHorizontal
 } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import FormBuilder from "@/components/forms/FormBuilder";
 
 const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || "https://ciwdlceyjsnlnunktqzx.supabase.co";
 
@@ -26,6 +33,9 @@ export default function Forms() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("overview");
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [builderOpen, setBuilderOpen] = useState(false);
+  const [editFormId, setEditFormId] = useState<string | null>(null);
+  const [deleteFormId, setDeleteFormId] = useState<string | null>(null);
 
   // Fetch forms
   const { data: forms, isLoading: formsLoading } = useQuery({
@@ -68,6 +78,90 @@ export default function Forms() {
     },
   });
 
+  // Delete form
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any)
+        .from("forms")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["forms"] });
+      toast.success("Formulário excluído");
+      setDeleteFormId(null);
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao excluir: " + (err.message || "Tente novamente"));
+    },
+  });
+
+  // Duplicate form
+  const duplicateMutation = useMutation({
+    mutationFn: async (sourceId: string) => {
+      // Get source form
+      const { data: source, error: sourceError } = await (supabase as any)
+        .from("forms")
+        .select("*")
+        .eq("id", sourceId)
+        .single();
+      if (sourceError) throw sourceError;
+
+      // Get source fields
+      const { data: sourceFields, error: fieldsError } = await (supabase as any)
+        .from("form_fields")
+        .select("*")
+        .eq("form_id", sourceId)
+        .order("display_order");
+      if (fieldsError) throw fieldsError;
+
+      // Create duplicate form
+      const { data: newForm, error: createError } = await (supabase as any)
+        .from("forms")
+        .insert({
+          name: `${source.name} (cópia)`,
+          slug: `${source.slug}-copia-${Date.now().toString(36)}`,
+          product: source.product,
+          redirect_url: source.redirect_url,
+          notify_emails: source.notify_emails,
+          is_active: false,
+          settings: source.settings,
+        })
+        .select()
+        .single();
+      if (createError) throw createError;
+
+      // Duplicate fields
+      if (sourceFields && sourceFields.length > 0) {
+        const { error: insertError } = await (supabase as any)
+          .from("form_fields")
+          .insert(
+            sourceFields.map((f: any) => ({
+              form_id: newForm.id,
+              field_name: f.field_name,
+              field_type: f.field_type,
+              label: f.label,
+              placeholder: f.placeholder,
+              required: f.required,
+              is_hidden: f.is_hidden,
+              display_order: f.display_order,
+              options: f.options,
+              maps_to: f.maps_to,
+            }))
+          );
+        if (insertError) throw insertError;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["forms"] });
+      toast.success("Formulário duplicado!");
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao duplicar: " + (err.message || "Tente novamente"));
+    },
+  });
+
   // Compute metrics
   const getFormMetrics = (formId: string) => {
     const formSubs = (submissions || []).filter((s: any) => s.form_id === formId);
@@ -97,10 +191,10 @@ export default function Forms() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const getApiEndpoint = (slug: string) =>
+  const getApiEndpoint = () =>
     `${SUPABASE_URL}/functions/v1/form-submit`;
 
-  const getEmbedScript = (slug: string, formId: string) =>
+  const getEmbedScript = (slug: string) =>
     `<script>
 (function() {
   var FORM_URL = "${SUPABASE_URL}/functions/v1/form-submit";
@@ -158,15 +252,29 @@ export default function Forms() {
   const getDirectLink = (slug: string) =>
     `${window.location.origin}/form/${slug}`;
 
+  const openEditor = (formId: string) => {
+    setEditFormId(formId);
+    setBuilderOpen(true);
+  };
+
+  const openNewForm = () => {
+    setEditFormId(null);
+    setBuilderOpen(true);
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Formulários</h1>
           <p className="text-sm text-muted-foreground">
-            Gerencie os formulários de captação de leads — substitui HubSpot Forms
+            Crie e gerencie formulários de captação de leads
           </p>
         </div>
+        <Button onClick={openNewForm}>
+          <Plus className="h-4 w-4 mr-1.5" />
+          Novo Formulário
+        </Button>
       </div>
 
       {/* Metrics cards */}
@@ -271,29 +379,71 @@ export default function Forms() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => openEditor(form.id)}
+                          >
+                            <Pencil className="h-3.5 w-3.5 mr-1" />
+                            Editar
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => window.open(`/form/${form.slug}`, '_blank')}
                           >
                             <Eye className="h-3.5 w-3.5 mr-1" />
                             Preview
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => copyToClipboard(getDirectLink(form.slug), `link-${form.id}`)}
-                          >
-                            {copiedId === `link-${form.id}` ? (
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-green-500" />
-                            ) : (
-                              <Link2 className="h-3.5 w-3.5 mr-1" />
-                            )}
-                            Link
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => copyToClipboard(getDirectLink(form.slug), `link-${form.id}`)}>
+                                <Link2 className="h-3.5 w-3.5 mr-2" />
+                                Copiar link
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => copyToClipboard(getEmbedScript(form.slug), `embed-${form.id}`)}>
+                                <Code className="h-3.5 w-3.5 mr-2" />
+                                Copiar embed script
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => duplicateMutation.mutate(form.id)}>
+                                <Copy className="h-3.5 w-3.5 mr-2" />
+                                Duplicar
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => setDeleteFormId(form.id)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                                Excluir
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </div>
                     </CardContent>
                   </Card>
                 );
               })}
+
+              {/* Empty state */}
+              {(forms || []).length === 0 && (
+                <Card className="border-dashed">
+                  <CardContent className="p-12 text-center">
+                    <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                    <h3 className="font-semibold text-lg mb-1">Nenhum formulário</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Crie seu primeiro formulário para começar a capturar leads
+                    </p>
+                    <Button onClick={openNewForm}>
+                      <Plus className="h-4 w-4 mr-1.5" />
+                      Criar Formulário
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           )}
         </TabsContent>
@@ -367,12 +517,12 @@ export default function Forms() {
             <CardContent className="space-y-4">
               <div className="flex items-center gap-2">
                 <code className="flex-1 bg-muted p-3 rounded text-sm font-mono">
-                  POST {getApiEndpoint("")}
+                  POST {getApiEndpoint()}
                 </code>
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => copyToClipboard(getApiEndpoint(""), "api")}
+                  onClick={() => copyToClipboard(getApiEndpoint(), "api")}
                 >
                   {copiedId === "api" ? <CheckCircle2 className="h-4 w-4 text-green-500" /> : <ClipboardCopy className="h-4 w-4" />}
                 </Button>
@@ -386,9 +536,7 @@ export default function Forms() {
     "firstname": "João Silva",
     "email": "joao@email.com",
     "phone": "(11) 99999-9999",
-    "renda_mensal": "De R$ 4.001 a R$ 8.000",
-    "motivo_para_aprender_ia": "Transição de carreira",
-    "objetivo_com_a_comunidade": "Acessar um mentor para acelerar carreira"
+    "renda_mensal": "De R$ 4.001 a R$ 8.000"
   },
   "utm": {
     "source": "instagram",
@@ -439,14 +587,14 @@ export default function Forms() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => copyToClipboard(getEmbedScript(form.slug, form.id), `embed-${form.id}`)}
+                      onClick={() => copyToClipboard(getEmbedScript(form.slug), `embed-${form.id}`)}
                     >
                       {copiedId === `embed-${form.id}` ? <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-green-500" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
                       Copiar script
                     </Button>
                   </div>
                   <pre className="bg-muted p-3 rounded text-xs font-mono overflow-x-auto max-h-48">
-                    {getEmbedScript(form.slug, form.id)}
+                    {getEmbedScript(form.slug)}
                   </pre>
                 </div>
               </CardContent>
@@ -454,6 +602,37 @@ export default function Forms() {
           ))}
         </TabsContent>
       </Tabs>
+
+      {/* Form Builder Dialog */}
+      <FormBuilder
+        open={builderOpen}
+        onOpenChange={(open) => {
+          setBuilderOpen(open);
+          if (!open) setEditFormId(null);
+        }}
+        editFormId={editFormId}
+      />
+
+      {/* Delete confirmation */}
+      <AlertDialog open={!!deleteFormId} onOpenChange={(open) => !open && setDeleteFormId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir formulário?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta ação é irreversível. Todos os campos e submissões associados serão excluídos permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => deleteFormId && deleteMutation.mutate(deleteFormId)}
+            >
+              Excluir
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
