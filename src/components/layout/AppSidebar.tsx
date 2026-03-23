@@ -149,6 +149,15 @@ export function AppSidebar() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
+                  <NavLink to="/tarefas" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                    <ListTodo className="h-4 w-4" />
+                    {!collapsed && <span>Tarefas</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
                   <NavLink to="/instagram" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                     <Instagram className="h-4 w-4" />
                     {!collapsed && <span>Automações IG</span>}
