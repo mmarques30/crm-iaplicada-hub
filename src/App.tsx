@@ -11,6 +11,11 @@ import ContactDetail from "./pages/ContactDetail";
 import DealDetail from "./pages/DealDetail";
 import Settings from "./pages/Settings";
 import InstagramAutomations from "./pages/InstagramAutomations";
+import PainelGeral from "./pages/PainelGeral";
+import InstagramAnalytics from "./pages/InstagramAnalytics";
+import FacebookAdsPage from "./pages/FacebookAdsPage";
+import CrmAnalytics from "./pages/CrmAnalytics";
+import Financeiro from "./pages/Financeiro";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +35,11 @@ const App = () => (
             <Route path="/contacts/:id" element={<ContactDetail />} />
             <Route path="/deals/:id" element={<DealDetail />} />
             <Route path="/instagram" element={<InstagramAutomations />} />
+            <Route path="/painel" element={<PainelGeral />} />
+            <Route path="/analytics/instagram" element={<InstagramAnalytics />} />
+            <Route path="/analytics/facebook-ads" element={<FacebookAdsPage />} />
+            <Route path="/analytics/crm" element={<CrmAnalytics />} />
+            <Route path="/financeiro" element={<Financeiro />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
