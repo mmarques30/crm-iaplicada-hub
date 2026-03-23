@@ -174,6 +174,7 @@ export default function PainelGeral() {
           <TabsTrigger value="channels">Canais</TabsTrigger>
           <TabsTrigger value="growth">Crescimento</TabsTrigger>
           <TabsTrigger value="roi">ROI</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         {/* Visão Geral — 3 SourceSummaryCards */}
