@@ -147,7 +147,7 @@ async function collectAndImportHubspot(supabase: any, accessToken: string) {
   const headers = { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }
 
   // Fetch contacts e deals em PARALELO
-  const contactProps = 'lifecyclestage,hs_lead_status,hs_marketable_status,hs_analytics_source,createdate,email,firstname,lastname,phone,company,cargo,numero_de_liderados,faixa_de_faturamento,renda_mensal,utm_source,utm_medium,utm_campaign,utm_term,mobilephone,city,state,address,zip,country,website,hs_linkedinbio,area_de_atuacao,notes_last_updated,hs_analytics_first_timestamp,first_conversion_event_name,first_conversion_date,hubspot_owner_id,por_qual_motivo_voce_quer_aprender_ia_,qual_o_seu_objetivo_ao_participar_da_comunidade_'
+  const contactProps = 'lifecyclestage,hs_lead_status,hs_marketable_status,hs_analytics_source,createdate,email,firstname,lastname,phone,company,cargo,numero_de_liderados,faixa_de_faturamento,renda_mensal,utm_source,utm_medium,utm_campaign,utm_term,mobilephone,hs_whatsapp_phone_number,city,state,address,zip,country,website,hs_linkedin_url,area_de_atuacao,notes_last_updated,hs_analytics_first_timestamp,first_conversion_event_name,first_conversion_date,hubspot_owner_id,por_qual_motivo_voce_quer_aprender_ia,qual_o_seu_objetivo_ao_participar_da_comunidade'
   const dealProps = 'dealname,dealstage,amount,tipo_do_produto,pipeline,closedate'
 
   // Fetch all contacts (paginated)
@@ -182,15 +182,15 @@ async function collectAndImportHubspot(supabase: any, accessToken: string) {
       first_name: c.properties?.firstname || c.properties?.email || 'Sem nome',
       last_name: c.properties?.lastname || null,
       email: c.properties?.email || null,
-      phone: c.properties?.phone || c.properties?.mobilephone || null,
-      whatsapp: c.properties?.mobilephone || c.properties?.phone || null,
+      phone: c.properties?.phone || c.properties?.mobilephone || c.properties?.hs_whatsapp_phone_number || null,
+      whatsapp: c.properties?.hs_whatsapp_phone_number || c.properties?.mobilephone || c.properties?.phone || null,
       company: c.properties?.company || null,
       cargo: c.properties?.cargo || null,
       numero_de_liderados: c.properties?.numero_de_liderados || null,
       faixa_de_faturamento: c.properties?.faixa_de_faturamento || null,
       renda_mensal: c.properties?.renda_mensal || null,
-      motivo_para_aprender_ia: c.properties?.por_qual_motivo_voce_quer_aprender_ia_ || null,
-      objetivo_com_a_comunidade: c.properties?.qual_o_seu_objetivo_ao_participar_da_comunidade_ || null,
+      motivo_para_aprender_ia: c.properties?.por_qual_motivo_voce_quer_aprender_ia || null,
+      objetivo_com_a_comunidade: c.properties?.qual_o_seu_objetivo_ao_participar_da_comunidade || null,
       lifecycle_stage: c.properties?.lifecyclestage || 'subscriber',
       lead_status: c.properties?.hs_lead_status || null,
       marketing_status: c.properties?.hs_marketable_status || null,
@@ -200,7 +200,7 @@ async function collectAndImportHubspot(supabase: any, accessToken: string) {
       zip_code: c.properties?.zip || null,
       country: c.properties?.country || null,
       website_url: c.properties?.website || null,
-      linkedin_url: c.properties?.hs_linkedinbio || null,
+      linkedin_url: c.properties?.hs_linkedin_url || null,
       area_atuacao: c.properties?.area_de_atuacao || null,
       fonte_registro: c.properties?.hs_analytics_source || null,
       first_conversion: c.properties?.first_conversion_event_name || null,
