@@ -902,8 +902,6 @@ export type Database = {
       }
     }
     Functions: {
-      fix_all_contacts: { Args: never; Returns: Json }
-      fix_contacts_page: { Args: { after_cursor?: string }; Returns: Json }
       get_secret: { Args: { secret_name: string }; Returns: string }
       get_secrets: {
         Args: { secret_names: string[] }
