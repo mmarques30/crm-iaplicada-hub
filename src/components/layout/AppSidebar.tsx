@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Brain } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Brain, Instagram } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -101,6 +101,15 @@ export function AppSidebar() {
                   <NavLink to="/contacts" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                     <Users className="h-4 w-4" />
                     {!collapsed && <span>Contatos</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/instagram" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                    <Instagram className="h-4 w-4" />
+                    {!collapsed && <span>Instagram</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
