@@ -25,7 +25,7 @@ export function MetricCard({ title, value, prefix, suffix, decimals, icon: Icon,
             </p>
             {subtitle && <p className="text-xs text-muted-foreground mt-1">{subtitle}</p>}
           </div>
-          <div className={`w-10 h-10 rounded-lg bg-muted flex items-center justify-center`}>
+          <div className="w-10 h-10 rounded-xl bg-[hsl(var(--brand-100))] flex items-center justify-center">
             <Icon className={`h-5 w-5 ${color}`} />
           </div>
         </div>

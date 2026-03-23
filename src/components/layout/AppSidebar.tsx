@@ -7,13 +7,13 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import logoImg from "@/assets/logo.png";
 
 const pipelineItems = [
   { title: "Business", url: "/pipeline/business", icon: Briefcase },
@@ -44,19 +44,15 @@ export function AppSidebar() {
         {/* Logo */}
         <div className="px-4 pb-4 mb-2 border-b border-sidebar-border">
           {!collapsed ? (
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-                <span className="text-sidebar-primary-foreground font-bold text-sm">IA</span>
-              </div>
+            <div className="flex items-center gap-3">
+              <img src={logoImg} alt="IAplicada" className="w-9 h-9 rounded-lg object-contain" />
               <div>
-                <h1 className="text-sm font-bold text-sidebar-foreground leading-none">CRM IAplicada</h1>
-                <p className="text-[10px] text-sidebar-foreground/60">Gestão de Vendas</p>
+                <h1 className="text-sm font-semibold text-sidebar-foreground leading-none tracking-tight">IAplicada</h1>
+                <p className="text-[10px] text-sidebar-foreground/50 mt-0.5">Gestão de Vendas</p>
               </div>
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-lg bg-sidebar-primary flex items-center justify-center mx-auto">
-              <span className="text-sidebar-primary-foreground font-bold text-sm">IA</span>
-            </div>
+            <img src={logoImg} alt="IAplicada" className="w-8 h-8 rounded-lg object-contain mx-auto" />
           )}
         </div>
 
@@ -94,7 +90,7 @@ export function AppSidebar() {
                             key={item.url}
                             to={item.url}
                             end
-                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                             activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                           >
                             <item.icon className="h-3.5 w-3.5" />
@@ -138,7 +134,7 @@ export function AppSidebar() {
                             key={item.url}
                             to={item.url}
                             end
-                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
                             activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
                           >
                             <item.icon className="h-3.5 w-3.5" />
