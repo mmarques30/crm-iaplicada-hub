@@ -1,93 +1,72 @@
 
 
-## Adicionar Aba "Insights" com IA em Todas as Páginas de Analytics
+## Corrigir Filtros de Insights + Sistema de Tarefas de Receita
 
-### Visao Geral
-Criar um sistema de insights dinâmicos gerados por IA (Lovable AI / Gemini) que analisa os dados reais de cada página e retorna recomendações classificadas por tipo, prioridade e produto. Cada página de analytics receberá uma aba "Insights" como última aba.
-
-### Arquitetura
-
-```text
-┌─────────────┐    ┌──────────────────────┐    ┌─────────────────┐
-│  Frontend   │───▶│  Edge Function        │───▶│  Lovable AI     │
-│  (cada pág) │    │  generate-insights    │    │  Gateway        │
-│             │◀───│  recebe dados,        │◀───│  (Gemini Flash) │
-│ InsightsTab │    │  envia p/ IA,         │    │                 │
-│             │    │  retorna insights[]   │    │                 │
-└─────────────┘    └──────────────────────┘    └─────────────────┘
-```
-
-### Componentes e Arquivos
-
-#### 1. Componente `InsightsTable` (novo)
+### 1. Corrigir filtros do InsightsTable
 **Arquivo:** `src/components/dashboard/InsightsTable.tsx`
 
-Componente reutilizável que renderiza uma tabela de insights com:
-- Interface `Insight` com campos: type, title, metric, description, product, priority
-- Filtros interativos por Produto, Prioridade e Tipo (com contagem)
-- Badges coloridos por tipo (positivo=verde, alerta=vermelho, oportunidade=azul, ação=âmbar)
-- Ordenação automática por prioridade e tipo
-- Estado de loading com skeleton
+Os filtros atuais usam botões inline que podem não estar respondendo corretamente. Substituir por 3 componentes `Select` (lista suspensa) usando o componente existente `src/components/ui/select.tsx`:
+- **Produto:** Todos, Academy, Business, Skills, Ambos, Geral
+- **Prioridade:** Todas, Alta, Média, Baixa
+- **Tipo:** Todos, Positivo, Alerta, Oportunidade, Ação
 
-#### 2. Hook `useInsights` (novo)
+Os selects ficam lado a lado em uma linha acima da lista de insights.
+
+### 2. Atualização semanal (não a cada 5 minutos)
 **Arquivo:** `src/hooks/useInsights.ts`
 
-Hook que recebe o contexto da página (ex: "instagram", "facebook_ads", "crm", "financeiro", "painel") e os dados resumidos em JSON, chama a edge function via `supabase.functions.invoke('generate-insights', { body })`, e retorna `{ insights, isLoading, error, refetch }`.
+Alterar `staleTime` de 5 minutos para 7 dias (`7 * 24 * 60 * 60 * 1000`), e `gcTime` para 8 dias. Isso evita chamadas desnecessárias à IA.
 
-#### 3. Edge Function `generate-insights` (novo)
-**Arquivo:** `supabase/functions/generate-insights/index.ts`
+### 3. Adicionar status aos insights + criar tarefas
+**Arquivo:** `src/components/dashboard/InsightsTable.tsx`
 
-- Recebe no body: `{ context: string, data: object }`
-- `context` identifica a página (instagram, facebook_ads, crm, financeiro, painel)
-- `data` contém as métricas resumidas da página
-- Monta um system prompt específico para análise de marketing/vendas em português
-- Chama Lovable AI Gateway com tool calling para extrair um array estruturado de insights
-- Retorna `{ insights: Insight[] }`
-- Trata erros 429/402
+Cada insight recebe um seletor de status com 3 opções:
+- **Pendente** (default)
+- **Em execução** → ao selecionar, cria automaticamente uma tarefa na tabela `receita_tasks`
+- **Concluído**
 
-O prompt do sistema instrui a IA a:
-- Analisar os dados como um consultor de marketing digital
-- Gerar 5-10 insights por página
-- Classificar cada insight com type, title, metric, description, product, priority
-- Focar em ações concretas e métricas reais dos dados
+O status é armazenado em `localStorage` por contexto (ex: `insight-status-instagram-0`).
 
-#### 4. Adicionar aba "Insights" em cada página
+### 4. Tabela `receita_tasks` no banco
+**Migration SQL:**
+```sql
+CREATE TABLE receita_tasks (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  title text NOT NULL,
+  description text,
+  metric text,
+  product text,
+  priority text,
+  source_context text,
+  status text NOT NULL DEFAULT 'em_execucao',
+  created_at timestamptz DEFAULT now(),
+  completed_at timestamptz
+);
+ALTER TABLE receita_tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public read/write receita_tasks" ON receita_tasks FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
+```
 
-Cada página será modificada para:
-- Importar `InsightsTable` e `useInsights`
-- Preparar um resumo dos dados da página em JSON
-- Adicionar `<TabsTrigger value="insights">Insights</TabsTrigger>` como última aba
-- Adicionar `<TabsContent value="insights">` com o componente InsightsTable
+### 5. Nova página de Tarefas de Receita
+**Arquivo:** `src/pages/ReceitaTasks.tsx`
 
-| Página | Dados enviados para IA |
-|--------|----------------------|
-| `InstagramAnalytics.tsx` | followers, reach, engagement, avgLikes, avgComments, top posts, reels vs posts |
-| `FacebookAdsPage.tsx` | spend, impressions, clicks, CTR, CPL, leads, campaigns com status/spend/cpl |
-| `CrmAnalytics.tsx` | contacts, activeDeals, wonDeals, lostDeals, winRate, pipeline value, deals by channel, stage conversion |
-| `Financeiro.tsx` | receita, totalVendas, ticketMedio, receita por produto, formas pagamento, evolução mensal |
-| `PainelGeral.tsx` | todos os KPIs consolidados (instagram + facebook + CRM) |
+Página com lista de tarefas criadas a partir dos insights, mostrando:
+- Titulo, métrica, produto, prioridade, contexto de origem
+- Status (em execução / concluído) com toggle
+- Data de criação
+- Filtros por produto e status
 
-#### 5. Atualizar `supabase/config.toml`
-Adicionar a edge function `generate-insights` com `verify_jwt = false` para acesso público.
+### 6. Adicionar rota e menu
+**Arquivo:** `src/App.tsx` — adicionar rota `/tarefas`
+**Arquivo:** `src/components/layout/AppSidebar.tsx` — adicionar item "Tarefas" com ícone `ListTodo` no menu principal
 
-### Arquivos criados/modificados (8 arquivos)
+### Arquivos criados/modificados
 
 | Arquivo | Ação |
 |---------|------|
-| `src/components/dashboard/InsightsTable.tsx` | Criar componente |
-| `src/hooks/useInsights.ts` | Criar hook |
-| `supabase/functions/generate-insights/index.ts` | Criar edge function |
-| `supabase/config.toml` | Adicionar function config |
-| `src/pages/InstagramAnalytics.tsx` | Adicionar aba Insights |
-| `src/pages/FacebookAdsPage.tsx` | Adicionar aba Insights |
-| `src/pages/CrmAnalytics.tsx` | Adicionar aba Insights |
-| `src/pages/Financeiro.tsx` | Adicionar aba Insights |
-| `src/pages/PainelGeral.tsx` | Adicionar aba Insights |
-
-### Detalhes Técnicos
-
-- **Modelo:** `google/gemini-3-flash-preview` (rápido e barato)
-- **Structured output:** Tool calling com schema `generate_insights` para garantir formato correto
-- **Cache:** React Query com `staleTime: 5min` para não chamar a IA a cada troca de aba
-- **Fallback:** Se a IA falhar, mostra mensagem "Não foi possível gerar insights" com botão retry
+| `src/components/dashboard/InsightsTable.tsx` | Filtros como Select + botão de status por insight |
+| `src/hooks/useInsights.ts` | staleTime para 7 dias |
+| Migration SQL | Criar tabela `receita_tasks` |
+| `src/pages/ReceitaTasks.tsx` | Criar página de tarefas |
+| `src/App.tsx` | Adicionar rota `/tarefas` |
+| `src/components/layout/AppSidebar.tsx` | Adicionar item Tarefas no menu |
 
