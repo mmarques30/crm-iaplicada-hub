@@ -137,7 +137,7 @@ export default function Pipeline() {
             </div>
           ) : (
             <>
-              <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
+              <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin snap-x snap-mandatory sm:snap-none">
                 {activeStages.map((stage) => (
                   <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} />
                 ))}
