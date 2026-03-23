@@ -57,22 +57,22 @@ export default function PainelGeral() {
   const maxFunnel = funnelData[0]?.value || 1
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       {/* Header */}
-      <div className="flex items-start justify-between">
+      <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Visão Consolidada</h1>
+          <h1 className="text-xl sm:text-2xl font-bold">Visão Consolidada</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Dashboard integrado: Instagram, Facebook Ads e HubSpot CRM
           </p>
-          <div className="flex gap-2 mt-2">
+          <div className="flex flex-wrap gap-2 mt-2">
             {ig && <Badge className="bg-pink-100 text-pink-800">Instagram</Badge>}
             {fb && <Badge className="bg-blue-100 text-blue-800">Facebook Ads</Badge>}
             {hs && <Badge className="bg-orange-100 text-orange-800">HubSpot CRM</Badge>}
             {!ig && !fb && !hs && <Badge variant="secondary">Sem dados</Badge>}
           </div>
         </div>
-        <div className="text-right space-y-2">
+        <div className="text-right space-y-2 shrink-0">
           <Button
             onClick={() => collectMutation.mutate('all')}
             disabled={collectMutation.isPending}
