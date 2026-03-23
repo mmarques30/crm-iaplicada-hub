@@ -7,7 +7,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Plus, Trash2, MessageCircle, Send, Instagram, Link2, Edit2, Eye } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Trash2, MessageCircle, Send, Instagram, Link2, Edit2, Eye, List, CheckCircle2, XCircle, User, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   useInstagramAutomations,
@@ -17,7 +18,9 @@ import {
   type InstagramAutomationInsert,
   type InstagramAutomation,
 } from "@/hooks/useInstagramAutomations";
+import { useInstagramCommentLogs } from "@/hooks/useInstagramCommentLogs";
 import { formatDateTime } from "@/lib/format";
+import { useNavigate } from "react-router-dom";
 
 const emptyForm: InstagramAutomationInsert = {
   post_url: "",
@@ -31,6 +34,7 @@ const emptyForm: InstagramAutomationInsert = {
 
 export default function InstagramAutomations() {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { data: automations, isLoading } = useInstagramAutomations();
   const createMutation = useCreateInstagramAutomation();
   const updateMutation = useUpdateInstagramAutomation();
@@ -40,6 +44,8 @@ export default function InstagramAutomations() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<InstagramAutomationInsert>(emptyForm);
   const [previewOpen, setPreviewOpen] = useState<string | null>(null);
+  const [logsOpen, setLogsOpen] = useState<string | null>(null);
+  const [triggerRunning, setTriggerRunning] = useState(false);
 
   const openCreate = () => {
     setEditingId(null);
@@ -96,6 +102,38 @@ export default function InstagramAutomations() {
     await updateMutation.mutateAsync({ id: auto.id, is_active: !auto.is_active });
   };
 
+  const triggerCron = async () => {
+    setTriggerRunning(true);
+    try {
+      const resp = await fetch(
+        `https://ciwdlceyjsnlnunktqzx.supabase.co/functions/v1/instagram-comments-cron`,
+        { method: "POST", headers: { "Content-Type": "application/json" } }
+      );
+      const data = await resp.json();
+      if (data.success) {
+        const totalProcessed = (data.results || []).reduce(
+          (sum: number, r: any) => sum + (r.processed || 0), 0
+        );
+        toast({
+          title: "Verificação concluída",
+          description: totalProcessed > 0
+            ? `${totalProcessed} novo(s) comentário(s) processado(s)`
+            : "Nenhum comentário novo encontrado",
+        });
+      } else {
+        toast({
+          title: "Erro na verificação",
+          description: data.error || JSON.stringify(data.results?.[0]?.error || "Erro desconhecido"),
+          variant: "destructive",
+        });
+      }
+    } catch (err) {
+      toast({ title: "Erro", description: String(err), variant: "destructive" });
+    } finally {
+      setTriggerRunning(false);
+    }
+  };
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -108,89 +146,95 @@ export default function InstagramAutomations() {
             Configure respostas automáticas em comentários e envio de DM por post
           </p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={openCreate}>
-              <Plus className="h-4 w-4 mr-2" />
-              Nova Automação
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{editingId ? "Editar Automação" : "Nova Automação"}</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 py-2">
-              <div className="space-y-2">
-                <Label htmlFor="post_url">URL do Post *</Label>
-                <Input
-                  id="post_url"
-                  placeholder="https://www.instagram.com/p/ABC123/"
-                  value={form.post_url}
-                  onChange={(e) => setForm({ ...form, post_url: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="post_id">Media ID do Instagram (opcional)</Label>
-                <Input
-                  id="post_id"
-                  placeholder="ID numérico do media (preenchido automaticamente pelo webhook)"
-                  value={form.post_id || ""}
-                  onChange={(e) => setForm({ ...form, post_id: e.target.value || null })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Se não souber, deixe em branco. Será preenchido ao receber o primeiro comentário.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="keyword">Palavra-chave (opcional)</Label>
-                <Input
-                  id="keyword"
-                  placeholder="ex: quero, link, eu quero (separar por vírgula)"
-                  value={form.keyword}
-                  onChange={(e) => setForm({ ...form, keyword: e.target.value })}
-                />
-                <p className="text-xs text-muted-foreground">
-                  Se vazio, responde a todos os comentários deste post. Separe múltiplas palavras por vírgula.
-                </p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="comment_reply">Resposta no Comentário *</Label>
-                <Textarea
-                  id="comment_reply"
-                  placeholder="ex: Te mandei no direct! Confere lá 🔥"
-                  value={form.comment_reply}
-                  onChange={(e) => setForm({ ...form, comment_reply: e.target.value })}
-                  rows={2}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dm_message">Mensagem da DM *</Label>
-                <Textarea
-                  id="dm_message"
-                  placeholder="ex: Fala! Aqui está o link que você pediu:"
-                  value={form.dm_message}
-                  onChange={(e) => setForm({ ...form, dm_message: e.target.value })}
-                  rows={3}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dm_link">Link para enviar na DM (opcional)</Label>
-                <Input
-                  id="dm_link"
-                  placeholder="https://seusite.com/oferta"
-                  value={form.dm_link || ""}
-                  onChange={(e) => setForm({ ...form, dm_link: e.target.value || null })}
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
-              <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
-                {editingId ? "Salvar" : "Criar Automação"}
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={triggerCron} disabled={triggerRunning}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${triggerRunning ? "animate-spin" : ""}`} />
+            {triggerRunning ? "Verificando..." : "Verificar Agora"}
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openCreate}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nova Automação
               </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>{editingId ? "Editar Automação" : "Nova Automação"}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="post_url">URL do Post *</Label>
+                  <Input
+                    id="post_url"
+                    placeholder="https://www.instagram.com/p/ABC123/"
+                    value={form.post_url}
+                    onChange={(e) => setForm({ ...form, post_url: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="post_id">Media ID do Instagram (opcional)</Label>
+                  <Input
+                    id="post_id"
+                    placeholder="ID numérico do media (preenchido automaticamente pelo webhook)"
+                    value={form.post_id || ""}
+                    onChange={(e) => setForm({ ...form, post_id: e.target.value || null })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se não souber, deixe em branco. Será preenchido ao receber o primeiro comentário.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="keyword">Palavra-chave (opcional)</Label>
+                  <Input
+                    id="keyword"
+                    placeholder="ex: quero, link, eu quero (separar por vírgula)"
+                    value={form.keyword}
+                    onChange={(e) => setForm({ ...form, keyword: e.target.value })}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Se vazio, responde a todos os comentários deste post. Separe múltiplas palavras por vírgula.
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="comment_reply">Resposta no Comentário *</Label>
+                  <Textarea
+                    id="comment_reply"
+                    placeholder="ex: Te mandei no direct! Confere lá"
+                    value={form.comment_reply}
+                    onChange={(e) => setForm({ ...form, comment_reply: e.target.value })}
+                    rows={2}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dm_message">Mensagem da DM *</Label>
+                  <Textarea
+                    id="dm_message"
+                    placeholder="ex: Fala! Aqui está o link que você pediu:"
+                    value={form.dm_message}
+                    onChange={(e) => setForm({ ...form, dm_message: e.target.value })}
+                    rows={3}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="dm_link">Link para enviar na DM (opcional)</Label>
+                  <Input
+                    id="dm_link"
+                    placeholder="https://seusite.com/oferta"
+                    value={form.dm_link || ""}
+                    onChange={(e) => setForm({ ...form, dm_link: e.target.value || null })}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancelar</Button>
+                <Button onClick={handleSave} disabled={createMutation.isPending || updateMutation.isPending}>
+                  {editingId ? "Salvar" : "Criar Automação"}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* How it works */}
@@ -276,18 +320,28 @@ export default function InstagramAutomations() {
                       checked={auto.is_active}
                       onCheckedChange={() => handleToggle(auto)}
                     />
-                    <Button variant="ghost" size="icon" onClick={() => setPreviewOpen(previewOpen === auto.id ? null : auto.id)}>
+                    <Button
+                      variant={logsOpen === auto.id ? "default" : "ghost"}
+                      size="icon"
+                      onClick={() => setLogsOpen(logsOpen === auto.id ? null : auto.id)}
+                      title="Ver comentários"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => setPreviewOpen(previewOpen === auto.id ? null : auto.id)} title="Preview">
                       <Eye className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEdit(auto)}>
+                    <Button variant="ghost" size="icon" onClick={() => openEdit(auto)} title="Editar">
                       <Edit2 className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDelete(auto.id)}>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(auto.id)} title="Excluir">
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
+
+              {/* Preview section */}
               {previewOpen === auto.id && (
                 <CardContent className="pt-0">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 bg-muted/50 rounded-lg">
@@ -311,13 +365,102 @@ export default function InstagramAutomations() {
                   </div>
                   <p className="text-xs text-muted-foreground mt-2">
                     Criada em {formatDateTime(auto.created_at)}
+                    {auto.post_id && <> &middot; Media ID: <code className="text-xs">{auto.post_id}</code></>}
                   </p>
+                </CardContent>
+              )}
+
+              {/* Comment logs section */}
+              {logsOpen === auto.id && (
+                <CardContent className="pt-0">
+                  <CommentLogsTable automationId={auto.id} navigate={navigate} />
                 </CardContent>
               )}
             </Card>
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function CommentLogsTable({ automationId, navigate }: { automationId: string; navigate: (path: string) => void }) {
+  const { data: logs, isLoading } = useInstagramCommentLogs(automationId);
+
+  if (isLoading) {
+    return <div className="text-center py-6 text-sm text-muted-foreground">Carregando comentários...</div>;
+  }
+
+  if (!logs || logs.length === 0) {
+    return (
+      <div className="text-center py-6">
+        <MessageCircle className="h-8 w-8 mx-auto text-muted-foreground/30 mb-2" />
+        <p className="text-sm text-muted-foreground">Nenhum comentário processado ainda</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border rounded-lg overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableRow className="bg-muted/50">
+            <TableHead className="w-[140px]">Usuário</TableHead>
+            <TableHead>Comentário</TableHead>
+            <TableHead className="w-[80px] text-center">DM</TableHead>
+            <TableHead className="w-[80px] text-center">Contato</TableHead>
+            <TableHead className="w-[150px]">Data</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {logs.map((log) => (
+            <TableRow key={log.id}>
+              <TableCell className="font-medium text-sm">
+                <span className="flex items-center gap-1.5">
+                  <User className="h-3.5 w-3.5 text-muted-foreground" />
+                  @{log.commenter_username}
+                </span>
+              </TableCell>
+              <TableCell className="text-sm max-w-[300px]">
+                <span className="line-clamp-2">{log.comment_text}</span>
+              </TableCell>
+              <TableCell className="text-center">
+                {log.dm_sent ? (
+                  <CheckCircle2 className="h-4 w-4 text-green-600 mx-auto" />
+                ) : (
+                  <XCircle className="h-4 w-4 text-muted-foreground/50 mx-auto" />
+                )}
+              </TableCell>
+              <TableCell className="text-center">
+                {log.contact_id ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 px-2 text-xs"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/contacts/${log.contact_id}`);
+                    }}
+                  >
+                    Ver
+                  </Button>
+                ) : (
+                  <span className="text-xs text-muted-foreground">—</span>
+                )}
+              </TableCell>
+              <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                {formatDateTime(log.replied_at)}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+      <div className="px-4 py-2 bg-muted/30 border-t">
+        <p className="text-xs text-muted-foreground">
+          {logs.length} comentário(s) processado(s) &middot;{" "}
+          {logs.filter((l) => l.dm_sent).length} DM(s) enviada(s)
+        </p>
+      </div>
     </div>
   );
 }
