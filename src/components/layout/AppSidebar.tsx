@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Brain, Instagram } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Brain, Instagram, BarChart3, Facebook, DollarSign, TrendingUp } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -7,6 +7,7 @@ import {
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -20,12 +21,22 @@ const pipelineItems = [
   { title: "Academy", url: "/pipeline/academy", icon: GraduationCap },
 ];
 
+const analyticsItems = [
+  { title: "Visão Geral", url: "/painel", icon: BarChart3 },
+  { title: "Instagram", url: "/analytics/instagram", icon: Instagram },
+  { title: "Facebook Ads", url: "/analytics/facebook-ads", icon: Facebook },
+  { title: "CRM", url: "/analytics/crm", icon: TrendingUp },
+  { title: "Financeiro", url: "/financeiro", icon: DollarSign },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
   const isPipelineActive = location.pathname.startsWith("/pipeline");
+  const isAnalyticsActive = location.pathname.startsWith("/painel") || location.pathname.startsWith("/analytics") || location.pathname.startsWith("/financeiro");
   const [pipelineOpen, setPipelineOpen] = useState(isPipelineActive);
+  const [analyticsOpen, setAnalyticsOpen] = useState(isAnalyticsActive);
 
   return (
     <Sidebar collapsible="icon">
@@ -105,11 +116,46 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
+              {/* Analytics with submenu */}
+              <SidebarMenuItem>
+                <Collapsible open={analyticsOpen || isAnalyticsActive} onOpenChange={setAnalyticsOpen}>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className={`w-full ${isAnalyticsActive ? 'bg-sidebar-accent text-sidebar-primary font-medium' : ''}`}>
+                      <BarChart3 className="h-4 w-4" />
+                      {!collapsed && (
+                        <>
+                          <span className="flex-1 text-left">Analytics</span>
+                          <ChevronDown className={`h-3 w-3 transition-transform ${analyticsOpen || isAnalyticsActive ? 'rotate-180' : ''}`} />
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  {!collapsed && (
+                    <CollapsibleContent>
+                      <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
+                        {analyticsItems.map((item) => (
+                          <NavLink
+                            key={item.url}
+                            to={item.url}
+                            end
+                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                            activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                          >
+                            <item.icon className="h-3.5 w-3.5" />
+                            <span>{item.title}</span>
+                          </NavLink>
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  )}
+                </Collapsible>
+              </SidebarMenuItem>
+
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
                   <NavLink to="/instagram" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
                     <Instagram className="h-4 w-4" />
-                    {!collapsed && <span>Instagram</span>}
+                    {!collapsed && <span>Automações IG</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
