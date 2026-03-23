@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { formatCurrency } from '@/lib/format'
 import { Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent } from 'lucide-react'
+import { InsightsTable } from '@/components/dashboard/InsightsTable'
+import { useInsights } from '@/hooks/useInsights'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,

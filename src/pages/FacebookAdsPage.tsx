@@ -5,6 +5,8 @@ import { MetricCard } from '@/components/dashboard/MetricCard'
 import { useDashboardSnapshot } from '@/hooks/useDashboardData'
 import { formatCurrency } from '@/lib/format'
 import { DollarSign, Eye, MousePointer, Target, TrendingUp, BarChart3, Percent, ExternalLink } from 'lucide-react'
+import { InsightsTable } from '@/components/dashboard/InsightsTable'
+import { useInsights } from '@/hooks/useInsights'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,

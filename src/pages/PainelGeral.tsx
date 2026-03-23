@@ -7,6 +7,8 @@ import { SourceSummaryCard } from '@/components/dashboard/SourceSummaryCard'
 import { useDashboardSnapshot, useCollectDashboardData } from '@/hooks/useDashboardData'
 import { formatCurrency, formatDateTime } from '@/lib/format'
 import { Users, Eye, Heart, Target, DollarSign, TrendingUp, RefreshCw, Loader2, Instagram, Facebook, BarChart3 } from 'lucide-react'
+import { InsightsTable } from '@/components/dashboard/InsightsTable'
+import { useInsights } from '@/hooks/useInsights'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, AreaChart, Area,
