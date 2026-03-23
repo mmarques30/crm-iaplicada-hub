@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { formatCurrency } from '@/lib/format'
 import { Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent } from 'lucide-react'
+import { InsightsTable } from '@/components/dashboard/InsightsTable'
+import { useInsights } from '@/hooks/useInsights'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -73,7 +75,6 @@ export default function CrmAnalytics() {
   const funnelStages = (stageConversion || []).filter(s => (s.deal_count || 0) > 0)
   const maxStage = funnelStages[0]?.deal_count || 1
 
-  // Product pie
   const productPie = (productMetrics || []).map(pm => ({
     name: String(pm.product).charAt(0).toUpperCase() + String(pm.product).slice(1),
     value: Number(pm.active_deals || 0),
@@ -81,6 +82,25 @@ export default function CrmAnalytics() {
   }))
 
   const SOURCE_COLORS = ['#10B981', '#1877F2', '#E1306C', '#8b5cf6', '#f59e0b', '#6b7280']
+
+  const insightsData = {
+    totalContacts: contactCount || 0,
+    activeDeals: totals.activeDeals,
+    wonDeals: totals.wonDeals,
+    lostDeals: totals.lostDeals,
+    winRate: winRate.toFixed(1),
+    pipelineValue: totals.pipelineValue,
+    avgDealSize: avgDeal,
+    funnelStages: funnelStages.map(s => ({ name: s.stage_name, deals: s.deal_count, amount: s.total_amount })),
+    productMetrics: (productMetrics || []).map(pm => ({ product: pm.product, active: pm.active_deals, won: pm.won_deals, lost: pm.lost_deals, winRate: pm.win_rate })),
+    dealsByChannel: (dealsByChannel || []).slice(0, 6),
+  }
+
+  const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({
+    context: 'crm',
+    data: insightsData,
+    enabled: (contactCount || 0) > 0 || totals.activeDeals > 0,
+  })
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
@@ -112,6 +132,7 @@ export default function CrmAnalytics() {
           <TabsTrigger value="funnel">Funil</TabsTrigger>
           <TabsTrigger value="sources">Fontes</TabsTrigger>
           <TabsTrigger value="products">Produtos</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         <TabsContent value="funnel" className="mt-4">
@@ -222,6 +243,16 @@ export default function CrmAnalytics() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={insights || []}
+            isLoading={insightsLoading}
+            error={insightsError?.message}
+            onRetry={() => refetchInsights()}
+            title="Insights do CRM"
+            subtitle="Análise do funil de vendas e pipeline gerada por IA"
+          />
         </TabsContent>
       </Tabs>
     </div>

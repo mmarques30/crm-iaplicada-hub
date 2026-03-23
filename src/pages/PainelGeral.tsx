@@ -7,6 +7,8 @@ import { SourceSummaryCard } from '@/components/dashboard/SourceSummaryCard'
 import { useDashboardSnapshot, useCollectDashboardData } from '@/hooks/useDashboardData'
 import { formatCurrency, formatDateTime } from '@/lib/format'
 import { Users, Eye, Heart, Target, DollarSign, TrendingUp, RefreshCw, Loader2, Instagram, Facebook, BarChart3 } from 'lucide-react'
+import { InsightsTable } from '@/components/dashboard/InsightsTable'
+import { useInsights } from '@/hooks/useInsights'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, AreaChart, Area,
@@ -89,6 +91,34 @@ export default function PainelGeral() {
       return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
     },
   })
+  const painelInsightsData = {
+    instagram: ig ? {
+      followers: ig.metrics?.followers,
+      totalReach: ig.metrics?.totalReach,
+      avgEngagement: ig.metrics?.avgEngagement,
+      totalPosts: ig.posts?.length,
+    } : null,
+    facebookAds: fb ? {
+      totalSpend: fb.metrics?.totalSpend,
+      totalLeads: fb.metrics?.totalLeads,
+      avgCPL: fb.metrics?.avgCPL,
+      avgCTR: fb.metrics?.avgCTR,
+    } : null,
+    crm: {
+      contacts: contactCount,
+      activeDeals: crmTotals.activeDeals,
+      wonDeals: crmTotals.wonDeals,
+      lostDeals: crmTotals.lostDeals,
+      winRate: crmWinRate.toFixed(1),
+      pipelineValue: crmTotals.pipelineValue,
+    },
+    followers, totalReach, engagement, leads, investment, cpl,
+  }
+
+  const { data: painelInsights, isLoading: painelInsightsLoading, error: painelInsightsError, refetch: refetchPainelInsights } = useInsights({
+    context: 'painel',
+    data: painelInsightsData,
+  })
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
@@ -144,6 +174,7 @@ export default function PainelGeral() {
           <TabsTrigger value="channels">Canais</TabsTrigger>
           <TabsTrigger value="growth">Crescimento</TabsTrigger>
           <TabsTrigger value="roi">ROI</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         {/* Visão Geral — 3 SourceSummaryCards */}
@@ -334,6 +365,16 @@ export default function PainelGeral() {
               </CardContent>
             </Card>
           </div>
+        </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={painelInsights || []}
+            isLoading={painelInsightsLoading}
+            error={painelInsightsError?.message}
+            onRetry={() => refetchPainelInsights()}
+            title="Insights Consolidados"
+            subtitle="Análise cruzada entre Instagram, Facebook Ads e CRM gerada por IA"
+          />
         </TabsContent>
       </Tabs>
     </div>

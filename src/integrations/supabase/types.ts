@@ -60,6 +60,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "activities_deal_id_fkey"
             columns: ["deal_id"]
             isOneToOne: false
@@ -77,16 +84,29 @@ export type Database = {
       }
       contacts: {
         Row: {
+          address: string | null
+          area_atuacao: string | null
           cargo: string | null
+          city: string | null
           company: string | null
+          country: string | null
           created_at: string | null
           email: string | null
           faixa_de_faturamento: string | null
+          first_conversion: string | null
+          first_conversion_date: string | null
           first_name: string
+          fonte_registro: string | null
           hubspot_id: number | null
+          hubspot_owner: string | null
           id: string
+          last_activity_at: string | null
           last_name: string | null
+          lead_status: string | null
+          lifecycle_stage: string | null
+          linkedin_url: string | null
           manychat_id: string | null
+          marketing_status: string | null
           motivo_para_aprender_ia: string | null
           numero_de_liderados: string | null
           objetivo_com_a_comunidade: string | null
@@ -96,24 +116,41 @@ export type Database = {
             | Database["public"]["Enums"]["product_type"][]
             | null
           renda_mensal: string | null
+          state: string | null
           updated_at: string | null
           utm_campaign: string | null
           utm_medium: string | null
           utm_source: string | null
           utm_term: string | null
+          website_url: string | null
+          whatsapp: string | null
           whatsapp_opt_in: boolean
+          zip_code: string | null
         }
         Insert: {
+          address?: string | null
+          area_atuacao?: string | null
           cargo?: string | null
+          city?: string | null
           company?: string | null
+          country?: string | null
           created_at?: string | null
           email?: string | null
           faixa_de_faturamento?: string | null
+          first_conversion?: string | null
+          first_conversion_date?: string | null
           first_name: string
+          fonte_registro?: string | null
           hubspot_id?: number | null
+          hubspot_owner?: string | null
           id?: string
+          last_activity_at?: string | null
           last_name?: string | null
+          lead_status?: string | null
+          lifecycle_stage?: string | null
+          linkedin_url?: string | null
           manychat_id?: string | null
+          marketing_status?: string | null
           motivo_para_aprender_ia?: string | null
           numero_de_liderados?: string | null
           objetivo_com_a_comunidade?: string | null
@@ -123,24 +160,41 @@ export type Database = {
             | Database["public"]["Enums"]["product_type"][]
             | null
           renda_mensal?: string | null
+          state?: string | null
           updated_at?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          website_url?: string | null
+          whatsapp?: string | null
           whatsapp_opt_in?: boolean
+          zip_code?: string | null
         }
         Update: {
+          address?: string | null
+          area_atuacao?: string | null
           cargo?: string | null
+          city?: string | null
           company?: string | null
+          country?: string | null
           created_at?: string | null
           email?: string | null
           faixa_de_faturamento?: string | null
+          first_conversion?: string | null
+          first_conversion_date?: string | null
           first_name?: string
+          fonte_registro?: string | null
           hubspot_id?: number | null
+          hubspot_owner?: string | null
           id?: string
+          last_activity_at?: string | null
           last_name?: string | null
+          lead_status?: string | null
+          lifecycle_stage?: string | null
+          linkedin_url?: string | null
           manychat_id?: string | null
+          marketing_status?: string | null
           motivo_para_aprender_ia?: string | null
           numero_de_liderados?: string | null
           objetivo_com_a_comunidade?: string | null
@@ -150,12 +204,16 @@ export type Database = {
             | Database["public"]["Enums"]["product_type"][]
             | null
           renda_mensal?: string | null
+          state?: string | null
           updated_at?: string | null
           utm_campaign?: string | null
           utm_medium?: string | null
           utm_source?: string | null
           utm_term?: string | null
+          website_url?: string | null
+          whatsapp?: string | null
           whatsapp_opt_in?: boolean
+          zip_code?: string | null
         }
         Relationships: []
       }
@@ -250,6 +308,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
             referencedColumns: ["id"]
           },
           {
@@ -392,6 +457,13 @@ export type Database = {
             referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "instagram_comment_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications: {
@@ -434,6 +506,13 @@ export type Database = {
             columns: ["related_contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_related_contact_id_fkey"
+            columns: ["related_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
             referencedColumns: ["id"]
           },
           {
@@ -604,6 +683,13 @@ export type Database = {
             referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "vendas_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
@@ -615,6 +701,70 @@ export type Database = {
           product: Database["public"]["Enums"]["product_type"] | null
           stage_name: string | null
           transitions: number | null
+        }
+        Relationships: []
+      }
+      contacts_full: {
+        Row: {
+          active_deals_count: number | null
+          activities_count: number | null
+          address: string | null
+          area_atuacao: string | null
+          cargo: string | null
+          city: string | null
+          company: string | null
+          country: string | null
+          created_at: string | null
+          days_since_creation: number | null
+          days_since_last_activity: number | null
+          deals_count: number | null
+          email: string | null
+          faixa_de_faturamento: string | null
+          first_conversion: string | null
+          first_conversion_date: string | null
+          first_name: string | null
+          fonte_registro: string | null
+          full_name: string | null
+          hubspot_id: number | null
+          hubspot_owner: string | null
+          id: string | null
+          last_activity_at: string | null
+          last_activity_date: string | null
+          last_activity_subject: string | null
+          last_activity_type: string | null
+          last_deal_amount: number | null
+          last_deal_name: string | null
+          last_deal_product: string | null
+          last_deal_stage: string | null
+          last_name: string | null
+          lead_status: string | null
+          lifecycle_stage: string | null
+          linkedin_url: string | null
+          lost_deals_count: number | null
+          manychat_id: string | null
+          marketing_status: string | null
+          motivo_para_aprender_ia: string | null
+          numero_de_liderados: string | null
+          objetivo_com_a_comunidade: string | null
+          owner_id: string | null
+          phone: string | null
+          produto_interesse:
+            | Database["public"]["Enums"]["product_type"][]
+            | null
+          renda_mensal: string | null
+          state: string | null
+          total_deal_value: number | null
+          updated_at: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          website_url: string | null
+          whatsapp: string | null
+          whatsapp_opt_in: boolean | null
+          won_deal_value: number | null
+          won_deals_count: number | null
+          zip_code: string | null
         }
         Relationships: []
       }
@@ -655,6 +805,13 @@ export type Database = {
             columns: ["contact_id"]
             isOneToOne: false
             referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
             referencedColumns: ["id"]
           },
           {

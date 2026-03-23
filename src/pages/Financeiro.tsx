@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { DollarSign, ShoppingCart, Receipt, CreditCard } from 'lucide-react'
+import { InsightsTable } from '@/components/dashboard/InsightsTable'
+import { useInsights } from '@/hooks/useInsights'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, LineChart, Line,
@@ -84,6 +86,21 @@ export default function Financeiro() {
   const emAndamento = allVendas.filter(v => v.status === 'em_andamento').length
   const concluidos = allVendas.filter(v => v.status === 'concluido').length
 
+  const insightsData = totalVendas > 0 ? {
+    receitaTotal, totalVendas, ticketMedio,
+    emAndamento, concluidos,
+    parcelasAtivas,
+    receitaPorProduto: productData.map(p => ({ produto: p.name, receita: p.receita, vendas: p.vendas })),
+    formasPagamento: paymentData,
+    evolucaoMensal: monthlyChart,
+  } : null
+
+  const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({
+    context: 'financeiro',
+    data: insightsData,
+    enabled: totalVendas > 0,
+  })
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
@@ -109,6 +126,7 @@ export default function Financeiro() {
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="evolution">Evolução</TabsTrigger>
           <TabsTrigger value="vendas">Vendas</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
@@ -228,6 +246,16 @@ export default function Financeiro() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={insights || []}
+            isLoading={insightsLoading}
+            error={insightsError?.message}
+            onRetry={() => refetchInsights()}
+            title="Insights Financeiros"
+            subtitle="Análise de vendas e receita gerada por IA"
+          />
         </TabsContent>
       </Tabs>
     </div>

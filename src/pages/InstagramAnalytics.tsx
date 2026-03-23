@@ -4,6 +4,8 @@ import { Badge } from '@/components/ui/badge'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { useDashboardSnapshot } from '@/hooks/useDashboardData'
 import { Users, Eye, Play, Bookmark, Share2, Heart } from 'lucide-react'
+import { InsightsTable } from '@/components/dashboard/InsightsTable'
+import { useInsights } from '@/hooks/useInsights'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, ScatterChart, Scatter, Cell,
@@ -49,6 +51,26 @@ export default function InstagramAnalytics() {
     date: new Date(d.end_time).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
     alcance: d.value,
   })) || []
+
+  const insightsData = ig ? {
+    followers: ig.metrics?.followers,
+    totalReach: ig.metrics?.totalReach,
+    totalViews: ig.metrics?.totalViews,
+    totalSaved: ig.metrics?.totalSaved,
+    totalShares: ig.metrics?.totalShares,
+    avgEngagement: ig.metrics?.avgEngagement,
+    avgLikes, avgComments, avgReach,
+    totalPosts: posts.length,
+    totalReels: reels.length,
+    totalImages: images.length,
+    topPosts: topPosts.slice(0, 3).map(p => ({ caption: (p.caption || '').substring(0, 60), reach: p.reach, likes: p.like_count, comments: p.comments_count, type: p.media_type })),
+  } : null
+
+  const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({
+    context: 'instagram',
+    data: insightsData,
+    enabled: !!ig,
+  })
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
@@ -99,6 +121,7 @@ export default function InstagramAnalytics() {
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="growth">Crescimento</TabsTrigger>
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
@@ -208,6 +231,16 @@ export default function InstagramAnalytics() {
               ) : <p className="text-center text-muted-foreground py-8">Sem dados de posts</p>}
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={insights || []}
+            isLoading={insightsLoading}
+            error={insightsError?.message}
+            onRetry={() => refetchInsights()}
+            title="Insights do Instagram"
+            subtitle="Análise de performance do perfil gerada por IA"
+          />
         </TabsContent>
       </Tabs>
     </div>

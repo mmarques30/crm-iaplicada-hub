@@ -5,6 +5,8 @@ import { MetricCard } from '@/components/dashboard/MetricCard'
 import { useDashboardSnapshot } from '@/hooks/useDashboardData'
 import { formatCurrency } from '@/lib/format'
 import { DollarSign, Eye, MousePointer, Target, TrendingUp, BarChart3, Percent, ExternalLink } from 'lucide-react'
+import { InsightsTable } from '@/components/dashboard/InsightsTable'
+import { useInsights } from '@/hooks/useInsights'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
@@ -18,6 +20,25 @@ export default function FacebookAdsPage() {
 
   const campaigns = fb?.campaigns || []
   const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE')
+
+  const insightsData = fb ? {
+    totalSpend: fb.metrics?.totalSpend,
+    totalImpressions: fb.metrics?.totalImpressions,
+    totalReach: fb.metrics?.totalReach,
+    totalClicks: fb.metrics?.totalClicks,
+    totalLeads: fb.metrics?.totalLeads,
+    avgCPL: fb.metrics?.avgCPL,
+    avgCTR: fb.metrics?.avgCTR,
+    activeCampaigns: activeCampaigns.length,
+    totalCampaigns: campaigns.length,
+    campaigns: campaigns.slice(0, 8).map(c => ({ name: c.name.substring(0, 40), status: c.status, spend: c.spend, leads: c.leads, cpl: c.costPerLead, ctr: c.ctr })),
+  } : null
+
+  const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({
+    context: 'facebook_ads',
+    data: insightsData,
+    enabled: !!fb,
+  })
 
   // Investimento por campanha (horizontal)
   const spendByCampaign = campaigns
@@ -73,6 +94,7 @@ export default function FacebookAdsPage() {
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="campaigns">Campanhas</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
@@ -185,6 +207,16 @@ export default function FacebookAdsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={insights || []}
+            isLoading={insightsLoading}
+            error={insightsError?.message}
+            onRetry={() => refetchInsights()}
+            title="Insights do Facebook Ads"
+            subtitle="Análise de campanhas e performance gerada por IA"
+          />
         </TabsContent>
       </Tabs>
     </div>
