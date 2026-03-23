@@ -8,15 +8,32 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, User, Columns3 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Clock, User, Columns3, SlidersHorizontal } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Deal = Tables<"deals"> & {
   contacts: { first_name: string; last_name: string | null } | null;
 };
 type Stage = Tables<"stages">;
+
+const HIDDEN_STAGES_KEY = "pipeline-hidden-stages";
+
+function getHiddenStages(pipelineId: string): Set<string> {
+  try {
+    const stored = localStorage.getItem(`${HIDDEN_STAGES_KEY}-${pipelineId}`);
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function saveHiddenStages(pipelineId: string, hidden: Set<string>) {
+  localStorage.setItem(`${HIDDEN_STAGES_KEY}-${pipelineId}`, JSON.stringify([...hidden]));
+}
 
 export default function Pipeline() {
   const { product = "business" } = useParams<{ product: string }>();
@@ -60,6 +77,24 @@ export default function Pipeline() {
     },
   });
 
+  const [hiddenStages, setHiddenStages] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    if (pipeline?.id) {
+      setHiddenStages(getHiddenStages(pipeline.id));
+    }
+  }, [pipeline?.id]);
+
+  const toggleStage = useCallback((stageId: string) => {
+    setHiddenStages((prev) => {
+      const next = new Set(prev);
+      if (next.has(stageId)) next.delete(stageId);
+      else next.add(stageId);
+      if (pipeline?.id) saveHiddenStages(pipeline.id, next);
+      return next;
+    });
+  }, [pipeline?.id]);
+
   const updateStage = useMutation({
     mutationFn: async ({ dealId, stageId }: { dealId: string; stageId: string }) => {
       await supabase.from("deals").update({ stage_id: stageId }).eq("id", dealId);
@@ -67,8 +102,10 @@ export default function Pipeline() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals", pipeline?.id] }),
   });
 
-  const activeStages = useMemo(() => stages?.filter((s) => !s.is_won && !s.is_lost) || [], [stages]);
-  const closedStages = useMemo(() => stages?.filter((s) => s.is_won || s.is_lost) || [], [stages]);
+  const visibleStages = useMemo(
+    () => (stages || []).filter((s) => !hiddenStages.has(s.id)),
+    [stages, hiddenStages]
+  );
 
   const dealsByStage = useMemo(() => {
     const map: Record<string, Deal[]> = {};
@@ -101,13 +138,49 @@ export default function Pipeline() {
     <div className="p-4 sm:p-6 lg:p-8 space-y-4 h-full flex flex-col">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Pipeline</h1>
-        <Tabs value={product} onValueChange={(v) => navigate(`/pipeline/${v}`)}>
-          <TabsList>
-            <TabsTrigger value="business">Business</TabsTrigger>
-            <TabsTrigger value="skills">Skills</TabsTrigger>
-            <TabsTrigger value="academy">Academy</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex items-center gap-2">
+          {/* Column visibility control */}
+          {stages && stages.length > 0 && (
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <SlidersHorizontal className="h-4 w-4" />
+                  <span className="hidden sm:inline">Colunas</span>
+                  {hiddenStages.size > 0 && (
+                    <Badge variant="secondary" className="ml-1 text-[10px] px-1.5 py-0">
+                      {hiddenStages.size} ocultas
+                    </Badge>
+                  )}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-56 p-3">
+                <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Visibilidade</p>
+                <div className="space-y-2">
+                  {(stages || []).map((stage) => (
+                    <label key={stage.id} className="flex items-center gap-2 cursor-pointer text-sm hover:bg-muted/50 rounded px-1 py-0.5 -mx-1">
+                      <Checkbox
+                        checked={!hiddenStages.has(stage.id)}
+                        onCheckedChange={() => toggleStage(stage.id)}
+                      />
+                      <span className="truncate">{stage.name}</span>
+                      <Badge variant="outline" className="ml-auto text-[10px]">
+                        {(dealsByStage[stage.id] || []).length}
+                      </Badge>
+                    </label>
+                  ))}
+                </div>
+              </PopoverContent>
+            </Popover>
+          )}
+
+          <Tabs value={product} onValueChange={(v) => navigate(`/pipeline/${v}`)}>
+            <TabsList>
+              <TabsTrigger value="business">Business</TabsTrigger>
+              <TabsTrigger value="skills">Skills</TabsTrigger>
+              <TabsTrigger value="academy">Academy</TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
 
       {pipelineError ? (
@@ -130,30 +203,28 @@ export default function Pipeline() {
         </div>
       ) : (
         <DragDropContext onDragEnd={onDragEnd}>
-          {activeStages.length === 0 ? (
+          {visibleStages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
               <Columns3 className="h-12 w-12 opacity-30" />
-              <p className="text-sm">Nenhum estágio configurado para este pipeline</p>
+              <p className="text-sm">
+                {stages && stages.length > 0
+                  ? "Todas as colunas estão ocultas. Use o botão Colunas para exibi-las."
+                  : "Nenhum estágio configurado para este pipeline"}
+              </p>
             </div>
           ) : (
-            <>
-              <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin snap-x snap-mandatory sm:snap-none">
-                {activeStages.map((stage) => (
-                  <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} />
-                ))}
-              </div>
-
-              {closedStages.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Estágios Finais</p>
-                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-                    {closedStages.map((stage) => (
-                      <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} isClosed />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+            <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin snap-x snap-mandatory sm:snap-none">
+              {visibleStages.map((stage) => (
+                <KanbanColumn
+                  key={stage.id}
+                  stage={stage}
+                  deals={dealsByStage[stage.id] || []}
+                  total={stageTotal(stage.id)}
+                  daysInStage={daysInStage}
+                  navigate={navigate}
+                />
+              ))}
+            </div>
           )}
         </DragDropContext>
       )}
@@ -161,16 +232,15 @@ export default function Pipeline() {
   );
 }
 
-function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: {
+function KanbanColumn({ stage, deals, total, daysInStage, navigate }: {
   stage: Stage;
   deals: Deal[];
   total: number;
   daysInStage: (d: Deal) => number;
   navigate: (path: string) => void;
-  isClosed?: boolean;
 }) {
   return (
-    <div className={`flex-shrink-0 ${isClosed ? 'w-60' : 'w-[280px] sm:w-72'} flex flex-col snap-center`}>
+    <div className="flex-shrink-0 w-[280px] sm:w-72 flex flex-col snap-center">
       <div className={`rounded-t-lg px-3 py-2 ${stage.is_won ? 'bg-brand-600/20' : stage.is_lost ? 'bg-destructive/10' : 'bg-muted'}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold truncate">{stage.name}</h3>
