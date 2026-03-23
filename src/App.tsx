@@ -16,6 +16,7 @@ import InstagramAnalytics from "./pages/InstagramAnalytics";
 import FacebookAdsPage from "./pages/FacebookAdsPage";
 import CrmAnalytics from "./pages/CrmAnalytics";
 import Financeiro from "./pages/Financeiro";
+import ReceitaTasks from "./pages/ReceitaTasks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
