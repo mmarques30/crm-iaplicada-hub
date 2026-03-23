@@ -90,7 +90,7 @@ export default function ReceitaTasks() {
   const concluidos = tasks.filter(t => t.status === 'concluido').length
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Tarefas de Receita</h1>
         <p className="text-muted-foreground">Insights em execução que se tornam tarefas acionáveis</p>
