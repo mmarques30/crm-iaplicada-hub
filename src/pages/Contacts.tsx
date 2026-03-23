@@ -1,14 +1,15 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/format";
-import { qualificationBadgeVariant, productLabel } from "@/lib/format";
+import { productLabel } from "@/lib/format";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Users } from "lucide-react";
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const PAGE_SIZE = 20;
 
@@ -18,7 +19,7 @@ export default function Contacts() {
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [page, setPage] = useState(0);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["contacts", search, page],
     queryFn: async () => {
       let q = supabase
@@ -57,42 +58,68 @@ export default function Contacts() {
         />
       </div>
 
-      <div className="border rounded-lg overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Nome</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead>Empresa</TableHead>
-              <TableHead>Telefone</TableHead>
-              <TableHead>Produto Interesse</TableHead>
-              <TableHead>Criado em</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Carregando...</TableCell></TableRow>
-            ) : data?.contacts.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Nenhum contato encontrado</TableCell></TableRow>
-            ) : (
-              data?.contacts.map((c) => (
-                <TableRow key={c.id} className="cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/contacts/${c.id}`)}>
-                  <TableCell className="font-medium">{c.first_name} {c.last_name || ""}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.email || "—"}</TableCell>
-                  <TableCell>{c.company || "—"}</TableCell>
-                  <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
-                  <TableCell>
-                    {c.produto_interesse?.map((p) => (
-                      <Badge key={p} variant="secondary" className="mr-1 text-xs">{productLabel[p] || p}</Badge>
-                    ))}
+      {isError ? (
+        <div className="text-center py-12 space-y-2">
+          <p className="text-sm text-destructive">Erro ao carregar contatos</p>
+          <Button variant="outline" size="sm" onClick={() => refetch()}>Tentar novamente</Button>
+        </div>
+      ) : (
+        <div className="border rounded-lg overflow-hidden">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-muted/50">
+                <TableHead>Nome</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Empresa</TableHead>
+                <TableHead>Telefone</TableHead>
+                <TableHead>Produto Interesse</TableHead>
+                <TableHead>Criado em</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {isLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-40" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-16 rounded-full" /></TableCell>
+                    <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  </TableRow>
+                ))
+              ) : data?.contacts.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="text-center py-12">
+                    <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                      <Users className="h-12 w-12 opacity-30" />
+                      <p className="text-sm font-medium">Nenhum contato encontrado</p>
+                      <p className="text-xs">
+                        {search ? "Tente buscar com outros termos" : "Os contatos aparecerão aqui quando forem cadastrados"}
+                      </p>
+                    </div>
                   </TableCell>
-                  <TableCell className="text-muted-foreground">{formatDate(c.created_at)}</TableCell>
                 </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
-      </div>
+              ) : (
+                data?.contacts.map((c) => (
+                  <TableRow key={c.id} className="cursor-pointer hover:bg-muted/30" onClick={() => navigate(`/contacts/${c.id}`)}>
+                    <TableCell className="font-medium">{c.first_name} {c.last_name || ""}</TableCell>
+                    <TableCell className="text-muted-foreground">{c.email || "—"}</TableCell>
+                    <TableCell>{c.company || "—"}</TableCell>
+                    <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
+                    <TableCell>
+                      {c.produto_interesse?.map((p) => (
+                        <Badge key={p} variant="secondary" className="mr-1 text-xs">{productLabel[p] || p}</Badge>
+                      ))}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">{formatDate(c.created_at)}</TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      )}
 
       {totalPages > 1 && (
         <div className="flex items-center justify-center gap-2">

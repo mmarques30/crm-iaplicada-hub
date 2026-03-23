@@ -4,8 +4,10 @@ import { formatCurrency, formatPercent } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
-import { TrendingUp, DollarSign, Target, Ticket } from "lucide-react";
+import { TrendingUp, DollarSign, Target, Ticket, BarChart3 } from "lucide-react";
 import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 const CHART_COLORS = [
   "hsl(73, 58%, 34%)",
@@ -21,7 +23,7 @@ const CHART_COLORS = [
 export default function Dashboard() {
   const [product, setProduct] = useState<string>("all");
 
-  const { data: metrics } = useQuery({
+  const { data: metrics, isLoading: metricsLoading, isError: metricsError, refetch: refetchMetrics } = useQuery({
     queryKey: ["product_metrics"],
     queryFn: async () => {
       const { data } = await supabase.from("product_metrics").select("*");
@@ -29,7 +31,7 @@ export default function Dashboard() {
     },
   });
 
-  const { data: stageConversion } = useQuery({
+  const { data: stageConversion, isLoading: chartLoading, isError: chartError, refetch: refetchChart } = useQuery({
     queryKey: ["stage_conversion", product],
     queryFn: async () => {
       let q = supabase.from("stage_conversion").select("*").order("display_order");
@@ -59,7 +61,6 @@ export default function Dashboard() {
     : 0;
   const avgTicket = totals && totals.count > 0 ? totals.avgSize / totals.count : 0;
 
-  // Aggregate stage conversion data when "all" is selected
   const chartData = product === "all"
     ? Object.values(
         (stageConversion || []).reduce((acc: Record<string, { stage_name: string; deal_count: number; total_amount: number; display_order: number }>, item) => {
@@ -100,42 +101,75 @@ export default function Dashboard() {
         </TabsList>
 
         <TabsContent value={product} className="mt-4 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {statCards.map((stat) => (
-              <Card key={stat.label}>
-                <CardHeader className="flex flex-row items-center justify-between pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
-                  <stat.icon className="h-4 w-4 text-primary" />
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold">{stat.format(stat.value)}</div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+          {metricsError ? (
+            <div className="text-center py-8 space-y-2">
+              <p className="text-sm text-destructive">Erro ao carregar métricas</p>
+              <Button variant="outline" size="sm" onClick={() => refetchMetrics()}>Tentar novamente</Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {statCards.map((stat) => (
+                <Card key={stat.label}>
+                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{stat.label}</CardTitle>
+                    <stat.icon className="h-4 w-4 text-primary" />
+                  </CardHeader>
+                  <CardContent>
+                    {metricsLoading ? (
+                      <Skeleton className="h-8 w-24" />
+                    ) : (
+                      <div className="text-2xl font-bold">{stat.format(stat.value)}</div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
 
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Funil de Vendas</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
-                    <XAxis type="number" />
-                    <YAxis dataKey="stage_name" type="category" width={140} tick={{ fontSize: 12 }} />
-                    <Tooltip
-                      formatter={(value: number) => [value, "Deals"]}
-                      contentStyle={{ borderRadius: 8, border: "1px solid hsl(65, 15%, 88%)" }}
-                    />
-                    <Bar dataKey="deal_count" radius={[0, 4, 4, 0]}>
-                      {chartData.map((_, i) => (
-                        <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
+              {chartError ? (
+                <div className="h-80 flex flex-col items-center justify-center gap-2">
+                  <p className="text-sm text-destructive">Erro ao carregar funil</p>
+                  <Button variant="outline" size="sm" onClick={() => refetchChart()}>Tentar novamente</Button>
+                </div>
+              ) : chartLoading ? (
+                <div className="h-80 space-y-4 flex flex-col justify-center">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="flex items-center gap-3">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-6 flex-1" style={{ maxWidth: `${80 - i * 12}%` }} />
+                    </div>
+                  ))}
+                </div>
+              ) : chartData.length === 0 ? (
+                <div className="h-80 flex flex-col items-center justify-center gap-3 text-muted-foreground">
+                  <BarChart3 className="h-12 w-12 opacity-30" />
+                  <p className="text-sm">Nenhum deal cadastrado ainda</p>
+                  <p className="text-xs">Crie deals no Pipeline para visualizar o funil</p>
+                </div>
+              ) : (
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
+                      <XAxis type="number" />
+                      <YAxis dataKey="stage_name" type="category" width={140} tick={{ fontSize: 12 }} />
+                      <Tooltip
+                        formatter={(value: number) => [value, "Deals"]}
+                        contentStyle={{ borderRadius: 8, border: "1px solid hsl(65, 15%, 88%)" }}
+                      />
+                      <Bar dataKey="deal_count" radius={[0, 4, 4, 0]}>
+                        {chartData.map((_, i) => (
+                          <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
