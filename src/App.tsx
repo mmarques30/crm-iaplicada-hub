@@ -17,6 +17,8 @@ import FacebookAdsPage from "./pages/FacebookAdsPage";
 import CrmAnalytics from "./pages/CrmAnalytics";
 import Financeiro from "./pages/Financeiro";
 import ReceitaTasks from "./pages/ReceitaTasks";
+import Forms from "./pages/Forms";
+import FormEmbed from "./pages/FormEmbed";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,8 +44,11 @@ const App = () => (
             <Route path="/analytics/crm" element={<CrmAnalytics />} />
             <Route path="/financeiro" element={<Financeiro />} />
             <Route path="/tarefas" element={<ReceitaTasks />} />
+            <Route path="/formularios" element={<Forms />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
+          {/* Public form page (outside layout) */}
+          <Route path="/form/:slug" element={<FormEmbed />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

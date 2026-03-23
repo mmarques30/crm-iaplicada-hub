@@ -16,21 +16,23 @@ import { useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Deal = Tables<"deals"> & {
-  contacts: { first_name: string; last_name: string | null; utm_source: string | null; utm_medium: string | null; manychat_id: string | null } | null;
+  contacts: { first_name: string; last_name: string | null; utm_source: string | null; utm_medium: string | null; manychat_id: string | null; hubspot_id: number | null; first_conversion: string | null; instagram_opt_in: boolean; whatsapp_opt_in: boolean } | null;
 };
-
-// Sources classified as social media
-const SOCIAL_SOURCES = ["ig", "instagram", "fb", "facebook", "meta", "tiktok", "youtube", "SOCIAL_MEDIA"];
-const SOCIAL_MEDIUMS = ["social", "paid", "organic_bio", "comment", "anuncio_pago"];
 
 type LeadOriginFilter = "all" | "pipeline" | "social";
 
+// Social = veio de comentário/DM (sem preencher formulário)
+// Pipeline = preencheu formulário (HubSpot ou próprio), independente de utm_source
 function isDealFromSocial(deal: Deal): boolean {
   if (!deal.contacts) return false;
   const c = deal.contacts;
-  if (c.manychat_id && c.manychat_id.startsWith("ig_")) return true;
-  if (c.utm_source && SOCIAL_SOURCES.includes(c.utm_source)) return true;
-  if (c.utm_medium && SOCIAL_MEDIUMS.includes(c.utm_medium)) return true;
+  // Se preencheu formulário, NÃO é social
+  if (c.hubspot_id) return false;
+  if (c.first_conversion) return false;
+  // Social = interação direta (comentário, DM)
+  if (c.instagram_opt_in) return true;
+  if (c.whatsapp_opt_in) return true;
+  if (c.manychat_id) return true;
   return false;
 }
 type Stage = Tables<"stages">;
@@ -111,7 +113,7 @@ export default function Pipeline() {
     queryFn: async () => {
       const { data } = await supabase
         .from("deals")
-        .select("*, contacts(first_name, last_name, utm_source, utm_medium, manychat_id)")
+        .select("*, contacts(first_name, last_name, utm_source, utm_medium, manychat_id, hubspot_id, first_conversion, instagram_opt_in, whatsapp_opt_in)")
         .eq("pipeline_id", pipeline!.id);
       return (data as Deal[]) || [];
     },

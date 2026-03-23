@@ -15,17 +15,25 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const PAGE_SIZE = 20;
 
-// Sources classified as social media
-const SOCIAL_SOURCES = ["ig", "instagram", "fb", "facebook", "meta", "tiktok", "youtube", "SOCIAL_MEDIA"];
-const SOCIAL_MEDIUMS = ["social", "paid", "organic_bio", "comment", "anuncio_pago"];
-
 type LeadOrigin = "all" | "pipeline" | "social";
 
+// Classificação de origem do lead:
+// - Pipeline/Formulário = preencheu formulário (HubSpot ou próprio), independente de onde veio o anúncio
+//   Indicadores: hubspot_id, first_conversion, fonte_registro
+// - Social = interação direta em rede social (comentou post, mandou DM)
+//   Indicadores: instagram_opt_in, whatsapp_opt_in via ManyChat, manychat_id SEM hubspot_id/first_conversion
 function getLeadOrigin(contact: any): "pipeline" | "social" {
-  if (contact.manychat_id && contact.manychat_id.startsWith("ig_")) return "social";
-  if (SOCIAL_SOURCES.includes(contact.utm_source)) return "social";
-  if (SOCIAL_MEDIUMS.includes(contact.utm_medium)) return "social";
-  if (contact.utm_medium === "comment") return "social";
+  // Se preencheu formulário (HubSpot ou próprio), é SEMPRE pipeline
+  // Mesmo que utm_source seja "instagram" — isso é rastreamento de anúncio, não interação social
+  if (contact.hubspot_id) return "pipeline";
+  if (contact.first_conversion) return "pipeline";
+
+  // Social = veio de comentário em post ou DM direta (sem preencher formulário)
+  if (contact.instagram_opt_in) return "social";
+  if (contact.whatsapp_opt_in) return "social";
+  if (contact.manychat_id) return "social";
+
+  // Fallback: se não tem nenhum indicador claro, considerar pipeline
   return "pipeline";
 }
 
@@ -116,12 +124,16 @@ export default function Contacts() {
 
       // Lead origin filter at database level
       if (leadOrigin === "social") {
+        // Social = comentou post ou mandou DM (SEM ter preenchido formulário)
+        // Tem instagram_opt_in, whatsapp_opt_in ou manychat_id, MAS não tem hubspot_id nem first_conversion
         q = q.or(
-          `utm_source.in.(${SOCIAL_SOURCES.join(",")}),utm_medium.in.(${SOCIAL_MEDIUMS.join(",")}),manychat_id.like.ig_%`
+          `instagram_opt_in.eq.true,whatsapp_opt_in.eq.true,manychat_id.not.is.null`
         );
+        q = q.is("hubspot_id", null);
+        q = q.is("first_conversion", null);
       } else if (leadOrigin === "pipeline") {
-        // Pipeline/Formulário = only contacts that came from HubSpot form submissions
-        q = q.not("first_conversion", "is", "null");
+        // Pipeline = preencheu formulário (HubSpot ou próprio)
+        q = q.or("hubspot_id.not.is.null,first_conversion.not.is.null");
       }
 
       if (filters.produto) {
@@ -221,16 +233,17 @@ export default function Contacts() {
   const originBadge = (contact: any) => {
     const origin = getLeadOrigin(contact);
     if (origin === "social") {
-      const src = (contact.utm_source || "").toLowerCase();
-      let label = "Social";
-      if (src === "ig" || src === "instagram" || contact.manychat_id?.startsWith("ig_")) label = "Instagram";
-      else if (src === "fb" || src === "facebook") label = "Facebook";
-      else if (src === "tiktok") label = "TikTok";
-      else if (src === "youtube") label = "YouTube";
-      else if (src === "meta") label = "Meta Ads";
-      return <Badge className="text-[10px] bg-pink-100 text-pink-700">{label}</Badge>;
+      // Social = veio de comentário ou DM, sem formulário
+      if (contact.instagram_opt_in || contact.manychat_id?.startsWith("ig_")) {
+        return <Badge className="text-[10px] bg-pink-100 text-pink-700">Instagram</Badge>;
+      }
+      if (contact.whatsapp_opt_in) {
+        return <Badge className="text-[10px] bg-green-100 text-green-700">WhatsApp</Badge>;
+      }
+      return <Badge className="text-[10px] bg-pink-100 text-pink-700">Social</Badge>;
     }
-    if (contact.first_conversion) {
+    // Pipeline = preencheu formulário
+    if (contact.first_conversion || contact.hubspot_id) {
       return <Badge className="text-[10px] bg-emerald-100 text-emerald-700">Formulário</Badge>;
     }
     return <Badge className="text-[10px] bg-blue-100 text-blue-700">Pipeline</Badge>;
