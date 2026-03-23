@@ -1,33 +1,34 @@
 
 
-## Substituir Logo e Ajustar Backgrounds
+## Corrigir Badges e Elementos com Cores Light-Mode no Tema Dark
 
-### 1. Copiar nova logo
-Copiar `user-uploads://Logo_Colorida_fundo_preto.png` para `src/assets/logo.png` (substituindo a atual).
+### Problema
+As variáveis CSS estão corretas (preto + verde escuro), mas várias páginas usam cores hardcoded de tema claro (`bg-emerald-100 text-emerald-800`, `bg-blue-100 text-blue-800`, etc.) que criam elementos com fundo claro/azulado no tema dark.
 
-### 2. Ajustar cores de background (`src/index.css`)
-Trocar os backgrounds azul-escuro por preto + verde escuro da marca:
+### Arquivos e Correções
 
-| Variável | Valor atual (azul) | Novo valor |
-|---|---|---|
-| `--background` | `220 60% 8%` (#080F25) | `0 0% 4%` (~#0A0A0A, preto) |
-| `--card` | `220 40% 20%` | `80 20% 12%` (verde escuro dark) |
-| `--popover` | `220 40% 20%` | `80 20% 12%` |
-| `--secondary` | `220 30% 28%` | `80 15% 18%` |
-| `--muted` | `220 30% 24%` | `80 12% 15%` |
-| `--accent` | `220 30% 28%` | `80 15% 18%` |
-| `--border` | `220 20% 22%` | `80 10% 16%` |
-| `--input` | `220 20% 22%` | `80 10% 16%` |
-| `--sidebar-background` | `220 55% 10%` | `80 15% 7%` (verde muito escuro) |
-| `--sidebar-accent` | `220 30% 18%` | `80 12% 14%` |
-| `--sidebar-border` | `220 20% 18%` | `80 10% 13%` |
+#### 1. `src/pages/CrmAnalytics.tsx`
+- `bg-emerald-100 text-emerald-800` → `bg-emerald-500/15 text-emerald-400`
 
-### 3. Atualizar gradient blob (`src/index.css`)
-Trocar o gradiente decorativo de tons azuis para verde da marca.
+#### 2. `src/pages/FacebookAdsPage.tsx`
+- `bg-blue-100 text-blue-800` → `bg-blue-500/15 text-blue-400`
 
-### Arquivos modificados
-| Arquivo | Ação |
-|---|---|
-| `src/assets/logo.png` | Substituir pela nova logo |
-| `src/index.css` | Trocar backgrounds azuis por preto/verde escuro |
+#### 3. `src/pages/InstagramAnalytics.tsx`
+- `bg-pink-100 text-pink-800` → `bg-pink-500/15 text-pink-400`
+
+#### 4. `src/pages/Financeiro.tsx`
+- `bg-yellow-100 text-yellow-800` → `bg-yellow-500/15 text-yellow-400`
+- `bg-green-100 text-green-800` → `bg-green-500/15 text-green-400`
+
+#### 5. `src/pages/InstagramAutomations.tsx`
+- `bg-pink-100` círculo → `bg-pink-500/15`
+- `bg-blue-100` círculo → `bg-blue-500/15`
+- `bg-purple-100` círculo → `bg-purple-500/15`
+- `bg-green-100 text-green-800` badge → `bg-green-500/15 text-green-400`
+
+#### 6. `src/lib/format.ts`
+- `productColor()`: trocar `bg-blue-100 text-blue-800` → `bg-blue-500/15 text-blue-400`, idem para purple e green
+
+### Padrão
+Todas as cores `*-100 text-*-800` (light-mode) serão substituídas por `*-500/15 text-*-400` (dark-friendly com fundo semi-transparente), consistente com o padrão já usado em `PainelGeral.tsx` e `InsightsTable.tsx`.
 
