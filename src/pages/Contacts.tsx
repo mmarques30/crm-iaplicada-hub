@@ -22,10 +22,13 @@ const SOCIAL_MEDIUMS = ["social", "paid", "organic_bio", "comment", "anuncio_pag
 type LeadOrigin = "all" | "pipeline" | "social";
 
 function getLeadOrigin(contact: any): "pipeline" | "social" {
-  if (contact.manychat_id && contact.manychat_id.startsWith("ig_")) return "social";
+  // Social = came via ManyChat/social media (Instagram DM, WhatsApp, comments, etc.)
+  if (contact.instagram_opt_in) return "social";
+  if (contact.whatsapp_opt_in) return "social";
+  if (contact.manychat_id) return "social";
   if (SOCIAL_SOURCES.includes(contact.utm_source)) return "social";
   if (SOCIAL_MEDIUMS.includes(contact.utm_medium)) return "social";
-  if (contact.utm_medium === "comment") return "social";
+  // Pipeline = came from HubSpot or form submissions
   return "pipeline";
 }
 
@@ -116,12 +119,13 @@ export default function Contacts() {
 
       // Lead origin filter at database level
       if (leadOrigin === "social") {
+        // Social = contacts from ManyChat (Instagram DM, WhatsApp), social media comments/ads
         q = q.or(
-          `utm_source.in.(${SOCIAL_SOURCES.join(",")}),utm_medium.in.(${SOCIAL_MEDIUMS.join(",")}),manychat_id.like.ig_%`
+          `instagram_opt_in.eq.true,whatsapp_opt_in.eq.true,manychat_id.not.is.null,utm_source.in.(${SOCIAL_SOURCES.join(",")}),utm_medium.in.(${SOCIAL_MEDIUMS.join(",")})`
         );
       } else if (leadOrigin === "pipeline") {
-        // Pipeline/Formulário = only contacts that came from HubSpot form submissions
-        q = q.not("first_conversion", "is", "null");
+        // Pipeline = contacts that came from HubSpot (have hubspot_id)
+        q = q.not("hubspot_id", "is", null);
       }
 
       if (filters.produto) {
@@ -224,16 +228,20 @@ export default function Contacts() {
       const src = (contact.utm_source || "").toLowerCase();
       let label = "Social";
       if (src === "ig" || src === "instagram" || contact.manychat_id?.startsWith("ig_")) label = "Instagram";
+      else if (contact.whatsapp_opt_in) label = "WhatsApp";
       else if (src === "fb" || src === "facebook") label = "Facebook";
       else if (src === "tiktok") label = "TikTok";
       else if (src === "youtube") label = "YouTube";
       else if (src === "meta") label = "Meta Ads";
       return <Badge className="text-[10px] bg-pink-100 text-pink-700">{label}</Badge>;
     }
-    if (contact.first_conversion) {
-      return <Badge className="text-[10px] bg-emerald-100 text-emerald-700">Formulário</Badge>;
+    if (contact.hubspot_id) {
+      if (contact.first_conversion) {
+        return <Badge className="text-[10px] bg-emerald-100 text-emerald-700">Formulário</Badge>;
+      }
+      return <Badge className="text-[10px] bg-blue-100 text-blue-700">Pipeline</Badge>;
     }
-    return <Badge className="text-[10px] bg-blue-100 text-blue-700">Pipeline</Badge>;
+    return <Badge className="text-[10px] bg-gray-100 text-gray-600">Outro</Badge>;
   };
 
   return (
