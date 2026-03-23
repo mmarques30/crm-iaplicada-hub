@@ -69,7 +69,9 @@ export function useDashboardSnapshot() {
       if (error && error.code !== 'PGRST116') throw error
       return (data as unknown as DashboardSnapshot) || null
     },
-    staleTime: 30_000,
+    staleTime: 5_000,
+    refetchInterval: 60_000,
+    refetchOnWindowFocus: true,
   })
 }
 

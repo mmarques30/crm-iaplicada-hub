@@ -8,20 +8,77 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, User, Columns3 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Clock, User, Columns3, Search, Filter, X, Building2, Share2, Globe } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Deal = Tables<"deals"> & {
-  contacts: { first_name: string; last_name: string | null } | null;
+  contacts: { first_name: string; last_name: string | null; utm_source: string | null; utm_medium: string | null; manychat_id: string | null } | null;
 };
+
+// Sources classified as social media
+const SOCIAL_SOURCES = ["ig", "instagram", "fb", "facebook", "meta", "tiktok", "youtube", "SOCIAL_MEDIA"];
+const SOCIAL_MEDIUMS = ["social", "paid", "organic_bio", "comment", "anuncio_pago"];
+
+type LeadOriginFilter = "all" | "pipeline" | "social";
+
+function isDealFromSocial(deal: Deal): boolean {
+  if (!deal.contacts) return false;
+  const c = deal.contacts;
+  if (c.manychat_id && c.manychat_id.startsWith("ig_")) return true;
+  if (c.utm_source && SOCIAL_SOURCES.includes(c.utm_source)) return true;
+  if (c.utm_medium && SOCIAL_MEDIUMS.includes(c.utm_medium)) return true;
+  return false;
+}
 type Stage = Tables<"stages">;
+
+const QUALIFICATION_OPTIONS = [
+  { value: "lead", label: "Lead" },
+  { value: "mql", label: "MQL" },
+  { value: "sql", label: "SQL" },
+];
+
+const CANAL_OPTIONS = [
+  "instagram",
+  "whatsapp",
+  "site",
+  "indicação",
+  "evento",
+  "outro",
+];
+
+interface PipelineFilters {
+  search: string;
+  qualification: string;
+  canalOrigem: string;
+  amountMin: string;
+  amountMax: string;
+  leadOrigin: LeadOriginFilter;
+}
+
+const emptyFilters: PipelineFilters = {
+  search: "",
+  qualification: "",
+  canalOrigem: "",
+  amountMin: "",
+  amountMax: "",
+  leadOrigin: "all",
+};
 
 export default function Pipeline() {
   const { product = "business" } = useParams<{ product: string }>();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [filters, setFilters] = useState<PipelineFilters>(emptyFilters);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const activeFilterCount = useMemo(
+    () => Object.values(filters).filter(Boolean).length,
+    [filters]
+  );
 
   const { data: pipeline, isLoading: pipelineLoading, isError: pipelineError, refetch: refetchPipeline } = useQuery({
     queryKey: ["pipeline", product],
@@ -54,7 +111,7 @@ export default function Pipeline() {
     queryFn: async () => {
       const { data } = await supabase
         .from("deals")
-        .select("*, contacts(first_name, last_name)")
+        .select("*, contacts(first_name, last_name, utm_source, utm_medium, manychat_id)")
         .eq("pipeline_id", pipeline!.id);
       return (data as Deal[]) || [];
     },
@@ -67,17 +124,39 @@ export default function Pipeline() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["deals", pipeline?.id] }),
   });
 
+  // Apply filters to deals
+  const filteredDeals = useMemo(() => {
+    if (!deals) return [];
+    return deals.filter((d) => {
+      if (filters.search) {
+        const term = filters.search.toLowerCase();
+        const contactName = d.contacts
+          ? `${d.contacts.first_name} ${d.contacts.last_name || ""}`.toLowerCase()
+          : "";
+        const dealName = d.name.toLowerCase();
+        if (!dealName.includes(term) && !contactName.includes(term)) return false;
+      }
+      if (filters.qualification && d.qualification_status !== filters.qualification) return false;
+      if (filters.canalOrigem && d.canal_origem !== filters.canalOrigem) return false;
+      if (filters.amountMin && (Number(d.amount) || 0) < Number(filters.amountMin)) return false;
+      if (filters.amountMax && (Number(d.amount) || 0) > Number(filters.amountMax)) return false;
+      if (filters.leadOrigin === "social" && !isDealFromSocial(d)) return false;
+      if (filters.leadOrigin === "pipeline" && isDealFromSocial(d)) return false;
+      return true;
+    });
+  }, [deals, filters]);
+
   const activeStages = useMemo(() => stages?.filter((s) => !s.is_won && !s.is_lost) || [], [stages]);
   const closedStages = useMemo(() => stages?.filter((s) => s.is_won || s.is_lost) || [], [stages]);
 
   const dealsByStage = useMemo(() => {
     const map: Record<string, Deal[]> = {};
     (stages || []).forEach((s) => (map[s.id] = []));
-    (deals || []).forEach((d) => {
+    filteredDeals.forEach((d) => {
       if (map[d.stage_id]) map[d.stage_id].push(d);
     });
     return map;
-  }, [deals, stages]);
+  }, [filteredDeals, stages]);
 
   const onDragEnd = (result: DropResult) => {
     if (!result.destination) return;
@@ -95,13 +174,27 @@ export default function Pipeline() {
   const stageTotal = (stageId: string) =>
     (dealsByStage[stageId] || []).reduce((s, d) => s + (Number(d.amount) || 0), 0);
 
+  const totalDeals = filteredDeals.length;
+  const totalValue = filteredDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+
   const isLoading = pipelineLoading || stagesLoading;
+
+  const updateFilter = (key: keyof PipelineFilters, value: string) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const clearFilters = () => setFilters(emptyFilters);
 
   return (
     <div className="p-6 space-y-4 h-full flex flex-col">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Pipeline</h1>
-        <Tabs value={product} onValueChange={(v) => navigate(`/pipeline/${v}`)}>
+        <div>
+          <h1 className="text-2xl font-bold">Pipeline</h1>
+          <p className="text-sm text-muted-foreground">
+            {totalDeals} negócios &middot; {formatCurrency(totalValue)} total
+          </p>
+        </div>
+        <Tabs value={product} onValueChange={(v) => { navigate(`/pipeline/${v}`); setFilters(emptyFilters); }}>
           <TabsList>
             <TabsTrigger value="business">Business</TabsTrigger>
             <TabsTrigger value="skills">Skills</TabsTrigger>
@@ -109,6 +202,113 @@ export default function Pipeline() {
           </TabsList>
         </Tabs>
       </div>
+
+      {/* Lead Origin Tabs */}
+      <Tabs value={filters.leadOrigin} onValueChange={(v) => updateFilter("leadOrigin", v)}>
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsTrigger value="all" className="gap-1.5">
+            <Globe className="h-3.5 w-3.5" />
+            Todos
+          </TabsTrigger>
+          <TabsTrigger value="pipeline" className="gap-1.5">
+            <Building2 className="h-3.5 w-3.5" />
+            Pipeline / Formulário
+          </TabsTrigger>
+          <TabsTrigger value="social" className="gap-1.5">
+            <Share2 className="h-3.5 w-3.5" />
+            Redes Sociais
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
+
+      {/* Search + Filter toggle */}
+      <div className="flex items-center gap-2">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar deal ou contato..."
+            value={filters.search}
+            onChange={(e) => updateFilter("search", e.target.value)}
+            className="pl-10 h-9"
+          />
+        </div>
+        <Button
+          variant={showFilters ? "default" : "outline"}
+          size="sm"
+          onClick={() => setShowFilters(!showFilters)}
+          className="gap-1.5"
+        >
+          <Filter className="h-4 w-4" />
+          Filtros
+          {activeFilterCount > (filters.search ? 1 : 0) && (
+            <Badge variant="secondary" className="ml-1 h-5 w-5 p-0 flex items-center justify-center text-[10px]">
+              {activeFilterCount - (filters.search ? 1 : 0)}
+            </Badge>
+          )}
+        </Button>
+        {activeFilterCount > 0 && (
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-muted-foreground">
+            <X className="h-3.5 w-3.5" /> Limpar
+          </Button>
+        )}
+      </div>
+
+      {/* Filter bar */}
+      {showFilters && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 p-4 border rounded-lg bg-muted/30">
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Qualificação</label>
+            <Select value={filters.qualification} onValueChange={(v) => updateFilter("qualification", v === "all" ? "" : v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {QUALIFICATION_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Canal de Origem</label>
+            <Select value={filters.canalOrigem} onValueChange={(v) => updateFilter("canalOrigem", v === "all" ? "" : v)}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue placeholder="Todos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                {CANAL_OPTIONS.map((o) => (
+                  <SelectItem key={o} value={o}>{o.charAt(0).toUpperCase() + o.slice(1)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Valor Mínimo (R$)</label>
+            <Input
+              type="number"
+              placeholder="0"
+              value={filters.amountMin}
+              onChange={(e) => updateFilter("amountMin", e.target.value)}
+              className="h-8 text-xs"
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-muted-foreground">Valor Máximo (R$)</label>
+            <Input
+              type="number"
+              placeholder="Sem limite"
+              value={filters.amountMax}
+              onChange={(e) => updateFilter("amountMax", e.target.value)}
+              className="h-8 text-xs"
+            />
+          </div>
+        </div>
+      )}
 
       {pipelineError ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
@@ -211,9 +411,14 @@ function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: 
                         <Clock className="h-3 w-3" /> {daysInStage(deal)}d
                       </span>
                     </div>
-                    <Badge className={`mt-1.5 text-[10px] ${qualificationBadgeVariant(deal.qualification_status)}`}>
-                      {deal.qualification_status.toUpperCase()}
-                    </Badge>
+                    <div className="flex items-center justify-between mt-1.5">
+                      <Badge className={`text-[10px] ${qualificationBadgeVariant(deal.qualification_status)}`}>
+                        {deal.qualification_status.toUpperCase()}
+                      </Badge>
+                      {deal.canal_origem && (
+                        <span className="text-[10px] text-muted-foreground">{deal.canal_origem}</span>
+                      )}
+                    </div>
                   </Card>
                 )}
               </Draggable>
