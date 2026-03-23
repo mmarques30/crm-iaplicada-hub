@@ -205,7 +205,7 @@ export default function InstagramAutomations() {
               <p className="text-xs text-muted-foreground">Alguém comenta no post com a palavra-chave</p>
             </div>
             <div className="space-y-2">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 rounded-full bg-blue-500/15 flex items-center justify-center mx-auto">
                 <MessageCircle className="h-5 w-5 text-blue-600" />
               </div>
               <p className="text-sm font-medium">2. Resposta</p>
