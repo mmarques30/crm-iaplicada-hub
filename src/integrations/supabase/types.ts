@@ -100,6 +100,7 @@ export type Database = {
           hubspot_id: number | null
           hubspot_owner: string | null
           id: string
+          instagram_opt_in: boolean
           last_activity_at: string | null
           last_name: string | null
           lead_status: string | null
@@ -144,6 +145,7 @@ export type Database = {
           hubspot_id?: number | null
           hubspot_owner?: string | null
           id?: string
+          instagram_opt_in?: boolean
           last_activity_at?: string | null
           last_name?: string | null
           lead_status?: string | null
@@ -188,6 +190,7 @@ export type Database = {
           hubspot_id?: number | null
           hubspot_owner?: string | null
           id?: string
+          instagram_opt_in?: boolean
           last_activity_at?: string | null
           last_name?: string | null
           lead_status?: string | null
@@ -794,6 +797,7 @@ export type Database = {
           hubspot_id: number | null
           hubspot_owner: string | null
           id: string | null
+          instagram_opt_in: boolean | null
           last_activity_at: string | null
           last_activity_date: string | null
           last_activity_subject: string | null

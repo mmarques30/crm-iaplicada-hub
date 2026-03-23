@@ -5,13 +5,14 @@ import { formatDate, formatCurrency, productLabel, qualificationBadgeVariant } f
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Phone, Building2, Briefcase, Globe, MessageSquare, Video, FileText, ArrowRightLeft, StickyNote, ArrowLeft, UserX } from "lucide-react";
+import { Mail, Phone, Building2, Briefcase, Globe, MessageSquare, Video, FileText, ArrowRightLeft, StickyNote, ArrowLeft, UserX, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const activityIcons: Record<string, any> = {
   email: Mail,
   whatsapp: MessageSquare,
+  instagram: Instagram,
   call: Phone,
   meeting: Video,
   note: StickyNote,
@@ -117,11 +118,19 @@ export default function ContactDetail() {
               </div>
             ))}
             <Separator />
-            <div>
-              <p className="text-xs text-muted-foreground mb-1">WhatsApp Opt-in</p>
-              <Badge variant={contact.whatsapp_opt_in ? "default" : "secondary"}>
-                {contact.whatsapp_opt_in ? "Sim" : "Não"}
-              </Badge>
+            <div className="flex gap-4">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">WhatsApp Opt-in</p>
+                <Badge variant={contact.whatsapp_opt_in ? "default" : "secondary"}>
+                  {contact.whatsapp_opt_in ? "Sim" : "Não"}
+                </Badge>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Instagram Opt-in</p>
+                <Badge variant={contact.instagram_opt_in ? "default" : "secondary"}>
+                  {contact.instagram_opt_in ? "Sim" : "Não"}
+                </Badge>
+              </div>
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-1">Produtos de Interesse</p>
