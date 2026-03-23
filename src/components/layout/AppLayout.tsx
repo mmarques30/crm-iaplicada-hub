@@ -22,8 +22,11 @@ export function AppLayout() {
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
         <AppSidebar />
-        <div className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-30 h-14 flex items-center justify-between px-3 sm:px-4 bg-background/95 backdrop-blur-sm shadow-[0_1px_3px_0_hsl(0_0%_0%/0.04)] shrink-0">
+        <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
+          {/* Decorative gradient blob */}
+          <div className="gradient-blob -top-32 -right-32 z-0" />
+
+          <header className="sticky top-0 z-30 h-14 flex items-center justify-between px-3 sm:px-4 bg-background/80 backdrop-blur-xl border-b border-white/[0.06] shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
               <SidebarTrigger />
               <form onSubmit={handleSearch} className="hidden sm:block">
@@ -33,7 +36,7 @@ export function AppLayout() {
                     placeholder="Buscar contatos, deals..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9 w-48 md:w-72 h-9 rounded-full bg-muted/60 border-transparent focus:border-primary/30 focus:bg-background transition-colors"
+                    className="pl-9 w-48 md:w-72 h-9 rounded-full bg-white/[0.06] border-white/[0.06] focus:border-primary/40 focus:bg-white/[0.08] text-foreground placeholder:text-muted-foreground transition-colors"
                   />
                 </div>
               </form>
@@ -47,7 +50,7 @@ export function AppLayout() {
               </div>
             </div>
           </header>
-          <main className="flex-1 overflow-auto bg-muted/30">
+          <main className="flex-1 overflow-auto relative z-10">
             <Outlet />
           </main>
         </div>

@@ -20,30 +20,30 @@ export interface Insight {
 type InsightStatus = 'pendente' | 'em_execucao' | 'concluido'
 
 const TYPE_CONFIG: Record<string, { label: string; bg: string; text: string }> = {
-  positive: { label: 'Positivo', bg: 'bg-green-50 dark:bg-green-950/30', text: 'text-green-700 dark:text-green-400' },
-  negative: { label: 'Alerta', bg: 'bg-red-50 dark:bg-red-950/30', text: 'text-red-700 dark:text-red-400' },
-  neutral: { label: 'Oportunidade', bg: 'bg-blue-50 dark:bg-blue-950/30', text: 'text-blue-700 dark:text-blue-400' },
-  action: { label: 'Ação', bg: 'bg-amber-50 dark:bg-amber-950/30', text: 'text-amber-700 dark:text-amber-400' },
+  positive: { label: 'Positivo', bg: 'bg-green-500/10', text: 'text-green-400' },
+  negative: { label: 'Alerta', bg: 'bg-red-500/10', text: 'text-red-400' },
+  neutral: { label: 'Oportunidade', bg: 'bg-blue-500/10', text: 'text-blue-400' },
+  action: { label: 'Ação', bg: 'bg-amber-500/10', text: 'text-amber-400' },
 }
 
 const PRIORITY_CONFIG: Record<string, { dot: string }> = {
   Alta: { dot: 'bg-red-500' },
   Média: { dot: 'bg-amber-500' },
-  Baixa: { dot: 'bg-gray-400' },
+  Baixa: { dot: 'bg-muted-foreground' },
 }
 
 const PRODUCT_COLORS: Record<string, string> = {
-  Academy: '#8B5CF6',
-  Business: '#F59E0B',
-  Skills: '#EC4899',
-  Ambos: '#1E3A5F',
-  Geral: '#6B7280',
+  Academy: '#AFC040',
+  Business: '#9EB038',
+  Skills: '#738925',
+  Ambos: '#7E89AC',
+  Geral: '#7E89AC',
 }
 
 const STATUS_CONFIG: Record<InsightStatus, { label: string; className: string }> = {
   pendente: { label: 'Pendente', className: 'bg-muted text-muted-foreground' },
-  em_execucao: { label: 'Em execução', className: 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' },
-  concluido: { label: 'Concluído', className: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300' },
+  em_execucao: { label: 'Em execução', className: 'bg-amber-500/15 text-amber-400' },
+  concluido: { label: 'Concluído', className: 'bg-green-500/15 text-green-400' },
 }
 
 interface InsightsTableProps {
@@ -74,7 +74,6 @@ export function InsightsTable({
   const [filterPriority, setFilterPriority] = useState('Todas')
   const [filterType, setFilterType] = useState('Todos')
 
-  // Load statuses from localStorage
   const [statuses, setStatuses] = useState<Record<number, InsightStatus>>(() => {
     const loaded: Record<number, InsightStatus> = {}
     insights.forEach((_, idx) => {
@@ -109,11 +108,9 @@ export function InsightsTable({
   const handleStatusChange = useCallback(async (insight: Insight, globalIdx: number, newStatus: InsightStatus) => {
     const oldStatus = statuses[globalIdx] || 'pendente'
     
-    // Save to localStorage
     localStorage.setItem(getStorageKey(context, globalIdx), newStatus)
     setStatuses(prev => ({ ...prev, [globalIdx]: newStatus }))
 
-    // If changing to em_execucao, create a task in receita_tasks
     if (newStatus === 'em_execucao' && oldStatus !== 'em_execucao') {
       const { error: insertError } = await supabase.from('receita_tasks' as any).insert({
         title: insight.title,
@@ -220,7 +217,6 @@ export function InsightsTable({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Filters as Select dropdowns */}
         <div className="flex flex-wrap gap-3">
           <div className="w-40">
             <Select value={filterProduct} onValueChange={setFilterProduct}>
@@ -264,7 +260,6 @@ export function InsightsTable({
           </div>
         </div>
 
-        {/* Insights List */}
         <div className="space-y-2">
           {sorted.map((insight, idx) => {
             const globalIdx = insights.indexOf(insight)
@@ -272,7 +267,7 @@ export function InsightsTable({
             const pc = PRIORITY_CONFIG[insight.priority] || PRIORITY_CONFIG.Baixa
             const currentStatus = statuses[globalIdx] || 'pendente'
             return (
-              <div key={idx} className={`p-3 rounded-lg border ${tc.bg}`}>
+              <div key={idx} className={`p-3 rounded-lg border border-white/[0.06] ${tc.bg}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
