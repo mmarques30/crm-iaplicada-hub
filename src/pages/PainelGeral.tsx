@@ -16,7 +16,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 
-const COLORS = ['#E1306C', '#1877F2', '#FF7A59', '#10B981', '#8b5cf6', '#f59e0b']
+const COLORS = ['hsl(73,55%,34%)', 'hsl(68,53%,50%)', 'hsl(66,47%,57%)', 'hsl(160,100%,39%)', 'hsl(66,42%,65%)', 'hsl(40,98%,57%)']
 
 export default function PainelGeral() {
   const { data: snapshot, isLoading } = useDashboardSnapshot()
@@ -25,7 +25,6 @@ export default function PainelGeral() {
   const ig = snapshot?.data?.instagram
   const fb = snapshot?.data?.facebook_ads
 
-  // CRM interno data
   const { data: productMetrics } = useQuery({
     queryKey: ['product_metrics'],
     queryFn: async () => {
@@ -61,24 +60,21 @@ export default function PainelGeral() {
   const investment = fb?.metrics?.totalSpend || 0
   const cpl = fb?.metrics?.avgCPL || 0
 
-  // Funil integrado
   const funnelData = [
-    { name: 'Impressões', value: fb?.metrics?.totalImpressions || 0, fill: '#1877F2' },
-    { name: 'Alcance', value: totalReach, fill: '#3b82f6' },
-    { name: 'Cliques', value: fb?.metrics?.totalClicks || 0, fill: '#8b5cf6' },
-    { name: 'Contatos CRM', value: contactCount || 0, fill: '#FF7A59' },
-    { name: 'Deals Ativos', value: crmTotals.activeDeals, fill: '#f59e0b' },
-    { name: 'Deals Ganhos', value: crmTotals.wonDeals, fill: '#10B981' },
+    { name: 'Impressões', value: fb?.metrics?.totalImpressions || 0, fill: 'hsl(68,53%,50%)' },
+    { name: 'Alcance', value: totalReach, fill: 'hsl(73,55%,34%)' },
+    { name: 'Cliques', value: fb?.metrics?.totalClicks || 0, fill: 'hsl(66,47%,57%)' },
+    { name: 'Contatos CRM', value: contactCount || 0, fill: 'hsl(66,42%,65%)' },
+    { name: 'Deals Ativos', value: crmTotals.activeDeals, fill: 'hsl(40,98%,57%)' },
+    { name: 'Deals Ganhos', value: crmTotals.wonDeals, fill: 'hsl(160,100%,39%)' },
   ].filter(d => d.value > 0)
   const maxFunnel = funnelData[0]?.value || 1
 
-  // Daily reach
   const dailyReach = ig?.dailyReach?.map(d => ({
     date: new Date(d.end_time).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
     alcance: d.value,
   })) || []
 
-  // Canal de origem dos deals
   const { data: dealsByChannel } = useQuery({
     queryKey: ['deals_by_channel'],
     queryFn: async () => {
@@ -120,6 +116,9 @@ export default function PainelGeral() {
     data: painelInsightsData,
   })
 
+  const tooltipStyle = { borderRadius: 8, border: "1px solid hsl(220, 20%, 22%)", backgroundColor: "hsl(220, 40%, 20%)", color: "#fff" }
+  const tickStyle = { fill: 'hsl(222, 18%, 58%)' }
+
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       {/* Hero Header */}
@@ -130,9 +129,9 @@ export default function PainelGeral() {
             Dashboard integrado — Instagram, Facebook Ads e CRM Interno
           </p>
           <div className="flex flex-wrap gap-2 mt-3">
-            {ig && <Badge className="bg-pink-100 text-pink-800">Instagram</Badge>}
-            {fb && <Badge className="bg-blue-100 text-blue-800">Facebook Ads</Badge>}
-            <Badge className="bg-emerald-100 text-emerald-800">CRM Interno</Badge>
+            {ig && <Badge className="bg-pink-500/15 text-pink-400 border-0">Instagram</Badge>}
+            {fb && <Badge className="bg-blue-500/15 text-blue-400 border-0">Facebook Ads</Badge>}
+            <Badge className="bg-green-500/15 text-green-400 border-0">CRM Interno</Badge>
             {!ig && !fb && <Badge variant="secondary">Aguardando dados externos</Badge>}
           </div>
         </div>
@@ -158,12 +157,12 @@ export default function PainelGeral() {
 
       {/* 6 KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        <MetricCard title="Seguidores" value={followers} icon={Users} color="text-pink-600" borderColor="#E1306C" />
-        <MetricCard title="Alcance Total" value={totalReach} icon={Eye} color="text-blue-600" borderColor="#1877F2" />
-        <MetricCard title="Engajamento" value={engagement} icon={Heart} color="text-red-500" borderColor="#ef4444" />
-        <MetricCard title="Leads Ads" value={leads} icon={Target} color="text-orange-600" borderColor="#f59e0b" />
-        <MetricCard title="Investimento" value={investment} prefix="R$ " decimals={2} icon={DollarSign} color="text-green-600" borderColor="#10B981" />
-        <MetricCard title="CPL Médio" value={cpl} prefix="R$ " decimals={2} icon={TrendingUp} color="text-purple-600" borderColor="#8b5cf6" />
+        <MetricCard title="Seguidores" value={followers} icon={Users} color="text-pink-400" borderColor="hsl(340,80%,55%)" />
+        <MetricCard title="Alcance Total" value={totalReach} icon={Eye} color="text-blue-400" borderColor="hsl(210,80%,55%)" />
+        <MetricCard title="Engajamento" value={engagement} icon={Heart} color="text-red-400" borderColor="hsl(352,80%,60%)" />
+        <MetricCard title="Leads Ads" value={leads} icon={Target} color="text-amber-400" borderColor="hsl(40,98%,57%)" />
+        <MetricCard title="Investimento" value={investment} prefix="R$ " decimals={2} icon={DollarSign} color="text-green-400" borderColor="hsl(160,100%,39%)" />
+        <MetricCard title="CPL Médio" value={cpl} prefix="R$ " decimals={2} icon={TrendingUp} color="text-primary" borderColor="hsl(68,53%,50%)" />
       </div>
 
       {/* Tabs */}
@@ -177,7 +176,6 @@ export default function PainelGeral() {
           <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
-        {/* Visão Geral — 3 SourceSummaryCards */}
         <TabsContent value="overview" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <SourceSummaryCard
@@ -207,7 +205,7 @@ export default function PainelGeral() {
             <SourceSummaryCard
               title="CRM Interno"
               icon={BarChart3}
-              accentColor="#10B981"
+              accentColor="hsl(68,53%,50%)"
               detailLink="/analytics/crm"
               metrics={[
                 { label: 'Contatos', value: contactCount || 0 },
@@ -219,7 +217,6 @@ export default function PainelGeral() {
           </div>
         </TabsContent>
 
-        {/* Funil */}
         <TabsContent value="funnel" className="mt-4">
           <Card>
             <CardHeader>
@@ -241,7 +238,7 @@ export default function PainelGeral() {
                             <span className="font-bold font-mono tabular-nums">{item.value.toLocaleString('pt-BR')}</span>
                           </div>
                         </div>
-                        <div className="h-9 bg-muted rounded-lg overflow-hidden">
+                        <div className="h-9 bg-white/[0.04] rounded-lg overflow-hidden">
                           <div
                             className="h-full rounded-lg transition-all duration-700 ease-out flex items-center px-3"
                             style={{
@@ -261,7 +258,6 @@ export default function PainelGeral() {
           </Card>
         </TabsContent>
 
-        {/* Canais */}
         <TabsContent value="channels" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
@@ -272,11 +268,11 @@ export default function PainelGeral() {
                 {(dealsByChannel || []).length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={dealsByChannel} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis type="number" tick={{ fontSize: 12 }} />
-                      <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11 }} />
-                      <Tooltip />
-                      <Bar dataKey="value" name="Deals" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,20%,22%)" />
+                      <XAxis type="number" tick={tickStyle} />
+                      <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, ...tickStyle }} />
+                      <Tooltip contentStyle={tooltipStyle} />
+                      <Bar dataKey="value" name="Deals" fill="hsl(68,53%,50%)" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados de canais</p>}
@@ -294,13 +290,13 @@ export default function PainelGeral() {
                       ativos: Number(pm.active_deals),
                       ganhos: Number(pm.won_deals),
                     }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                      <XAxis dataKey="name" tick={{ fontSize: 13 }} />
-                      <YAxis tick={{ fontSize: 12 }} />
-                      <Tooltip />
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,20%,22%)" />
+                      <XAxis dataKey="name" tick={{ fontSize: 13, ...tickStyle }} />
+                      <YAxis tick={tickStyle} />
+                      <Tooltip contentStyle={tooltipStyle} />
                       <Legend />
-                      <Bar dataKey="ativos" name="Deals Ativos" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="ganhos" name="Deals Ganhos" fill="#10B981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="ativos" name="Deals Ativos" fill="hsl(68,53%,50%)" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="ganhos" name="Deals Ganhos" fill="hsl(160,100%,39%)" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
@@ -309,7 +305,6 @@ export default function PainelGeral() {
           </div>
         </TabsContent>
 
-        {/* Crescimento */}
         <TabsContent value="growth" className="mt-4">
           <Card>
             <CardHeader>
@@ -319,11 +314,11 @@ export default function PainelGeral() {
               {dailyReach.length > 0 ? (
                 <ResponsiveContainer width="100%" height={350}>
                   <AreaChart data={dailyReach}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Area type="monotone" dataKey="alcance" stroke="#E1306C" fill="#E1306C" fillOpacity={0.1} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,20%,22%)" />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, ...tickStyle }} />
+                    <YAxis tick={tickStyle} />
+                    <Tooltip contentStyle={tooltipStyle} />
+                    <Area type="monotone" dataKey="alcance" stroke="hsl(68,53%,50%)" fill="hsl(68,53%,50%)" fillOpacity={0.1} />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : <p className="text-center text-muted-foreground py-8">Sem dados de crescimento</p>}
@@ -331,7 +326,6 @@ export default function PainelGeral() {
           </Card>
         </TabsContent>
 
-        {/* ROI */}
         <TabsContent value="roi" className="mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             <Card style={{ borderTop: '3px solid #1877F2' }}>
@@ -350,11 +344,11 @@ export default function PainelGeral() {
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm"><span className="text-muted-foreground">Alcance</span><span className="font-bold font-mono">{(ig?.metrics?.totalReach || 0).toLocaleString('pt-BR')}</span></div>
                   <div className="flex justify-between text-sm"><span className="text-muted-foreground">Engajamento</span><span className="font-bold font-mono">{ig?.metrics?.avgEngagement || 0}%</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo</span><span className="font-bold font-mono text-green-600">R$ 0</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo</span><span className="font-bold font-mono text-green-400">R$ 0</span></div>
                 </div>
               </CardContent>
             </Card>
-            <Card style={{ borderTop: '3px solid #10B981' }}>
+            <Card style={{ borderTop: '3px solid hsl(160,100%,39%)' }}>
               <CardContent className="p-5 space-y-2">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">CRM Interno</p>
                 <div className="space-y-1">

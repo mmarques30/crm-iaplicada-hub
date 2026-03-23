@@ -10,14 +10,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 
 const CHART_COLORS = [
-  "hsl(73, 58%, 34%)",
-  "hsl(68, 56%, 39%)",
-  "hsl(67, 52%, 45%)",
+  "hsl(73, 55%, 34%)",
+  "hsl(71, 55%, 39%)",
+  "hsl(69, 48%, 45%)",
   "hsl(68, 53%, 50%)",
-  "hsl(65, 48%, 58%)",
-  "hsl(65, 44%, 65%)",
-  "hsl(65, 38%, 75%)",
-  "hsl(65, 34%, 85%)",
+  "hsl(66, 47%, 57%)",
+  "hsl(66, 42%, 65%)",
+  "hsl(66, 36%, 75%)",
+  "hsl(65, 33%, 85%)",
 ];
 
 export default function Dashboard() {
@@ -155,11 +155,12 @@ export default function Dashboard() {
                 <div className="h-60 sm:h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
-                      <XAxis type="number" />
-                      <YAxis dataKey="stage_name" type="category" width={140} tick={{ fontSize: 12 }} />
+                      <XAxis type="number" tick={{ fill: 'hsl(222, 18%, 58%)' }} />
+                      <YAxis dataKey="stage_name" type="category" width={140} tick={{ fontSize: 12, fill: 'hsl(222, 18%, 58%)' }} />
                       <Tooltip
                         formatter={(value: number) => [value, "Deals"]}
-                        contentStyle={{ borderRadius: 8, border: "1px solid hsl(65, 15%, 88%)" }}
+                        contentStyle={{ borderRadius: 8, border: "1px solid hsl(220, 20%, 22%)", backgroundColor: "hsl(220, 40%, 20%)", color: "#fff" }}
+                        labelStyle={{ color: "#fff" }}
                       />
                       <Bar dataKey="deal_count" radius={[0, 4, 4, 0]}>
                         {chartData.map((_, i) => (

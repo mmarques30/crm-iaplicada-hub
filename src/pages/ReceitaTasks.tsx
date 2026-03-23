@@ -35,7 +35,7 @@ const CONTEXT_LABELS: Record<string, string> = {
 const PRIORITY_DOT: Record<string, string> = {
   Alta: 'bg-red-500',
   Média: 'bg-amber-500',
-  Baixa: 'bg-gray-400',
+  Baixa: 'bg-muted-foreground',
 }
 
 export default function ReceitaTasks() {
@@ -96,7 +96,6 @@ export default function ReceitaTasks() {
         <p className="text-muted-foreground">Insights em execução que se tornam tarefas acionáveis</p>
       </div>
 
-      {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -112,7 +111,7 @@ export default function ReceitaTasks() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <Clock className="h-8 w-8 text-amber-500" />
+              <Clock className="h-8 w-8 text-amber-400" />
               <div>
                 <p className="text-2xl font-bold">{emExecucao}</p>
                 <p className="text-xs text-muted-foreground">Em execução</p>
@@ -123,7 +122,7 @@ export default function ReceitaTasks() {
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-8 w-8 text-green-500" />
+              <CheckCircle2 className="h-8 w-8 text-green-400" />
               <div>
                 <p className="text-2xl font-bold">{concluidos}</p>
                 <p className="text-xs text-muted-foreground">Concluídos</p>
@@ -133,7 +132,6 @@ export default function ReceitaTasks() {
         </Card>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3">
         <div className="w-44">
           <Select value={filterStatus} onValueChange={setFilterStatus}>
@@ -162,7 +160,6 @@ export default function ReceitaTasks() {
         </div>
       </div>
 
-      {/* Tasks list */}
       {isLoading ? (
         <div className="space-y-3">
           {[1, 2, 3].map(i => <Skeleton key={i} className="h-20 w-full" />)}
@@ -195,7 +192,7 @@ export default function ReceitaTasks() {
                       )}
                       {task.priority && (
                         <div className="flex items-center gap-1">
-                          <span className={`h-2 w-2 rounded-full ${PRIORITY_DOT[task.priority] || 'bg-gray-400'}`} />
+                          <span className={`h-2 w-2 rounded-full ${PRIORITY_DOT[task.priority] || 'bg-muted-foreground'}`} />
                           <span className="text-[10px] text-muted-foreground">{task.priority}</span>
                         </div>
                       )}
@@ -217,10 +214,10 @@ export default function ReceitaTasks() {
                       value={task.status}
                       onValueChange={(v) => updateStatus.mutate({ id: task.id, status: v })}
                     >
-                      <SelectTrigger className={`h-8 w-32 text-xs font-medium ${
+                      <SelectTrigger className={`h-8 w-32 text-xs font-medium border-0 ${
                         task.status === 'concluido'
-                          ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-300 border-0'
-                          : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-0'
+                          ? 'bg-green-500/15 text-green-400'
+                          : 'bg-amber-500/15 text-amber-400'
                       }`}>
                         <SelectValue />
                       </SelectTrigger>
