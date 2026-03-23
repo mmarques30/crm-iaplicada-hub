@@ -21,6 +21,25 @@ export default function FacebookAdsPage() {
   const campaigns = fb?.campaigns || []
   const activeCampaigns = campaigns.filter(c => c.status === 'ACTIVE')
 
+  const insightsData = fb ? {
+    totalSpend: fb.metrics?.totalSpend,
+    totalImpressions: fb.metrics?.totalImpressions,
+    totalReach: fb.metrics?.totalReach,
+    totalClicks: fb.metrics?.totalClicks,
+    totalLeads: fb.metrics?.totalLeads,
+    avgCPL: fb.metrics?.avgCPL,
+    avgCTR: fb.metrics?.avgCTR,
+    activeCampaigns: activeCampaigns.length,
+    totalCampaigns: campaigns.length,
+    campaigns: campaigns.slice(0, 8).map(c => ({ name: c.name.substring(0, 40), status: c.status, spend: c.spend, leads: c.leads, cpl: c.costPerLead, ctr: c.ctr })),
+  } : null
+
+  const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({
+    context: 'facebook_ads',
+    data: insightsData,
+    enabled: !!fb,
+  })
+
   // Investimento por campanha (horizontal)
   const spendByCampaign = campaigns
     .filter(c => c.spend > 0)
