@@ -5,30 +5,50 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
-// Helper para buscar secrets do vault
+// Helper para buscar secrets do vault via RPC
 async function getSecret(supabase: any, name: string): Promise<string | null> {
-  const { data } = await supabase.rpc('get_secret', { secret_name: name }).single()
-  if (data) return data
-  // Fallback: buscar via query direta
-  const { data: rows } = await supabase
-    .from('vault.decrypted_secrets')
-    .select('decrypted_secret')
-    .eq('name', name)
-    .limit(1)
-  return rows?.[0]?.decrypted_secret || Deno.env.get(name) || null
+  try {
+    const { data, error } = await supabase.rpc('get_secret', { secret_name: name })
+    if (!error && data) return data
+    console.warn(`get_secret RPC failed for ${name}:`, error?.message)
+  } catch (err) {
+    console.warn(`get_secret RPC exception for ${name}:`, err)
+  }
+  // Fallback: variável de ambiente da edge function
+  return Deno.env.get(name) || null
 }
 
 // ============ INSTAGRAM COLLECTOR ============
 async function collectInstagram(accessToken: string, igAccountId: string) {
   const baseUrl = 'https://graph.facebook.com/v21.0'
 
+  // Auto-descobrir IG Business Account via Pages do token
+  let resolvedIgId = igAccountId
+  try {
+    const pagesRes = await fetch(
+      `${baseUrl}/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`
+    )
+    const pagesData = await pagesRes.json()
+    if (pagesData.data) {
+      for (const page of pagesData.data) {
+        if (page.instagram_business_account?.id) {
+          resolvedIgId = page.instagram_business_account.id
+          console.log(`Auto-discovered IG account: ${resolvedIgId} from page "${page.name}" (${page.id})`)
+          break
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to auto-discover IG account, using stored ID:', err)
+  }
+
   // 1. Perfil
   const profileRes = await fetch(
-    `${baseUrl}/${igAccountId}?fields=id,username,name,followers_count,media_count&access_token=${accessToken}`
+    `${baseUrl}/${resolvedIgId}?fields=id,username,name,followers_count,media_count&access_token=${accessToken}`
   )
   const profile = await profileRes.json()
   if (profile.error) throw new Error(`Instagram profile: ${profile.error.message}`)
@@ -38,19 +58,19 @@ async function collectInstagram(accessToken: string, igAccountId: string) {
   const until = new Date().toISOString().split('T')[0]
 
   const dailyRes = await fetch(
-    `${baseUrl}/${igAccountId}/insights?metric=reach,follower_count&period=day&metric_type=time_series&since=${since}&until=${until}&access_token=${accessToken}`
+    `${baseUrl}/${resolvedIgId}/insights?metric=reach,follower_count&period=day&metric_type=time_series&since=${since}&until=${until}&access_token=${accessToken}`
   )
   const dailyInsights = await dailyRes.json()
 
   // 3. Insights totais
   const totalRes = await fetch(
-    `${baseUrl}/${igAccountId}/insights?metric=profile_views,accounts_engaged,total_interactions,reach&period=day&metric_type=total_value&since=${since}&until=${until}&access_token=${accessToken}`
+    `${baseUrl}/${resolvedIgId}/insights?metric=profile_views,accounts_engaged,total_interactions,reach&period=day&metric_type=total_value&since=${since}&until=${until}&access_token=${accessToken}`
   )
   const totalInsights = await totalRes.json()
 
   // 4. Últimos 25 posts
   const mediaRes = await fetch(
-    `${baseUrl}/${igAccountId}/media?fields=id,caption,media_type,permalink,timestamp,like_count,comments_count&limit=25&access_token=${accessToken}`
+    `${baseUrl}/${resolvedIgId}/media?fields=id,caption,media_type,permalink,timestamp,like_count,comments_count&limit=25&access_token=${accessToken}`
   )
   const mediaData = await mediaRes.json()
   const posts = mediaData.data || []
@@ -302,36 +322,35 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
 
-    // Buscar tokens do vault
-    const { data: secrets } = await supabase
-      .from('vault.decrypted_secrets')
-      .select('name, decrypted_secret')
-      .in('name', ['INSTAGRAM_ACCESS_TOKEN', 'META_AD_ACCOUNT_ID', 'META_IG_ACCOUNT_ID', 'HUBSPOT_ACCESS_TOKEN'])
+    // Buscar tokens do vault via RPC
+    const [igToken, igAccountId, adAccountId, hubspotToken] = await Promise.all([
+      getSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN'),
+      getSecret(supabase, 'META_IG_ACCOUNT_ID'),
+      getSecret(supabase, 'META_AD_ACCOUNT_ID'),
+      getSecret(supabase, 'HUBSPOT_ACCESS_TOKEN'),
+    ])
 
-    const secretMap: Record<string, string> = {}
-    for (const s of (secrets || [])) {
-      secretMap[s.name] = s.decrypted_secret
-    }
-
-    const igToken = secretMap['INSTAGRAM_ACCESS_TOKEN']
-    const igAccountId = secretMap['META_IG_ACCOUNT_ID']
-    const adAccountId = secretMap['META_AD_ACCOUNT_ID']
-    const hubspotToken = secretMap['HUBSPOT_ACCESS_TOKEN']
+    console.log('Tokens loaded:', {
+      igToken: igToken ? `${igToken.substring(0, 10)}...(${igToken.length} chars)` : 'NOT FOUND',
+      igAccountId: igAccountId || 'NOT FOUND',
+      adAccountId: adAccountId || 'NOT FOUND',
+      hubspotToken: hubspotToken ? 'SET' : 'NOT FOUND',
+    })
 
     const results: Record<string, any> = {}
     const errors: string[] = []
 
-    // Coletar Instagram
-    if ((source === 'all' || source === 'instagram') && igToken && igAccountId) {
+    // Coletar Instagram (igAccountId é opcional — auto-discover via me/accounts)
+    if ((source === 'all' || source === 'instagram') && igToken) {
       try {
-        results.instagram = await collectInstagram(igToken, igAccountId)
+        results.instagram = await collectInstagram(igToken, igAccountId || '')
         console.log('Instagram collected successfully')
       } catch (err) {
         errors.push(`Instagram: ${String(err)}`)
         console.error('Instagram error:', err)
       }
     } else if (source === 'all' || source === 'instagram') {
-      errors.push('Instagram: tokens not configured')
+      errors.push('Instagram: access token not configured')
     }
 
     // Coletar Facebook Ads (usa o mesmo token do Instagram como fallback)

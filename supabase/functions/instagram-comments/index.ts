@@ -5,7 +5,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-api-key, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, x-api-key, content-type',
   'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
 }
 
@@ -66,10 +66,18 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
     )
-    const accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN')
+
+    // Buscar token do vault via RPC, com fallback para env var
+    let accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN') || null
+    try {
+      const { data, error } = await supabase.rpc('get_secret', { secret_name: 'INSTAGRAM_ACCESS_TOKEN' })
+      if (!error && data) accessToken = data
+    } catch (err) {
+      console.warn('Failed to get token from vault, using env var:', err)
+    }
 
     if (!accessToken) {
-      console.error('INSTAGRAM_ACCESS_TOKEN not configured')
+      console.error('INSTAGRAM_ACCESS_TOKEN not configured (neither vault nor env)')
       return new Response(JSON.stringify({ error: 'Token not configured' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
