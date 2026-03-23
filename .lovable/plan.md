@@ -1,65 +1,86 @@
 
 
-## Rebranding Completo + Responsividade
+## Modernização do Layout - Replicar Estrutura do lead.iaplicada.com
 
-### Problemas Atuais
-- Páginas usam `max-w-7xl` fixo sem responsividade mobile
-- Header badges no Financeiro/PainelGeral quebram em telas pequenas
-- Grids de 6 colunas (MetricCards) não se adaptam bem
-- Tabelas não scrollam horizontalmente em mobile
-- Pipeline Kanban não tem comportamento mobile
-- Sidebar não mostra logo no mobile
-- Falta consistência visual entre páginas
+### Contexto
+O app de referência (lead.iaplicada.com) tem um layout full-width sem sidebar, com header de navegação horizontal no topo, hero sections com título grande, KPI cards com borda colorida superior, e abas com mais sub-seções (Funil, ROI, Canais, Insights). O sistema atual usa sidebar lateral com navegação diferente.
 
-### Plano de Implementação
+A mudança principal: **remover referências ao HubSpot** (agora é CRM interno) e **replicar a estética visual** do Manus, mantendo as cores da marca IAplicada.
 
-#### 1. CSS Global - Melhorar base visual (`src/index.css`)
-- Adicionar `scroll-smooth` ao html
-- Melhorar background do `main` com gradiente sutil
-- Adicionar utility classes para containers responsivos
+### Mudanças
 
-#### 2. AppLayout - Header responsivo (`src/components/layout/AppLayout.tsx`)
-- Adicionar busca mobile (ícone que expande)
-- Header sticky com `backdrop-blur`
-- Breadcrumb ou título da página no header mobile
+#### 1. Modernizar MetricCard para replicar estilo Manus
+O app de referência usa KPI cards com: borda colorida no topo, label uppercase pequena, número grande monocromático colorido, sem bordas laterais visíveis, fundo levemente azulado/cinza.
 
-#### 3. Todas as páginas - Container responsivo
-Substituir `p-6 max-w-7xl` por `p-4 sm:p-6 lg:p-8 max-w-[1400px] mx-auto w-full` em:
+**Arquivo:** `src/components/dashboard/MetricCard.tsx`
+- Adicionar prop `borderColor` para borda superior colorida (3px)
+- Número com `font-mono` e tamanho maior (`text-3xl`)
+- Remover ícone circular, usar ícone inline ao lado do label
+- Background sutil diferenciado
 
-| Pagina | Mudanças adicionais |
-|--------|-------------------|
-| `Index.tsx` | Grid cards: `grid-cols-1 sm:grid-cols-2 lg:grid-cols-4`. Chart height responsivo |
-| `Contacts.tsx` | Tabela com `overflow-x-auto`, colunas opcionais hidden em mobile |
-| `Pipeline.tsx` | Kanban horizontal scroll com snap em mobile, header flex-wrap |
-| `Settings.tsx` | `max-w-4xl mx-auto`, integrations grid `grid-cols-1 sm:grid-cols-2` |
-| `Financeiro.tsx` | Badges flex-wrap, tabela scroll, grids responsivos |
-| `PainelGeral.tsx` | Metric grid `grid-cols-2 sm:grid-cols-3 lg:grid-cols-6`, header stack em mobile |
-| `InstagramAnalytics.tsx` | Mesma grid responsiva |
-| `FacebookAdsPage.tsx` | Mesma grid responsiva |
-| `CrmAnalytics.tsx` | Mesma grid responsiva |
-| `InstagramAutomations.tsx` | Cards auto-width, dialog full-screen em mobile |
-| `ContactDetail.tsx` | Grid `grid-cols-1 lg:grid-cols-3`, info stack em mobile |
-| `DealDetail.tsx` | Mesma abordagem |
+#### 2. Criar SourceSummaryCard (componente novo)
+No Manus, a aba "Visão Geral" do Painel mostra 3 cards lado a lado (Instagram / Facebook Ads / CRM), cada um com mini-KPIs e botão "Ver detalhes".
 
-#### 4. Componentes - Refinamento visual
-- **MetricCard**: Padding responsivo `p-4 sm:pt-6`, icon size menor em mobile
-- **Card**: Manter shadow atual, OK
-- **AppLayout header**: `sticky top-0 z-30 backdrop-blur-sm bg-background/95`
+**Arquivo:** `src/components/dashboard/SourceSummaryCard.tsx`
+- Props: title, icon, color, metrics (array de {label, value}), detailLink
+- Grid 2x2 de mini-métricas + botão "Ver detalhes" com link
 
-#### 5. Sidebar mobile
-- Já usa `collapsible="icon"` do shadcn — funciona. Garantir que o trigger esteja visível no mobile
+#### 3. Redesenhar PainelGeral.tsx (Visão Consolidada)
+Replicar a estrutura do Manus:
 
-### Arquivos a modificar (13 arquivos)
-`src/index.css`, `src/components/layout/AppLayout.tsx`, `src/components/dashboard/MetricCard.tsx`, `src/pages/Index.tsx`, `src/pages/Contacts.tsx`, `src/pages/Pipeline.tsx`, `src/pages/Settings.tsx`, `src/pages/Financeiro.tsx`, `src/pages/PainelGeral.tsx`, `src/pages/InstagramAnalytics.tsx`, `src/pages/FacebookAdsPage.tsx`, `src/pages/CrmAnalytics.tsx`, `src/pages/InstagramAutomations.tsx`
+- **Hero section**: Título "Visão Consolidada", subtítulo, badges de fontes conectadas, timestamp + botão atualizar
+- **6 KPI Cards** com novo estilo (borda colorida no topo)
+- **Filtros**: Adicionar dropdowns de período
+- **Tabs expandidas**: Visão Geral, Crescimento, Canais, Funil, ROI
+  - **Visão Geral**: 3 SourceSummaryCards (Instagram, Facebook Ads, CRM Interno) com "Ver detalhes"
+  - **Funil**: Barras proporcionais horizontais (Impressões → Leads → Opportunities)
+  - **Canais**: Gráfico de barras horizontais + tabela de conversão por canal
+  - **Crescimento**: Gráficos de linha semanais
+  - **ROI**: Cards de custo por canal
 
-### Padrão de container usado em todas as páginas
-```tsx
-<div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
-```
+#### 4. Redesenhar CrmAnalytics.tsx → CRM Interno
+Renomear de "HubSpot CRM" para "CRM Interno" / "Funil de Vendas":
 
-### Padrão de grid para MetricCards
-```tsx
-// 6 cards → grid-cols-2 sm:grid-cols-3 lg:grid-cols-6
-// 4 cards → grid-cols-1 sm:grid-cols-2 lg:grid-cols-4
-```
+- Título: "Funil de Vendas"
+- Badges: "X Deals Ativos", "Y Contatos"
+- **8 KPI cards** em 2 linhas de 4 (como no Manus)
+- Tabs: Funil, Fontes, Leads, Insights
+- Dados vêm das tabelas internas (`deals`, `contacts`, `stages`, `product_metrics`) em vez do snapshot HubSpot
+
+#### 5. Modernizar FacebookAdsPage.tsx
+- **8 KPI cards** em 2 linhas (4 grandes + 4 menores, como no Manus)
+- Adicionar gráficos: Investimento por Campanha (horizontal), CPL por Campanha (horizontal)
+- Tab "Evolução" com gráfico de área temporal
+
+#### 6. Modernizar InstagramAnalytics.tsx
+- Adicionar tab "Categorias" (se houver dados)
+- Melhorar scatter plot com tooltip descritivo
+- Cards de mini-KPIs (Méd. Curtidas/Post, Méd. Comentários/Post)
+
+#### 7. Modernizar Financeiro.tsx
+- KPI cards com borda colorida no topo (verde, azul, roxo, âmbar)
+- Adicionar gráfico "Evolução Mensal de Vendas" (linha dupla: receita + volume)
+- Remover referência "HubSpot" da descrição → "Acompanhamento financeiro integrado ao CRM"
+
+#### 8. Atualizar referências HubSpot em todo o sistema
+- `AppSidebar.tsx`: Renomear "CRM" para "Funil de Vendas" no menu analytics
+- `CrmAnalytics.tsx`: Mudar para usar dados das tabelas internas (`deals_full`, `contacts`, `product_metrics`) em vez do snapshot HubSpot
+- `PainelGeral.tsx`: Card "HubSpot CRM" → "CRM Interno" com dados de `product_metrics`
+
+#### 9. CSS refinamentos (`src/index.css`)
+- Adicionar classe `.metric-card-hero` para cards com borda superior colorida
+- Garantir `font-feature-settings: "tnum"` nos números para alinhamento tabular
+
+### Arquivos modificados (8 arquivos)
+| Arquivo | O que muda |
+|---------|-----------|
+| `src/components/dashboard/MetricCard.tsx` | Estilo Manus: borda superior colorida, número grande mono |
+| `src/components/dashboard/SourceSummaryCard.tsx` | Novo componente para Visão Geral |
+| `src/pages/PainelGeral.tsx` | Redesign completo com tabs expandidas, SourceSummaryCards, funil |
+| `src/pages/CrmAnalytics.tsx` | Renomear HubSpot → CRM Interno, usar dados internos |
+| `src/pages/FacebookAdsPage.tsx` | 8 KPIs em 2 linhas, gráficos horizontais |
+| `src/pages/Financeiro.tsx` | Borda colorida nos KPIs, evolução mensal, remover ref HubSpot |
+| `src/pages/InstagramAnalytics.tsx` | Mini-KPI cards adicionais |
+| `src/components/layout/AppSidebar.tsx` | Renomear "CRM" → "Funil de Vendas" |
+| `src/index.css` | Classe utilitária para metric cards |
 
