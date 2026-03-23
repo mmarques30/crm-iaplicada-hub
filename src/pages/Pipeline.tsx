@@ -98,8 +98,8 @@ export default function Pipeline() {
   const isLoading = pipelineLoading || stagesLoading;
 
   return (
-    <div className="p-6 space-y-4 h-full flex flex-col">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4 h-full flex flex-col">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Pipeline</h1>
         <Tabs value={product} onValueChange={(v) => navigate(`/pipeline/${v}`)}>
           <TabsList>
