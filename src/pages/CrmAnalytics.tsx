@@ -130,6 +130,7 @@ export default function CrmAnalytics() {
           <TabsTrigger value="funnel">Funil</TabsTrigger>
           <TabsTrigger value="sources">Fontes</TabsTrigger>
           <TabsTrigger value="products">Produtos</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         <TabsContent value="funnel" className="mt-4">
