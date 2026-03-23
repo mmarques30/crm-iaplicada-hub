@@ -40,7 +40,7 @@ export default function Contacts() {
   const totalPages = Math.ceil((data?.total || 0) / PAGE_SIZE);
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4 max-w-[1400px] mx-auto w-full">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Contatos</h1>
