@@ -3,12 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { ArrowRight, MessageSquare, Mail, Calendar, Mic, Database } from "lucide-react";
+import { ArrowRight, MessageSquare, Mail, Calendar, Mic, Database, Instagram } from "lucide-react";
 import { productLabel } from "@/lib/format";
 
 const integrations = [
   { name: "HubSpot", icon: Database, status: "Desconectado", description: "Sincronize contatos e deals" },
-  { name: "ManyChat", icon: MessageSquare, status: "Desconectado", description: "Automação de WhatsApp" },
+  { name: "Instagram", icon: Instagram, status: "Configurável", description: "Automação de comentários e DM" },
   { name: "Gmail", icon: Mail, status: "Desconectado", description: "Envio de emails" },
   { name: "Google Calendar", icon: Calendar, status: "Desconectado", description: "Agendamento de reuniões" },
   { name: "Granola", icon: Mic, status: "Desconectado", description: "Notas de reunião com IA" },

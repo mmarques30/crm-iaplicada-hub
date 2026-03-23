@@ -10,6 +10,7 @@ import Contacts from "./pages/Contacts";
 import ContactDetail from "./pages/ContactDetail";
 import DealDetail from "./pages/DealDetail";
 import Settings from "./pages/Settings";
+import InstagramAutomations from "./pages/InstagramAutomations";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/contacts" element={<Contacts />} />
             <Route path="/contacts/:id" element={<ContactDetail />} />
             <Route path="/deals/:id" element={<DealDetail />} />
+            <Route path="/instagram" element={<InstagramAutomations />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
