@@ -152,7 +152,7 @@ export default function Dashboard() {
                   <p className="text-xs">Crie deals no Pipeline para visualizar o funil</p>
                 </div>
               ) : (
-                <div className="h-80">
+                <div className="h-60 sm:h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
                       <XAxis type="number" />

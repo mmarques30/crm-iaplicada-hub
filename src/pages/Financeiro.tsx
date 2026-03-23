@@ -82,7 +82,7 @@ export default function Financeiro() {
       </div>
 
       {/* Hero Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <MetricCard title="Receita Total" value={receitaTotal} prefix="R$ " decimals={2} icon={DollarSign} color="text-green-600" />
         <MetricCard title="Total Vendas" value={totalVendas} icon={ShoppingCart} color="text-blue-600" />
         <MetricCard title="Ticket Médio" value={ticketMedio} prefix="R$ " decimals={2} icon={Receipt} color="text-purple-600" />

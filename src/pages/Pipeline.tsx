@@ -170,7 +170,7 @@ function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: 
   isClosed?: boolean;
 }) {
   return (
-    <div className={`flex-shrink-0 ${isClosed ? 'w-60' : 'w-72'} flex flex-col`}>
+    <div className={`flex-shrink-0 ${isClosed ? 'w-60' : 'w-[280px] sm:w-72'} flex flex-col snap-center`}>
       <div className={`rounded-t-lg px-3 py-2 ${stage.is_won ? 'bg-brand-600/20' : stage.is_lost ? 'bg-destructive/10' : 'bg-muted'}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold truncate">{stage.name}</h3>

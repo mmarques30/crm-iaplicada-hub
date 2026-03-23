@@ -46,7 +46,7 @@ export default function FacebookAdsPage() {
       </div>
 
       {/* Hero Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <MetricCard title="Investimento" value={fb?.metrics?.totalSpend || 0} prefix="R$ " decimals={2} icon={DollarSign} color="text-blue-600" />
         <MetricCard title="Impressões" value={fb?.metrics?.totalImpressions || 0} icon={Eye} color="text-blue-500" />
         <MetricCard title="Alcance" value={fb?.metrics?.totalReach || 0} icon={BarChart3} color="text-blue-400" />

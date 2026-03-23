@@ -93,7 +93,7 @@ export default function PainelGeral() {
       </div>
 
       {/* Hero Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <MetricCard title="Seguidores" value={followers} icon={Users} color="text-pink-600" />
         <MetricCard title="Alcance Total" value={totalReach} icon={Eye} color="text-blue-600" />
         <MetricCard title="Engajamento" value={engagement} icon={Heart} color="text-red-500" />

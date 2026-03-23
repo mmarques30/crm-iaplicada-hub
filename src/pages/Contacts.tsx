@@ -106,8 +106,8 @@ export default function Contacts() {
                     <TableCell className="font-medium">{c.first_name} {c.last_name || ""}</TableCell>
                     <TableCell className="text-muted-foreground">{c.email || "—"}</TableCell>
                     <TableCell>{c.company || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-muted-foreground hidden md:table-cell">{c.phone || "—"}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {c.produto_interesse?.map((p) => (
                         <Badge key={p} variant="secondary" className="mr-1 text-xs">{productLabel[p] || p}</Badge>
                       ))}
