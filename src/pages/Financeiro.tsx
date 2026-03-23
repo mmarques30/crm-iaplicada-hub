@@ -70,10 +70,10 @@ export default function Financeiro() {
   const concluidos = allVendas.filter(v => v.status === 'concluido').length
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">Vendas & Receita</h1>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold">Vendas & Receita</h1>
           <Badge variant="secondary">{totalVendas} vendas</Badge>
           <Badge className="bg-yellow-100 text-yellow-800">{emAndamento} em andamento</Badge>
           <Badge className="bg-green-100 text-green-800">{concluidos} concluídos</Badge>
