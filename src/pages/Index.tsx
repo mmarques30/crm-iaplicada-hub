@@ -86,7 +86,7 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
         <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
         <p className="text-sm text-muted-foreground">Visão geral das vendas</p>
@@ -152,7 +152,7 @@ export default function Dashboard() {
                   <p className="text-xs">Crie deals no Pipeline para visualizar o funil</p>
                 </div>
               ) : (
-                <div className="h-80">
+                <div className="h-60 sm:h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
                       <XAxis type="number" />

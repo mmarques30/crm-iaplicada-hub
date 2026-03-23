@@ -98,8 +98,8 @@ export default function Pipeline() {
   const isLoading = pipelineLoading || stagesLoading;
 
   return (
-    <div className="p-6 space-y-4 h-full flex flex-col">
-      <div className="flex items-center justify-between">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4 h-full flex flex-col">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">Pipeline</h1>
         <Tabs value={product} onValueChange={(v) => navigate(`/pipeline/${v}`)}>
           <TabsList>
@@ -137,7 +137,7 @@ export default function Pipeline() {
             </div>
           ) : (
             <>
-              <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
+              <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin snap-x snap-mandatory sm:snap-none">
                 {activeStages.map((stage) => (
                   <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} />
                 ))}
@@ -170,7 +170,7 @@ function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: 
   isClosed?: boolean;
 }) {
   return (
-    <div className={`flex-shrink-0 ${isClosed ? 'w-60' : 'w-72'} flex flex-col`}>
+    <div className={`flex-shrink-0 ${isClosed ? 'w-60' : 'w-[280px] sm:w-72'} flex flex-col snap-center`}>
       <div className={`rounded-t-lg px-3 py-2 ${stage.is_won ? 'bg-brand-600/20' : stage.is_lost ? 'bg-destructive/10' : 'bg-muted'}`}>
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-semibold truncate">{stage.name}</h3>

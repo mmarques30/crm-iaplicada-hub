@@ -40,7 +40,7 @@ export default function Contacts() {
   const totalPages = Math.ceil((data?.total || 0) / PAGE_SIZE);
 
   return (
-    <div className="p-6 space-y-4">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4 max-w-[1400px] mx-auto w-full">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Contatos</h1>
@@ -64,15 +64,15 @@ export default function Contacts() {
           <Button variant="outline" size="sm" onClick={() => refetch()}>Tentar novamente</Button>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/50">
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Empresa</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Produto Interesse</TableHead>
+                <TableHead className="hidden md:table-cell">Telefone</TableHead>
+                <TableHead className="hidden sm:table-cell">Produto Interesse</TableHead>
                 <TableHead>Criado em</TableHead>
               </TableRow>
             </TableHeader>
@@ -106,8 +106,8 @@ export default function Contacts() {
                     <TableCell className="font-medium">{c.first_name} {c.last_name || ""}</TableCell>
                     <TableCell className="text-muted-foreground">{c.email || "—"}</TableCell>
                     <TableCell>{c.company || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground">{c.phone || "—"}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-muted-foreground hidden md:table-cell">{c.phone || "—"}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {c.produto_interesse?.map((p) => (
                         <Badge key={p} variant="secondary" className="mr-1 text-xs">{productLabel[p] || p}</Badge>
                       ))}

@@ -706,6 +706,7 @@ export type Database = {
       }
     }
     Functions: {
+      get_secret: { Args: { secret_name: string }; Returns: string }
       get_secrets: {
         Args: { secret_names: string[] }
         Returns: {

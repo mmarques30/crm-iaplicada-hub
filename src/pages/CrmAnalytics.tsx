@@ -70,7 +70,7 @@ export default function CrmAnalytics() {
   }))
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold">HubSpot CRM</h1>
@@ -82,7 +82,7 @@ export default function CrmAnalytics() {
       </div>
 
       {/* Hero Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <MetricCard title="Total Contatos" value={hs?.metrics?.totalContacts || 0} icon={Users} color="text-orange-600" />
         <MetricCard title="Leads" value={hs?.metrics?.leads || 0} icon={Target} color="text-yellow-600" />
         <MetricCard title="Opportunities" value={hs?.metrics?.opportunities || 0} icon={TrendingUp} color="text-green-600" />

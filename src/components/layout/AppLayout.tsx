@@ -23,8 +23,8 @@ export function AppLayout() {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center justify-between px-4 bg-background shadow-[0_1px_3px_0_hsl(0_0%_0%/0.04)] shrink-0">
-            <div className="flex items-center gap-3">
+          <header className="sticky top-0 z-30 h-14 flex items-center justify-between px-3 sm:px-4 bg-background/95 backdrop-blur-sm shadow-[0_1px_3px_0_hsl(0_0%_0%/0.04)] shrink-0">
+            <div className="flex items-center gap-2 sm:gap-3">
               <SidebarTrigger />
               <form onSubmit={handleSearch} className="hidden sm:block">
                 <div className="relative">
@@ -33,7 +33,7 @@ export function AppLayout() {
                     placeholder="Buscar contatos, deals..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9 w-72 h-9 rounded-full bg-muted/60 border-transparent focus:border-primary/30 focus:bg-background transition-colors"
+                    className="pl-9 w-48 md:w-72 h-9 rounded-full bg-muted/60 border-transparent focus:border-primary/30 focus:bg-background transition-colors"
                   />
                 </div>
               </form>
