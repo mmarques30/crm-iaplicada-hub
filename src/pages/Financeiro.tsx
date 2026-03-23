@@ -100,6 +100,8 @@ export default function Financeiro() {
     data: insightsData,
     enabled: totalVendas > 0,
   })
+
+  return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
