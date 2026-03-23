@@ -446,6 +446,7 @@ export type Database = {
           commenter_ig_id: string | null
           commenter_username: string | null
           contact_id: string | null
+          dm_error: string | null
           dm_sent: boolean
           id: string
           replied_at: string | null
@@ -457,6 +458,7 @@ export type Database = {
           commenter_ig_id?: string | null
           commenter_username?: string | null
           contact_id?: string | null
+          dm_error?: string | null
           dm_sent?: boolean
           id?: string
           replied_at?: string | null
@@ -468,6 +470,7 @@ export type Database = {
           commenter_ig_id?: string | null
           commenter_username?: string | null
           contact_id?: string | null
+          dm_error?: string | null
           dm_sent?: boolean
           id?: string
           replied_at?: string | null
@@ -797,7 +800,6 @@ export type Database = {
           hubspot_id: number | null
           hubspot_owner: string | null
           id: string | null
-          instagram_opt_in: boolean | null
           last_activity_at: string | null
           last_activity_date: string | null
           last_activity_subject: string | null
@@ -933,6 +935,10 @@ export type Database = {
       }
     }
     Functions: {
+      create_secret: {
+        Args: { new_secret: string; secret_name: string }
+        Returns: undefined
+      }
       get_secret: { Args: { secret_name: string }; Returns: string }
       get_secrets: {
         Args: { secret_names: string[] }
@@ -964,6 +970,10 @@ export type Database = {
         Returns: string
       }
       qualify_skills: { Args: { p_contact_id: string }; Returns: string }
+      update_secret: {
+        Args: { new_secret: string; secret_name: string }
+        Returns: undefined
+      }
     }
     Enums: {
       product_type: "business" | "skills" | "academy"
