@@ -55,9 +55,9 @@ export const formatDateTime = (date: string | null | undefined) => {
 
 export const productColor = (product: string) => {
   const colors: Record<string, string> = {
-    business: 'bg-blue-100 text-blue-800',
-    skills: 'bg-purple-100 text-purple-800',
-    academy: 'bg-green-100 text-green-800',
+    business: 'bg-blue-500/15 text-blue-400',
+    skills: 'bg-purple-500/15 text-purple-400',
+    academy: 'bg-green-500/15 text-green-400',
   };
-  return colors[product] ?? 'bg-gray-100 text-gray-800';
+  return colors[product] ?? 'bg-muted text-muted-foreground';
 };

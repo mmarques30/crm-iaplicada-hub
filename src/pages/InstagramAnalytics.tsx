@@ -78,7 +78,7 @@ export default function InstagramAnalytics() {
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold">Instagram Analytics</h1>
           {ig?.profile?.username && (
-            <Badge className="bg-pink-100 text-pink-800">@{ig.profile.username}</Badge>
+            <Badge className="bg-pink-500/15 text-pink-400">@{ig.profile.username}</Badge>
           )}
         </div>
         <p className="text-sm text-muted-foreground mt-1">Análise detalhada do perfil — últimos 28 dias</p>

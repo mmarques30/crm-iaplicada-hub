@@ -198,21 +198,21 @@ export default function InstagramAutomations() {
         <CardContent className="pt-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-center">
             <div className="space-y-2">
-              <div className="w-10 h-10 rounded-full bg-pink-100 flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 rounded-full bg-pink-500/15 flex items-center justify-center mx-auto">
                 <MessageCircle className="h-5 w-5 text-pink-600" />
               </div>
               <p className="text-sm font-medium">1. Comentário</p>
               <p className="text-xs text-muted-foreground">Alguém comenta no post com a palavra-chave</p>
             </div>
             <div className="space-y-2">
-              <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 rounded-full bg-blue-500/15 flex items-center justify-center mx-auto">
                 <MessageCircle className="h-5 w-5 text-blue-600" />
               </div>
               <p className="text-sm font-medium">2. Resposta</p>
               <p className="text-xs text-muted-foreground">Bot responde automaticamente no comentário</p>
             </div>
             <div className="space-y-2">
-              <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center mx-auto">
+              <div className="w-10 h-10 rounded-full bg-purple-500/15 flex items-center justify-center mx-auto">
                 <Send className="h-5 w-5 text-purple-600" />
               </div>
               <p className="text-sm font-medium">3. DM</p>
@@ -245,7 +245,7 @@ export default function InstagramAutomations() {
                     <div className="flex items-center gap-2 mb-1">
                       <CardTitle className="text-base truncate">{auto.post_url}</CardTitle>
                       {auto.is_active ? (
-                        <Badge className="bg-green-100 text-green-800 text-xs shrink-0">Ativa</Badge>
+                        <Badge className="bg-green-500/15 text-green-400 text-xs shrink-0">Ativa</Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs shrink-0">Inativa</Badge>
                       )}

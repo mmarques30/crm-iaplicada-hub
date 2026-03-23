@@ -107,7 +107,7 @@ export default function CrmAnalytics() {
       <div>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold">Funil de Vendas</h1>
-          <Badge className="bg-emerald-100 text-emerald-800">{totals.activeDeals} Deals Ativos</Badge>
+          <Badge className="bg-emerald-500/15 text-emerald-400">{totals.activeDeals} Deals Ativos</Badge>
           <Badge variant="secondary">{contactCount} Contatos</Badge>
         </div>
         <p className="text-sm text-muted-foreground mt-1">Análise do pipeline de vendas interno</p>
