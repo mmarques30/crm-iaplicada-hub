@@ -7,12 +7,27 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, ChevronLeft, ChevronRight, Users, Filter, X } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const PAGE_SIZE = 20;
+
+// Sources classified as social media
+const SOCIAL_SOURCES = ["ig", "instagram", "fb", "facebook", "meta", "tiktok", "youtube", "SOCIAL_MEDIA"];
+const SOCIAL_MEDIUMS = ["social", "paid", "organic_bio", "comment", "anuncio_pago"];
+
+type LeadOrigin = "all" | "pipeline" | "social";
+
+function getLeadOrigin(contact: any): "pipeline" | "social" {
+  if (contact.manychat_id && contact.manychat_id.startsWith("ig_")) return "social";
+  if (SOCIAL_SOURCES.includes(contact.utm_source)) return "social";
+  if (SOCIAL_MEDIUMS.includes(contact.utm_medium)) return "social";
+  if (contact.utm_medium === "comment") return "social";
+  return "pipeline";
+}
 
 const CARGO_OPTIONS = [
   "CEO / Fundador / Sócio",
@@ -76,14 +91,16 @@ export default function Contacts() {
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [leadOrigin, setLeadOrigin] = useState<LeadOrigin>("all");
 
   const activeFilterCount = useMemo(
     () => Object.values(filters).filter(Boolean).length,
     [filters]
   );
 
+  // Build Supabase query with origin-based filtering
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["contacts", search, page, filters],
+    queryKey: ["contacts", search, page, filters, leadOrigin],
     queryFn: async () => {
       let q = supabase
         .from("contacts")
@@ -95,6 +112,18 @@ export default function Contacts() {
         q = q.or(
           `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%,phone.ilike.%${search}%`
         );
+      }
+
+      // Lead origin filter at database level
+      if (leadOrigin === "social") {
+        q = q.or(
+          `utm_source.in.(${SOCIAL_SOURCES.join(",")}),utm_medium.in.(${SOCIAL_MEDIUMS.join(",")}),manychat_id.like.ig_%`
+        );
+      } else if (leadOrigin === "pipeline") {
+        // Pipeline = NOT social. Exclude social sources/mediums and ig_ manychat_id
+        q = q.not("utm_source", "in", `(${SOCIAL_SOURCES.join(",")})`)
+             .not("utm_medium", "in", `(${SOCIAL_MEDIUMS.join(",")})`)
+             .or("manychat_id.is.null,manychat_id.not.like.ig_%");
       }
 
       if (filters.produto) {
@@ -123,7 +152,7 @@ export default function Contacts() {
     },
   });
 
-  // Fetch deals to compute lifecycle/qualification per contact
+  // Fetch deals to compute qualification per contact
   const contactIds = useMemo(
     () => (data?.contacts || []).map((c: any) => c.id),
     [data?.contacts]
@@ -154,7 +183,7 @@ export default function Contacts() {
     return map;
   }, [dealsData]);
 
-  // Filter by lifecycle stage client-side (based on deal qualification)
+  // Client-side filter for lifecycle stage
   const filteredContacts = useMemo(() => {
     if (!filters.lifecycleStage || !data?.contacts) return data?.contacts || [];
     return data.contacts.filter(
@@ -191,6 +220,21 @@ export default function Contacts() {
     );
   };
 
+  const originBadge = (contact: any) => {
+    const origin = getLeadOrigin(contact);
+    if (origin === "social") {
+      const src = (contact.utm_source || "").toLowerCase();
+      let label = "Social";
+      if (src === "ig" || src === "instagram" || contact.manychat_id?.startsWith("ig_")) label = "Instagram";
+      else if (src === "fb" || src === "facebook") label = "Facebook";
+      else if (src === "tiktok") label = "TikTok";
+      else if (src === "youtube") label = "YouTube";
+      else if (src === "meta") label = "Meta Ads";
+      return <Badge className="text-[10px] bg-pink-100 text-pink-700">{label}</Badge>;
+    }
+    return <Badge className="text-[10px] bg-blue-100 text-blue-700">Pipeline</Badge>;
+  };
+
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between">
@@ -199,6 +243,24 @@ export default function Contacts() {
           <p className="text-sm text-muted-foreground">{displayTotal} contatos</p>
         </div>
       </div>
+
+      {/* Lead Origin Tabs */}
+      <Tabs value={leadOrigin} onValueChange={(v) => { setLeadOrigin(v as LeadOrigin); setPage(0); }}>
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsTrigger value="all" className="gap-1.5">
+            <Globe className="h-3.5 w-3.5" />
+            Todos
+          </TabsTrigger>
+          <TabsTrigger value="pipeline" className="gap-1.5">
+            <Building2 className="h-3.5 w-3.5" />
+            Pipeline / Formulário
+          </TabsTrigger>
+          <TabsTrigger value="social" className="gap-1.5">
+            <Share2 className="h-3.5 w-3.5" />
+            Redes Sociais
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Search + Filter toggle */}
       <div className="flex items-center gap-2">
@@ -351,10 +413,10 @@ export default function Contacts() {
                 <TableHead>Telefone</TableHead>
                 <TableHead>Empresa</TableHead>
                 <TableHead>Cargo</TableHead>
+                <TableHead>Origem</TableHead>
                 <TableHead>Produto Interesse</TableHead>
                 <TableHead>Qualificação</TableHead>
                 <TableHead>Faturamento</TableHead>
-                <TableHead>UTM Source</TableHead>
                 <TableHead>Criado em</TableHead>
               </TableRow>
             </TableHeader>
@@ -391,6 +453,7 @@ export default function Contacts() {
                     <TableCell className="text-muted-foreground whitespace-nowrap">{c.phone || "—"}</TableCell>
                     <TableCell className="whitespace-nowrap">{c.company || "—"}</TableCell>
                     <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{c.cargo || "—"}</TableCell>
+                    <TableCell>{originBadge(c)}</TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
                         {c.produto_interesse?.map((p: string) => (
@@ -405,7 +468,6 @@ export default function Contacts() {
                     <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
                       {c.faixa_de_faturamento || "—"}
                     </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{c.utm_source || "—"}</TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{formatDate(c.created_at)}</TableCell>
                   </TableRow>
                 ))

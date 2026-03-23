@@ -10,14 +10,29 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, User, Columns3, Search, Filter, X } from "lucide-react";
+import { Clock, User, Columns3, Search, Filter, X, Building2, Share2, Globe } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Deal = Tables<"deals"> & {
-  contacts: { first_name: string; last_name: string | null } | null;
+  contacts: { first_name: string; last_name: string | null; utm_source: string | null; utm_medium: string | null; manychat_id: string | null } | null;
 };
+
+// Sources classified as social media
+const SOCIAL_SOURCES = ["ig", "instagram", "fb", "facebook", "meta", "tiktok", "youtube", "SOCIAL_MEDIA"];
+const SOCIAL_MEDIUMS = ["social", "paid", "organic_bio", "comment", "anuncio_pago"];
+
+type LeadOriginFilter = "all" | "pipeline" | "social";
+
+function isDealFromSocial(deal: Deal): boolean {
+  if (!deal.contacts) return false;
+  const c = deal.contacts;
+  if (c.manychat_id && c.manychat_id.startsWith("ig_")) return true;
+  if (c.utm_source && SOCIAL_SOURCES.includes(c.utm_source)) return true;
+  if (c.utm_medium && SOCIAL_MEDIUMS.includes(c.utm_medium)) return true;
+  return false;
+}
 type Stage = Tables<"stages">;
 
 const QUALIFICATION_OPTIONS = [
@@ -41,6 +56,7 @@ interface PipelineFilters {
   canalOrigem: string;
   amountMin: string;
   amountMax: string;
+  leadOrigin: LeadOriginFilter;
 }
 
 const emptyFilters: PipelineFilters = {
@@ -49,6 +65,7 @@ const emptyFilters: PipelineFilters = {
   canalOrigem: "",
   amountMin: "",
   amountMax: "",
+  leadOrigin: "all",
 };
 
 export default function Pipeline() {
@@ -94,7 +111,7 @@ export default function Pipeline() {
     queryFn: async () => {
       const { data } = await supabase
         .from("deals")
-        .select("*, contacts(first_name, last_name)")
+        .select("*, contacts(first_name, last_name, utm_source, utm_medium, manychat_id)")
         .eq("pipeline_id", pipeline!.id);
       return (data as Deal[]) || [];
     },
@@ -123,6 +140,8 @@ export default function Pipeline() {
       if (filters.canalOrigem && d.canal_origem !== filters.canalOrigem) return false;
       if (filters.amountMin && (Number(d.amount) || 0) < Number(filters.amountMin)) return false;
       if (filters.amountMax && (Number(d.amount) || 0) > Number(filters.amountMax)) return false;
+      if (filters.leadOrigin === "social" && !isDealFromSocial(d)) return false;
+      if (filters.leadOrigin === "pipeline" && isDealFromSocial(d)) return false;
       return true;
     });
   }, [deals, filters]);
@@ -183,6 +202,24 @@ export default function Pipeline() {
           </TabsList>
         </Tabs>
       </div>
+
+      {/* Lead Origin Tabs */}
+      <Tabs value={filters.leadOrigin} onValueChange={(v) => updateFilter("leadOrigin", v)}>
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
+          <TabsTrigger value="all" className="gap-1.5">
+            <Globe className="h-3.5 w-3.5" />
+            Todos
+          </TabsTrigger>
+          <TabsTrigger value="pipeline" className="gap-1.5">
+            <Building2 className="h-3.5 w-3.5" />
+            Pipeline / Formulário
+          </TabsTrigger>
+          <TabsTrigger value="social" className="gap-1.5">
+            <Share2 className="h-3.5 w-3.5" />
+            Redes Sociais
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Search + Filter toggle */}
       <div className="flex items-center gap-2">
