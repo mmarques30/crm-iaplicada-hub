@@ -6,12 +6,12 @@ import { qualificationBadgeVariant } from "@/lib/format";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, Mail, Phone, Building2, FileText, MessageSquare, Video, StickyNote, ArrowRightLeft, Clock, FileX } from "lucide-react";
+import { ArrowLeft, Mail, Phone, Building2, FileText, MessageSquare, Video, StickyNote, ArrowRightLeft, Clock, FileX, Instagram } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const activityIcons: Record<string, any> = {
-  email: Mail, whatsapp: MessageSquare, call: Phone, meeting: Video, note: StickyNote, stage_change: ArrowRightLeft,
+  email: Mail, whatsapp: MessageSquare, instagram: Instagram, call: Phone, meeting: Video, note: StickyNote, stage_change: ArrowRightLeft,
 };
 
 export default function DealDetail() {
