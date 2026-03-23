@@ -96,4 +96,9 @@
     background: hsl(var(--border));
     border-radius: 3px;
   }
+
+  .tabular-nums {
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+  }
 }

@@ -1,115 +1,190 @@
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { MetricCard } from '@/components/dashboard/MetricCard'
-import { useDashboardSnapshot } from '@/hooks/useDashboardData'
 import { formatCurrency } from '@/lib/format'
-import { Users, Target, Trophy, TrendingUp, Briefcase, BarChart3 } from 'lucide-react'
+import { Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts'
 
-const STAGE_COLORS: Record<string, string> = {
-  subscriber: '#93c5fd',
-  lead: '#f59e0b',
-  marketingqualifiedlead: '#8b5cf6',
-  salesqualifiedlead: '#ec4899',
-  opportunity: '#10B981',
-  customer: '#059669',
-  evangelist: '#0ea5e9',
-  other: '#6b7280',
-  unknown: '#d1d5db',
+const PRODUCT_COLORS: Record<string, string> = {
+  business: '#8b5cf6',
+  skills: '#ec4899',
+  academy: '#f59e0b',
 }
-
-const STAGE_LABELS: Record<string, string> = {
-  subscriber: 'Subscriber',
-  lead: 'Lead',
-  marketingqualifiedlead: 'MQL',
-  salesqualifiedlead: 'SQL',
-  opportunity: 'Opportunity',
-  customer: 'Customer',
-  evangelist: 'Evangelist',
-  other: 'Outro',
-  unknown: 'Desconhecido',
-}
-
-const SOURCE_COLORS = ['#FF7A59', '#1877F2', '#E1306C', '#10B981', '#8b5cf6', '#f59e0b', '#6b7280']
 
 export default function CrmAnalytics() {
-  const { data: snapshot } = useDashboardSnapshot()
-  const hs = snapshot?.data?.hubspot
+  const { data: productMetrics } = useQuery({
+    queryKey: ['product_metrics'],
+    queryFn: async () => {
+      const { data } = await supabase.from('product_metrics').select('*')
+      return data || []
+    },
+  })
 
-  const stageData = hs?.byStage
-    ? Object.entries(hs.byStage).map(([name, value]) => ({
-        name: STAGE_LABELS[name] || name,
-        value,
-        fill: STAGE_COLORS[name] || STAGE_COLORS.other,
-      }))
-    : []
+  const { data: stageConversion } = useQuery({
+    queryKey: ['stage_conversion'],
+    queryFn: async () => {
+      const { data } = await supabase.from('stage_conversion').select('*').order('display_order')
+      return data || []
+    },
+  })
 
-  const sourceData = hs?.bySource
-    ? Object.entries(hs.bySource)
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 10)
-        .map(([name, value]) => ({ name, value }))
-    : []
+  const { data: contactCount } = useQuery({
+    queryKey: ['contacts_count'],
+    queryFn: async () => {
+      const { count } = await supabase.from('contacts').select('*', { count: 'exact', head: true })
+      return count || 0
+    },
+  })
 
-  const deals = hs?.deals || []
-  const dealsByStage: Record<string, { count: number; amount: number }> = {}
-  for (const deal of deals) {
-    const stage = deal.stage || 'unknown'
-    if (!dealsByStage[stage]) dealsByStage[stage] = { count: 0, amount: 0 }
-    dealsByStage[stage].count++
-    dealsByStage[stage].amount += deal.amount
-  }
-  const dealStageData = Object.entries(dealsByStage).map(([name, data]) => ({
-    name,
-    deals: data.count,
-    valor: data.amount,
+  const { data: dealsByChannel } = useQuery({
+    queryKey: ['deals_by_channel_crm'],
+    queryFn: async () => {
+      const { data } = await supabase.from('deals_full').select('canal_origem')
+      const channels: Record<string, number> = {}
+      for (const d of data || []) {
+        const ch = d.canal_origem || 'Não informado'
+        channels[ch] = (channels[ch] || 0) + 1
+      }
+      return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
+    },
+  })
+
+  const totals = (productMetrics || []).reduce(
+    (acc, pm) => ({
+      activeDeals: acc.activeDeals + Number(pm.active_deals || 0),
+      wonDeals: acc.wonDeals + Number(pm.won_deals || 0),
+      lostDeals: acc.lostDeals + Number(pm.lost_deals || 0),
+      pipelineValue: acc.pipelineValue + Number(pm.pipeline_value || 0),
+      avgDealSize: acc.avgDealSize + Number(pm.avg_deal_size || 0),
+    }),
+    { activeDeals: 0, wonDeals: 0, lostDeals: 0, pipelineValue: 0, avgDealSize: 0 }
+  )
+  const totalClosed = totals.wonDeals + totals.lostDeals
+  const winRate = totalClosed > 0 ? (totals.wonDeals / totalClosed) * 100 : 0
+  const avgDeal = (productMetrics || []).length > 0 ? totals.avgDealSize / (productMetrics || []).length : 0
+
+  // Funil stages
+  const funnelStages = (stageConversion || []).filter(s => (s.deal_count || 0) > 0)
+  const maxStage = funnelStages[0]?.deal_count || 1
+
+  // Product pie
+  const productPie = (productMetrics || []).map(pm => ({
+    name: String(pm.product).charAt(0).toUpperCase() + String(pm.product).slice(1),
+    value: Number(pm.active_deals || 0),
+    fill: PRODUCT_COLORS[String(pm.product)] || '#6b7280',
   }))
+
+  const SOURCE_COLORS = ['#10B981', '#1877F2', '#E1306C', '#8b5cf6', '#f59e0b', '#6b7280']
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold">HubSpot CRM</h1>
-          {hs?.metrics?.totalContacts && (
-            <Badge className="bg-orange-100 text-orange-800">{hs.metrics.totalContacts} contatos</Badge>
-          )}
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl sm:text-3xl font-bold">Funil de Vendas</h1>
+          <Badge className="bg-emerald-100 text-emerald-800">{totals.activeDeals} Deals Ativos</Badge>
+          <Badge variant="secondary">{contactCount} Contatos</Badge>
         </div>
-        <p className="text-sm text-muted-foreground mt-1">Análise de contatos, deals e pipeline</p>
+        <p className="text-sm text-muted-foreground mt-1">Análise do pipeline de vendas interno</p>
       </div>
 
-      {/* Hero Metrics */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        <MetricCard title="Total Contatos" value={hs?.metrics?.totalContacts || 0} icon={Users} color="text-orange-600" />
-        <MetricCard title="Leads" value={hs?.metrics?.leads || 0} icon={Target} color="text-yellow-600" />
-        <MetricCard title="Opportunities" value={hs?.metrics?.opportunities || 0} icon={TrendingUp} color="text-green-600" />
-        <MetricCard title="Customers" value={hs?.metrics?.customers || 0} icon={Trophy} color="text-emerald-600" />
-        <MetricCard title="Deals Ativos" value={hs?.metrics?.activeDeals || 0} icon={Briefcase} color="text-blue-600" />
-        <MetricCard title="Win Rate" value={hs?.metrics?.winRate || 0} suffix="%" decimals={1} icon={BarChart3} color="text-purple-600" />
+      {/* 8 KPI Cards — 2 rows */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <MetricCard title="Total Contatos" value={contactCount || 0} icon={Users} color="text-orange-600" borderColor="#FF7A59" />
+        <MetricCard title="Deals Ativos" value={totals.activeDeals} icon={Briefcase} color="text-blue-600" borderColor="#3b82f6" />
+        <MetricCard title="Deals Ganhos" value={totals.wonDeals} icon={Trophy} color="text-green-600" borderColor="#10B981" />
+        <MetricCard title="Deals Perdidos" value={totals.lostDeals} icon={XCircle} color="text-red-500" borderColor="#ef4444" />
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <MetricCard title="Pipeline" value={totals.pipelineValue} prefix="R$ " decimals={2} icon={BarChart3} color="text-purple-600" borderColor="#8b5cf6" />
+        <MetricCard title="Win Rate" value={winRate} suffix="%" decimals={1} icon={Percent} color="text-emerald-600" borderColor="#059669" />
+        <MetricCard title="Ticket Médio" value={avgDeal} prefix="R$ " decimals={2} icon={TrendingUp} color="text-amber-600" borderColor="#f59e0b" />
+        <MetricCard title="Total Fechados" value={totalClosed} icon={Target} color="text-indigo-600" borderColor="#6366f1" />
       </div>
 
-      <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="contacts">Contatos</TabsTrigger>
-          <TabsTrigger value="deals">Deals</TabsTrigger>
+      <Tabs defaultValue="funnel">
+        <TabsList className="flex-wrap h-auto">
+          <TabsTrigger value="funnel">Funil</TabsTrigger>
+          <TabsTrigger value="sources">Fontes</TabsTrigger>
+          <TabsTrigger value="products">Produtos</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4 mt-4">
+        <TabsContent value="funnel" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Pipeline por Estágio</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {funnelStages.length > 0 ? (
+                <div className="space-y-3">
+                  {funnelStages.map(stage => (
+                    <div key={stage.stage_name} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium">{stage.stage_name}</span>
+                        <div className="flex gap-4">
+                          <span className="text-xs text-muted-foreground">{formatCurrency(Number(stage.total_amount || 0))}</span>
+                          <span className="font-bold font-mono tabular-nums">{stage.deal_count} deals</span>
+                        </div>
+                      </div>
+                      <div className="h-8 bg-muted rounded-lg overflow-hidden">
+                        <div
+                          className="h-full rounded-lg transition-all duration-500"
+                          style={{
+                            width: `${Math.max((Number(stage.deal_count) / Number(maxStage)) * 100, 3)}%`,
+                            backgroundColor: 'hsl(var(--primary))',
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : <p className="text-center text-muted-foreground py-8">Sem dados de pipeline</p>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="sources" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">Deals por Canal de Origem</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(dealsByChannel || []).length > 0 ? (
+                <ResponsiveContainer width="100%" height={350}>
+                  <BarChart data={dealsByChannel} layout="vertical">
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                    <XAxis type="number" tick={{ fontSize: 12 }} />
+                    <YAxis dataKey="name" type="category" width={130} tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="value" name="Deals" radius={[0, 4, 4, 0]}>
+                      {(dealsByChannel || []).map((_, i) => (
+                        <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : <p className="text-center text-muted-foreground py-8">Sem dados de canais</p>}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="products" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Contatos por Lifecycle Stage</CardTitle>
+                <CardTitle className="text-base">Deals por Produto</CardTitle>
               </CardHeader>
               <CardContent>
-                {stageData.length > 0 ? (
+                {productPie.length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <PieChart>
-                      <Pie data={stageData} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label>
-                        {stageData.map((entry, i) => (
+                      <Pie data={productPie} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label>
+                        {productPie.map((entry, i) => (
                           <Cell key={i} fill={entry.fill} />
                         ))}
                       </Pie>
@@ -120,98 +195,33 @@ export default function CrmAnalytics() {
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Contatos por Fonte</CardTitle>
+                <CardTitle className="text-base">Performance por Produto</CardTitle>
               </CardHeader>
               <CardContent>
-                {sourceData.length > 0 ? (
+                {(productMetrics || []).length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={sourceData} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                      <XAxis type="number" tick={{ fontSize: 12 }} />
-                      <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11 }} />
+                    <BarChart data={(productMetrics || []).map(pm => ({
+                      name: String(pm.product).charAt(0).toUpperCase() + String(pm.product).slice(1),
+                      ganhos: Number(pm.won_deals),
+                      perdidos: Number(pm.lost_deals),
+                      ativos: Number(pm.active_deals),
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                      <XAxis dataKey="name" tick={{ fontSize: 13 }} />
+                      <YAxis tick={{ fontSize: 12 }} />
                       <Tooltip />
-                      <Bar dataKey="value" name="Contatos" radius={[0, 4, 4, 0]}>
-                        {sourceData.map((_, i) => (
-                          <Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />
-                        ))}
-                      </Bar>
+                      <Legend />
+                      <Bar dataKey="ganhos" name="Ganhos" fill="#10B981" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="perdidos" name="Perdidos" fill="#ef4444" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="ativos" name="Ativos" fill="#3b82f6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="contacts" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Contatos Recentes do HubSpot</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left py-2 px-3 font-medium">Nome</th>
-                      <th className="text-left py-2 px-3 font-medium">Email</th>
-                      <th className="text-left py-2 px-3 font-medium">Empresa</th>
-                      <th className="text-left py-2 px-3 font-medium">Stage</th>
-                      <th className="text-left py-2 px-3 font-medium">Fonte</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(hs?.contacts || []).slice(0, 50).map(c => (
-                      <tr key={c.id} className="border-b hover:bg-muted/50">
-                        <td className="py-2 px-3">{[c.firstname, c.lastname].filter(Boolean).join(' ') || '—'}</td>
-                        <td className="py-2 px-3 text-muted-foreground">{c.email || '—'}</td>
-                        <td className="py-2 px-3">{c.company || '—'}</td>
-                        <td className="py-2 px-3">
-                          <Badge
-                            variant="outline"
-                            className="text-xs"
-                            style={{ borderColor: STAGE_COLORS[c.lifecyclestage] || '#6b7280' }}
-                          >
-                            {STAGE_LABELS[c.lifecyclestage] || c.lifecyclestage || '—'}
-                          </Badge>
-                        </td>
-                        <td className="py-2 px-3 text-muted-foreground text-xs">{c.source || '—'}</td>
-                      </tr>
-                    ))}
-                    {(!hs?.contacts || hs.contacts.length === 0) && (
-                      <tr><td colSpan={5} className="py-8 text-center text-muted-foreground">Sem dados</td></tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="deals" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Deals por Estágio</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dealStageData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={dealStageData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
-                    <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar dataKey="deals" name="Qtd Deals" fill="#FF7A59" radius={[4, 4, 0, 0]} />
-                    <Bar dataKey="valor" name="Valor (R$)" fill="#10B981" radius={[4, 4, 0, 0]} />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : <p className="text-center text-muted-foreground py-8">Sem dados de deals</p>}
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>

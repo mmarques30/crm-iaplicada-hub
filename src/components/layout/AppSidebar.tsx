@@ -25,7 +25,7 @@ const analyticsItems = [
   { title: "Visão Geral", url: "/painel", icon: BarChart3 },
   { title: "Instagram", url: "/analytics/instagram", icon: Instagram },
   { title: "Facebook Ads", url: "/analytics/facebook-ads", icon: Facebook },
-  { title: "CRM", url: "/analytics/crm", icon: TrendingUp },
+  { title: "Funil de Vendas", url: "/analytics/crm", icon: TrendingUp },
   { title: "Financeiro", url: "/financeiro", icon: DollarSign },
 ];
 
