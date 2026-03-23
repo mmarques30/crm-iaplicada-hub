@@ -52,7 +52,25 @@ export default function InstagramAnalytics() {
     alcance: d.value,
   })) || []
 
-  return (
+  const insightsData = ig ? {
+    followers: ig.metrics?.followers,
+    totalReach: ig.metrics?.totalReach,
+    totalViews: ig.metrics?.totalViews,
+    totalSaved: ig.metrics?.totalSaved,
+    totalShares: ig.metrics?.totalShares,
+    avgEngagement: ig.metrics?.avgEngagement,
+    avgLikes, avgComments, avgReach,
+    totalPosts: posts.length,
+    totalReels: reels.length,
+    totalImages: images.length,
+    topPosts: topPosts.slice(0, 3).map(p => ({ caption: (p.caption || '').substring(0, 60), reach: p.reach, likes: p.like_count, comments: p.comments_count, type: p.media_type })),
+  } : null
+
+  const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({
+    context: 'instagram',
+    data: insightsData,
+    enabled: !!ig,
+  })
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
         <div className="flex flex-wrap items-center gap-3">
