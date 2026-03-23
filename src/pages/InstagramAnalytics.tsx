@@ -119,6 +119,7 @@ export default function InstagramAnalytics() {
           <TabsTrigger value="overview">Visão Geral</TabsTrigger>
           <TabsTrigger value="growth">Crescimento</TabsTrigger>
           <TabsTrigger value="ranking">Ranking</TabsTrigger>
+          <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
