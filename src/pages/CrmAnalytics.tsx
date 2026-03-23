@@ -70,7 +70,7 @@ export default function CrmAnalytics() {
   }))
 
   return (
-    <div className="p-6 space-y-6 max-w-7xl">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-bold">HubSpot CRM</h1>
