@@ -86,7 +86,20 @@ export default function Financeiro() {
   const emAndamento = allVendas.filter(v => v.status === 'em_andamento').length
   const concluidos = allVendas.filter(v => v.status === 'concluido').length
 
-  return (
+  const insightsData = totalVendas > 0 ? {
+    receitaTotal, totalVendas, ticketMedio,
+    emAndamento, concluidos,
+    parcelasAtivas,
+    receitaPorProduto: productData.map(p => ({ produto: p.name, receita: p.receita, vendas: p.vendas })),
+    formasPagamento: paymentData,
+    evolucaoMensal: monthlyChart,
+  } : null
+
+  const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({
+    context: 'financeiro',
+    data: insightsData,
+    enabled: totalVendas > 0,
+  })
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
