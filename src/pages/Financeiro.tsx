@@ -245,6 +245,16 @@ export default function Financeiro() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={insights || []}
+            isLoading={insightsLoading}
+            error={insightsError?.message}
+            onRetry={() => refetchInsights()}
+            title="Insights Financeiros"
+            subtitle="Análise de vendas e receita gerada por IA"
+          />
+        </TabsContent>
       </Tabs>
     </div>
   )

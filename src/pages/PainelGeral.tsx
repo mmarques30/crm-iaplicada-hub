@@ -366,6 +366,16 @@ export default function PainelGeral() {
             </Card>
           </div>
         </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={painelInsights || []}
+            isLoading={painelInsightsLoading}
+            error={painelInsightsError?.message}
+            onRetry={() => refetchPainelInsights()}
+            title="Insights Consolidados"
+            subtitle="Análise cruzada entre Instagram, Facebook Ads e CRM gerada por IA"
+          />
+        </TabsContent>
       </Tabs>
     </div>
   )

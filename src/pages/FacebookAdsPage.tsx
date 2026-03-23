@@ -208,6 +208,16 @@ export default function FacebookAdsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={insights || []}
+            isLoading={insightsLoading}
+            error={insightsError?.message}
+            onRetry={() => refetchInsights()}
+            title="Insights do Facebook Ads"
+            subtitle="Análise de campanhas e performance gerada por IA"
+          />
+        </TabsContent>
       </Tabs>
     </div>
   )

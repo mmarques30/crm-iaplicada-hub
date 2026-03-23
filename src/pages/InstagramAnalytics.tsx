@@ -230,6 +230,16 @@ export default function InstagramAnalytics() {
             </CardContent>
           </Card>
         </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={insights || []}
+            isLoading={insightsLoading}
+            error={insightsError?.message}
+            onRetry={() => refetchInsights()}
+            title="Insights do Instagram"
+            subtitle="Análise de performance do perfil gerada por IA"
+          />
+        </TabsContent>
       </Tabs>
     </div>
   )

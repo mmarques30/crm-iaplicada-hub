@@ -242,6 +242,16 @@ export default function CrmAnalytics() {
             </Card>
           </div>
         </TabsContent>
+        <TabsContent value="insights" className="mt-4">
+          <InsightsTable
+            insights={insights || []}
+            isLoading={insightsLoading}
+            error={insightsError?.message}
+            onRetry={() => refetchInsights()}
+            title="Insights do CRM"
+            subtitle="Análise do funil de vendas e pipeline gerada por IA"
+          />
+        </TabsContent>
       </Tabs>
     </div>
   )
