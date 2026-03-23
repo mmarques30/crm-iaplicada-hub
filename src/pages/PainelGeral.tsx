@@ -91,6 +91,34 @@ export default function PainelGeral() {
       return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
     },
   })
+  const painelInsightsData = {
+    instagram: ig ? {
+      followers: ig.metrics?.followers,
+      totalReach: ig.metrics?.totalReach,
+      avgEngagement: ig.metrics?.avgEngagement,
+      totalPosts: ig.posts?.length,
+    } : null,
+    facebookAds: fb ? {
+      totalSpend: fb.metrics?.totalSpend,
+      totalLeads: fb.metrics?.totalLeads,
+      avgCPL: fb.metrics?.avgCPL,
+      avgCTR: fb.metrics?.avgCTR,
+    } : null,
+    crm: {
+      contacts: contactCount,
+      activeDeals: crmTotals.activeDeals,
+      wonDeals: crmTotals.wonDeals,
+      lostDeals: crmTotals.lostDeals,
+      winRate: crmWinRate.toFixed(1),
+      pipelineValue: crmTotals.pipelineValue,
+    },
+    followers, totalReach, engagement, leads, investment, cpl,
+  }
+
+  const { data: painelInsights, isLoading: painelInsightsLoading, error: painelInsightsError, refetch: refetchPainelInsights } = useInsights({
+    context: 'painel',
+    data: painelInsightsData,
+  })
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
