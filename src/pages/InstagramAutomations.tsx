@@ -245,7 +245,7 @@ export default function InstagramAutomations() {
                     <div className="flex items-center gap-2 mb-1">
                       <CardTitle className="text-base truncate">{auto.post_url}</CardTitle>
                       {auto.is_active ? (
-                        <Badge className="bg-green-100 text-green-800 text-xs shrink-0">Ativa</Badge>
+                        <Badge className="bg-green-500/15 text-green-400 text-xs shrink-0">Ativa</Badge>
                       ) : (
                         <Badge variant="secondary" className="text-xs shrink-0">Inativa</Badge>
                       )}

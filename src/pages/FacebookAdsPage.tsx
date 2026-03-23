@@ -70,7 +70,7 @@ export default function FacebookAdsPage() {
       <div>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold">Facebook Ads</h1>
-          <Badge className="bg-blue-100 text-blue-800">{activeCampaigns.length} Ativas</Badge>
+          <Badge className="bg-blue-500/15 text-blue-400">{activeCampaigns.length} Ativas</Badge>
           <Badge variant="secondary">{campaigns.length - activeCampaigns.length} Pausadas</Badge>
         </div>
         <p className="text-sm text-muted-foreground mt-1">Análise de campanhas — últimos 30 dias</p>

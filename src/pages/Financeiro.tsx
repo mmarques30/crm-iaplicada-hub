@@ -107,8 +107,8 @@ export default function Financeiro() {
         <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold">Vendas & Receita</h1>
           <Badge variant="secondary">{totalVendas} vendas</Badge>
-          <Badge className="bg-yellow-100 text-yellow-800">{emAndamento} em andamento</Badge>
-          <Badge className="bg-green-100 text-green-800">{concluidos} concluídos</Badge>
+          <Badge className="bg-yellow-500/15 text-yellow-400">{emAndamento} em andamento</Badge>
+           <Badge className="bg-green-500/15 text-green-400">{concluidos} concluídos</Badge>
         </div>
         <p className="text-sm text-muted-foreground mt-1">Acompanhamento financeiro integrado ao CRM</p>
       </div>
