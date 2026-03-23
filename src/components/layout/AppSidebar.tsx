@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Brain, Instagram, BarChart3, Facebook, DollarSign, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Brain, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";

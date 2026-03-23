@@ -41,6 +41,7 @@ const App = () => (
             <Route path="/analytics/facebook-ads" element={<FacebookAdsPage />} />
             <Route path="/analytics/crm" element={<CrmAnalytics />} />
             <Route path="/financeiro" element={<Financeiro />} />
+            <Route path="/tarefas" element={<ReceitaTasks />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
