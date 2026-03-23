@@ -706,6 +706,13 @@ export type Database = {
       }
     }
     Functions: {
+      get_secrets: {
+        Args: { secret_names: string[] }
+        Returns: {
+          name: string
+          secret: string
+        }[]
+      }
       qualify_academy: { Args: { p_contact_id: string }; Returns: string }
       qualify_business: { Args: { p_contact_id: string }; Returns: string }
       qualify_contact: {

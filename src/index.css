@@ -5,59 +5,60 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 0 0% 5%;
+    --foreground: 70 4% 17%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 5%;
+    --card-foreground: 70 4% 17%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 5%;
+    --popover-foreground: 70 4% 17%;
 
-    --primary: 73 58% 34%;
+    --primary: 73 55% 34%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 64 45% 94%;
-    --secondary-foreground: 0 0% 5%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 70 4% 17%;
 
-    --muted: 65 20% 93%;
+    --muted: 0 0% 95%;
     --muted-foreground: 0 0% 40%;
 
     --accent: 65 34% 85%;
-    --accent-foreground: 0 0% 5%;
+    --accent-foreground: 70 4% 17%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 65 15% 88%;
-    --input: 65 15% 88%;
-    --ring: 73 58% 34%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 73 55% 34%;
 
-    --radius: 0.625rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 70 5% 17%;
+    --sidebar-background: 70 4% 17%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 68 53% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 70 8% 22%;
+    --sidebar-accent: 70 6% 23%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 70 5% 25%;
     --sidebar-ring: 68 53% 50%;
 
-    --brand-900: 73 58% 34%;
-    --brand-800: 68 56% 39%;
-    --brand-700: 67 52% 45%;
+    /* Brand scale (brandbook exact) */
+    --brand-900: 73 55% 34%;
+    --brand-800: 71 55% 39%;
+    --brand-700: 69 48% 45%;
     --brand-600: 68 53% 50%;
-    --brand-500: 65 48% 58%;
-    --brand-400: 65 44% 65%;
-    --brand-300: 65 38% 75%;
-    --brand-200: 65 34% 85%;
+    --brand-500: 66 47% 57%;
+    --brand-400: 66 42% 65%;
+    --brand-300: 66 36% 75%;
+    --brand-200: 65 33% 85%;
     --brand-100: 64 45% 94%;
 
-    --chart-1: 73 58% 34%;
+    --chart-1: 73 55% 34%;
     --chart-2: 68 53% 50%;
-    --chart-3: 65 48% 58%;
-    --chart-4: 65 38% 75%;
-    --chart-5: 65 34% 85%;
+    --chart-3: 66 47% 57%;
+    --chart-4: 66 36% 75%;
+    --chart-5: 65 33% 85%;
 
     --qualification-lead: 0 0% 75%;
     --qualification-mql: 45 90% 50%;
@@ -72,7 +73,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-family: 'Sora', system-ui, -apple-system, sans-serif;
   }
 }
 

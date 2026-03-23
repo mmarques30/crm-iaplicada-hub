@@ -213,15 +213,15 @@ Deno.serve(async (req) => {
         })
 
         // 4. Incrementar contador de replies
-        await supabase.rpc('increment_replies_count', { automation_uuid: matchedAutomation.id })
-          .then(() => {})
-          .catch(async () => {
-            // Fallback: update manual
-            await supabase
-              .from('instagram_automations')
-              .update({ replies_count: (matchedAutomation.replies_count || 0) + 1 })
-              .eq('id', matchedAutomation.id)
-          })
+        try {
+          await supabase.rpc('increment_replies_count', { automation_uuid: matchedAutomation.id })
+        } catch {
+          // Fallback: update manual
+          await supabase
+            .from('instagram_automations')
+            .update({ replies_count: (matchedAutomation.replies_count || 0) + 1 })
+            .eq('id', matchedAutomation.id)
+        }
 
         // 5. Criar contato no CRM (se não existir)
         try {
