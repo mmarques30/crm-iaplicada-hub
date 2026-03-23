@@ -34,13 +34,13 @@
 
     --radius: 0.75rem;
 
-    --sidebar-background: 220 55% 10%;
+    --sidebar-background: 80 15% 7%;
     --sidebar-foreground: 0 0% 90%;
     --sidebar-primary: 68 53% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 30% 18%;
+    --sidebar-accent: 80 12% 14%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 220 20% 18%;
+    --sidebar-border: 80 10% 13%;
     --sidebar-ring: 68 53% 50%;
 
     /* Brand scale (brandbook exact) */
