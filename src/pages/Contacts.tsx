@@ -71,8 +71,8 @@ export default function Contacts() {
                 <TableHead>Nome</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Empresa</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Produto Interesse</TableHead>
+                <TableHead className="hidden md:table-cell">Telefone</TableHead>
+                <TableHead className="hidden sm:table-cell">Produto Interesse</TableHead>
                 <TableHead>Criado em</TableHead>
               </TableRow>
             </TableHeader>
