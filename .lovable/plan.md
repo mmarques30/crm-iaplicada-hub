@@ -1,16 +1,34 @@
 
 
-## Problem
+## Corrigir Badges e Elementos com Cores Light-Mode no Tema Dark
 
-The entire app is blank due to a fatal error: `supabaseKey is required.`
+### Problema
+As variáveis CSS estão corretas (preto + verde escuro), mas várias páginas usam cores hardcoded de tema claro (`bg-emerald-100 text-emerald-800`, `bg-blue-100 text-blue-800`, etc.) que criam elementos com fundo claro/azulado no tema dark.
 
-The `.env` file defines `VITE_SUPABASE_PUBLISHABLE_KEY` but `src/integrations/supabase/client.ts` reads `import.meta.env.VITE_SUPABASE_ANON_KEY` — which doesn't exist. This crashes the app before any component renders.
+### Arquivos e Correções
 
-## Fix
+#### 1. `src/pages/CrmAnalytics.tsx`
+- `bg-emerald-100 text-emerald-800` → `bg-emerald-500/15 text-emerald-400`
 
-**File: `src/integrations/supabase/client.ts`** (line 6)
+#### 2. `src/pages/FacebookAdsPage.tsx`
+- `bg-blue-100 text-blue-800` → `bg-blue-500/15 text-blue-400`
 
-Change the env variable name from `VITE_SUPABASE_ANON_KEY` to `VITE_SUPABASE_PUBLISHABLE_KEY` to match the `.env` file.
+#### 3. `src/pages/InstagramAnalytics.tsx`
+- `bg-pink-100 text-pink-800` → `bg-pink-500/15 text-pink-400`
 
-After this fix, the app will boot and we can verify all pages (Dashboard, Pipeline, Contacts, Settings) display their structure with empty states and skeletons.
+#### 4. `src/pages/Financeiro.tsx`
+- `bg-yellow-100 text-yellow-800` → `bg-yellow-500/15 text-yellow-400`
+- `bg-green-100 text-green-800` → `bg-green-500/15 text-green-400`
+
+#### 5. `src/pages/InstagramAutomations.tsx`
+- `bg-pink-100` círculo → `bg-pink-500/15`
+- `bg-blue-100` círculo → `bg-blue-500/15`
+- `bg-purple-100` círculo → `bg-purple-500/15`
+- `bg-green-100 text-green-800` badge → `bg-green-500/15 text-green-400`
+
+#### 6. `src/lib/format.ts`
+- `productColor()`: trocar `bg-blue-100 text-blue-800` → `bg-blue-500/15 text-blue-400`, idem para purple e green
+
+### Padrão
+Todas as cores `*-100 text-*-800` (light-mode) serão substituídas por `*-500/15 text-*-400` (dark-friendly com fundo semi-transparente), consistente com o padrão já usado em `PainelGeral.tsx` e `InsightsTable.tsx`.
 

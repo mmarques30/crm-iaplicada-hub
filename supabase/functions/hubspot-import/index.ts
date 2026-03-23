@@ -8,40 +8,40 @@ const HUBSPOT_BASE_URL = 'https://api.hubapi.com'
 // Mapeamento de dealstage do HubSpot para stage IDs locais
 const STAGE_MAP: Record<string, Record<string, string>> = {
   business: {
-    appointmentscheduled: 'b1000000-0000-0000-0000-000000000001', // MQL
-    '1241627963': 'b1000000-0000-0000-0000-000000000002', // Contato Iniciado
-    qualifiedtobuy: 'b1000000-0000-0000-0000-000000000003', // Conectado
-    '1248846720': 'b1000000-0000-0000-0000-000000000004', // SQL
-    '1241627964': 'b1000000-0000-0000-0000-000000000005', // Reuniao Agendada
-    '1241627965': 'b1000000-0000-0000-0000-000000000006', // Reuniao Realizada
-    presentationscheduled: 'b1000000-0000-0000-0000-000000000007', // Negociacao
-    '1241627966': 'b1000000-0000-0000-0000-000000000008', // Contrato Enviado
-    closedwon: 'b1000000-0000-0000-0000-000000000009', // Negocio Fechado
-    closedlost: 'b1000000-0000-0000-0000-000000000010', // Negocio Perdido
+    appointmentscheduled: 'b1000000-0000-0000-0000-000000000001',
+    '1241627963': 'b1000000-0000-0000-0000-000000000002',
+    qualifiedtobuy: 'b1000000-0000-0000-0000-000000000003',
+    '1248846720': 'b1000000-0000-0000-0000-000000000004',
+    '1241627964': 'b1000000-0000-0000-0000-000000000005',
+    '1241627965': 'b1000000-0000-0000-0000-000000000006',
+    presentationscheduled: 'b1000000-0000-0000-0000-000000000007',
+    '1241627966': 'b1000000-0000-0000-0000-000000000008',
+    closedwon: 'b1000000-0000-0000-0000-000000000009',
+    closedlost: 'b1000000-0000-0000-0000-000000000010',
   },
   skills: {
-    appointmentscheduled: 'b2000000-0000-0000-0000-000000000001', // MQL
-    '1241627963': 'b2000000-0000-0000-0000-000000000002', // Contato Iniciado
-    qualifiedtobuy: 'b2000000-0000-0000-0000-000000000003', // Conectado
-    '1248846720': 'b2000000-0000-0000-0000-000000000004', // SQL
-    '1241627964': 'b2000000-0000-0000-0000-000000000005', // Diagnostico Agendado
-    '1241627965': 'b2000000-0000-0000-0000-000000000006', // Diagnostico Realizado
-    presentationscheduled: 'b2000000-0000-0000-0000-000000000008', // Negociacao
-    '1241627966': 'b2000000-0000-0000-0000-000000000007', // Proposta Enviada
-    closedwon: 'b2000000-0000-0000-0000-000000000009', // Negocio Fechado
-    closedlost: 'b2000000-0000-0000-0000-000000000010', // Negocio Perdido
+    appointmentscheduled: 'b2000000-0000-0000-0000-000000000001',
+    '1241627963': 'b2000000-0000-0000-0000-000000000002',
+    qualifiedtobuy: 'b2000000-0000-0000-0000-000000000003',
+    '1248846720': 'b2000000-0000-0000-0000-000000000004',
+    '1241627964': 'b2000000-0000-0000-0000-000000000005',
+    '1241627965': 'b2000000-0000-0000-0000-000000000006',
+    presentationscheduled: 'b2000000-0000-0000-0000-000000000008',
+    '1241627966': 'b2000000-0000-0000-0000-000000000007',
+    closedwon: 'b2000000-0000-0000-0000-000000000009',
+    closedlost: 'b2000000-0000-0000-0000-000000000010',
   },
   academy: {
-    appointmentscheduled: 'b3000000-0000-0000-0000-000000000002', // MQL
-    '1241627963': 'b3000000-0000-0000-0000-000000000004', // Contato Iniciado
-    qualifiedtobuy: 'b3000000-0000-0000-0000-000000000005', // Conectado
-    '1248846720': 'b3000000-0000-0000-0000-000000000003', // SQL
-    '1241627964': 'b3000000-0000-0000-0000-000000000006', // Reuniao Agendada
-    '1241627965': 'b3000000-0000-0000-0000-000000000006', // -> Reuniao Agendada
-    presentationscheduled: 'b3000000-0000-0000-0000-000000000006', // -> Reuniao Agendada
-    '1241627966': 'b3000000-0000-0000-0000-000000000006', // -> Reuniao Agendada
-    closedwon: 'b3000000-0000-0000-0000-000000000007', // Inscrito
-    closedlost: 'b3000000-0000-0000-0000-000000000008', // Perdido
+    appointmentscheduled: 'b3000000-0000-0000-0000-000000000002',
+    '1241627963': 'b3000000-0000-0000-0000-000000000004',
+    qualifiedtobuy: 'b3000000-0000-0000-0000-000000000005',
+    '1248846720': 'b3000000-0000-0000-0000-000000000003',
+    '1241627964': 'b3000000-0000-0000-0000-000000000006',
+    '1241627965': 'b3000000-0000-0000-0000-000000000006',
+    presentationscheduled: 'b3000000-0000-0000-0000-000000000006',
+    '1241627966': 'b3000000-0000-0000-0000-000000000006',
+    closedwon: 'b3000000-0000-0000-0000-000000000007',
+    closedlost: 'b3000000-0000-0000-0000-000000000008',
   },
 }
 
@@ -69,7 +69,8 @@ async function fetchHubSpot(path: string, token: string): Promise<unknown> {
   return res.json()
 }
 
-async function importContacts(supabase: ReturnType<typeof createClient>, token: string) {
+// deno-lint-ignore no-explicit-any
+async function importContacts(supabase: any, token: string) {
   const properties = [
     'firstname', 'lastname', 'email', 'phone', 'company',
     'cargo', 'numero_de_liderados', 'faixa_de_faturamento',
@@ -113,7 +114,8 @@ async function importContacts(supabase: ReturnType<typeof createClient>, token: 
   return totalImported
 }
 
-async function importDeals(supabase: ReturnType<typeof createClient>, token: string) {
+// deno-lint-ignore no-explicit-any
+async function importDeals(supabase: any, token: string) {
   const properties = [
     'dealname', 'dealstage', 'amount', 'hubspot_owner_id',
     'tipo_do_produto', 'pipeline',
@@ -144,7 +146,7 @@ async function importDeals(supabase: ReturnType<typeof createClient>, token: str
           .select('id')
           .eq('hubspot_id', parseInt(associatedContactHubspotId))
           .single()
-        if (contactData) contactId = contactData.id
+        if (contactData) contactId = (contactData as { id: string }).id
       }
 
       const isWon = d.properties.dealstage === 'closedwon' ? true :

@@ -16,6 +16,7 @@ import InstagramAnalytics from "./pages/InstagramAnalytics";
 import FacebookAdsPage from "./pages/FacebookAdsPage";
 import CrmAnalytics from "./pages/CrmAnalytics";
 import Financeiro from "./pages/Financeiro";
+import ReceitaTasks from "./pages/ReceitaTasks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +41,7 @@ const App = () => (
             <Route path="/analytics/facebook-ads" element={<FacebookAdsPage />} />
             <Route path="/analytics/crm" element={<CrmAnalytics />} />
             <Route path="/financeiro" element={<Financeiro />} />
+            <Route path="/tarefas" element={<ReceitaTasks />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
           <Route path="*" element={<NotFound />} />
