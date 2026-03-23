@@ -277,6 +277,99 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_automations: {
+        Row: {
+          comment_reply: string
+          created_at: string | null
+          dm_link: string | null
+          dm_message: string
+          id: string
+          is_active: boolean
+          keyword: string
+          post_id: string | null
+          post_url: string
+          replies_count: number
+          updated_at: string | null
+        }
+        Insert: {
+          comment_reply: string
+          created_at?: string | null
+          dm_link?: string | null
+          dm_message: string
+          id?: string
+          is_active?: boolean
+          keyword?: string
+          post_id?: string | null
+          post_url: string
+          replies_count?: number
+          updated_at?: string | null
+        }
+        Update: {
+          comment_reply?: string
+          created_at?: string | null
+          dm_link?: string | null
+          dm_message?: string
+          id?: string
+          is_active?: boolean
+          keyword?: string
+          post_id?: string | null
+          post_url?: string
+          replies_count?: number
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      instagram_comment_logs: {
+        Row: {
+          automation_id: string
+          comment_id: string
+          comment_text: string | null
+          commenter_ig_id: string | null
+          commenter_username: string | null
+          contact_id: string | null
+          dm_sent: boolean
+          id: string
+          replied_at: string | null
+        }
+        Insert: {
+          automation_id: string
+          comment_id: string
+          comment_text?: string | null
+          commenter_ig_id?: string | null
+          commenter_username?: string | null
+          contact_id?: string | null
+          dm_sent?: boolean
+          id?: string
+          replied_at?: string | null
+        }
+        Update: {
+          automation_id?: string
+          comment_id?: string
+          comment_text?: string | null
+          commenter_ig_id?: string | null
+          commenter_username?: string | null
+          contact_id?: string | null
+          dm_sent?: boolean
+          id?: string
+          replied_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "instagram_comment_logs_automation_id_fkey"
+            columns: ["automation_id"]
+            isOneToOne: false
+            referencedRelation: "instagram_automations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "instagram_comment_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
