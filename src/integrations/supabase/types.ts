@@ -552,6 +552,45 @@ export type Database = {
         }
         Relationships: []
       }
+      receita_tasks: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          metric: string | null
+          priority: string | null
+          product: string | null
+          source_context: string | null
+          status: string
+          title: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metric?: string | null
+          priority?: string | null
+          product?: string | null
+          source_context?: string | null
+          status?: string
+          title: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metric?: string | null
+          priority?: string | null
+          product?: string | null
+          source_context?: string | null
+          status?: string
+          title?: string
+        }
+        Relationships: []
+      }
       stages: {
         Row: {
           created_at: string | null
@@ -863,6 +902,8 @@ export type Database = {
       }
     }
     Functions: {
+      fix_all_contacts: { Args: never; Returns: Json }
+      fix_contacts_page: { Args: { after_cursor?: string }; Returns: Json }
       get_secret: { Args: { secret_name: string }; Returns: string }
       get_secrets: {
         Args: { secret_names: string[] }

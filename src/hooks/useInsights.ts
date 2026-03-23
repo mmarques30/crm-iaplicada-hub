@@ -27,8 +27,8 @@ export function useInsights({ context, data, enabled = true }: UseInsightsOption
       return result?.insights || []
     },
     enabled: enabled && !!data && Object.keys(data).length > 0,
-    staleTime: 5 * 60 * 1000, // 5 min
-    gcTime: 10 * 60 * 1000,
+    staleTime: 7 * 24 * 60 * 60 * 1000, // 7 dias
+    gcTime: 8 * 24 * 60 * 60 * 1000, // 8 dias
     retry: 1,
   })
 }

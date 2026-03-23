@@ -255,6 +255,7 @@ export default function Financeiro() {
             onRetry={() => refetchInsights()}
             title="Insights Financeiros"
             subtitle="Análise de vendas e receita gerada por IA"
+            context="financeiro"
           />
         </TabsContent>
       </Tabs>

@@ -252,6 +252,7 @@ export default function CrmAnalytics() {
             onRetry={() => refetchInsights()}
             title="Insights do CRM"
             subtitle="Análise do funil de vendas e pipeline gerada por IA"
+            context="crm"
           />
         </TabsContent>
       </Tabs>
