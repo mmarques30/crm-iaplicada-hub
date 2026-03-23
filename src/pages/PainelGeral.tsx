@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { MetricCard } from '@/components/dashboard/MetricCard'
 import { useDashboardSnapshot, useCollectDashboardData } from '@/hooks/useDashboardData'
 import { formatCurrency, formatDateTime } from '@/lib/format'
-import { Users, Eye, Heart, Target, DollarSign, TrendingUp, RefreshCw, BarChart3, Loader2 } from 'lucide-react'
+import { Users, Eye, Heart, Target, DollarSign, TrendingUp, RefreshCw, BarChart3, Loader2, AlertTriangle } from 'lucide-react'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, LineChart, Line, Legend, AreaChart, Area,
@@ -91,6 +91,28 @@ export default function PainelGeral() {
           )}
         </div>
       </div>
+
+      {/* Errors Alert */}
+      {snapshot?.errors && snapshot.errors.length > 0 && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium text-amber-800">Alguns dados não foram coletados</p>
+              {snapshot.errors.map((err, i) => {
+                const isTokenExpired = err.includes('Session has expired') || err.includes('access token')
+                return (
+                  <p key={i} className="text-xs text-amber-700">
+                    {isTokenExpired
+                      ? err.split(':')[0] + ': Token expirado — gere um novo token no Meta Developer Portal e atualize no Supabase Vault'
+                      : err}
+                  </p>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Hero Metrics */}
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">

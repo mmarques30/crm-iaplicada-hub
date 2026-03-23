@@ -17,6 +17,88 @@ async function getSecret(supabase: any, name: string): Promise<string | null> {
   return Deno.env.get(name) || null
 }
 
+async function updateSecret(supabase: any, name: string, value: string) {
+  try {
+    await supabase.rpc('update_secret', { secret_name: name, new_secret: value })
+  } catch (err) {
+    console.warn(`Could not update secret ${name}:`, err)
+  }
+}
+
+// Tenta refresh do token Meta usando APP_ID + APP_SECRET
+// Se falhar, tenta tokens de fallback (V3, V2)
+async function resolveMetaToken(supabase: any): Promise<string | null> {
+  const mainToken = await getSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN')
+  const appId = await getSecret(supabase, 'META_APP_ID')
+  const appSecret = await getSecret(supabase, 'META_APP_SECRET')
+
+  // Testar token principal
+  if (mainToken) {
+    const valid = await testMetaToken(mainToken)
+    if (valid) return mainToken
+
+    // Token expirado — tentar refresh via app credentials
+    if (appId && appSecret) {
+      console.log('Main token expired, attempting refresh...')
+      const refreshed = await refreshMetaToken(mainToken, appId, appSecret)
+      if (refreshed) {
+        console.log('Token refreshed successfully!')
+        await updateSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN', refreshed)
+        return refreshed
+      }
+    }
+  }
+
+  // Fallback: tentar tokens V3, V2
+  for (const suffix of ['V3', 'V2']) {
+    const fallback = await getSecret(supabase, `INSTAGRAM_ACCESS_TOKEN_${suffix}`)
+    if (fallback) {
+      const valid = await testMetaToken(fallback)
+      if (valid) {
+        console.log(`Fallback token ${suffix} is valid, promoting to main`)
+        await updateSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN', fallback)
+        return fallback
+      }
+      // Tentar refresh do fallback
+      if (appId && appSecret) {
+        const refreshed = await refreshMetaToken(fallback, appId, appSecret)
+        if (refreshed) {
+          console.log(`Fallback ${suffix} refreshed successfully!`)
+          await updateSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN', refreshed)
+          return refreshed
+        }
+      }
+    }
+  }
+
+  return null
+}
+
+async function testMetaToken(token: string): Promise<boolean> {
+  try {
+    const res = await fetch(`https://graph.facebook.com/v21.0/me?access_token=${token}`)
+    const data = await res.json()
+    return !data.error
+  } catch {
+    return false
+  }
+}
+
+async function refreshMetaToken(token: string, appId: string, appSecret: string): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://graph.facebook.com/v21.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${appId}&client_secret=${appSecret}&fb_exchange_token=${token}`
+    )
+    const data = await res.json()
+    if (data.access_token) return data.access_token
+    console.warn('Token refresh failed:', data.error?.message || JSON.stringify(data))
+    return null
+  } catch (err) {
+    console.warn('Token refresh error:', err)
+    return null
+  }
+}
+
 // ============ INSTAGRAM COLLECTOR (otimizado — sem insights por post) ============
 async function collectInstagram(accessToken: string, igAccountId: string) {
   const baseUrl = 'https://graph.facebook.com/v21.0'
@@ -291,7 +373,7 @@ Deno.serve(async (req) => {
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
     const [igToken, igAccountId, adAccountId, hubspotToken] = await Promise.all([
-      getSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN'),
+      resolveMetaToken(supabase),
       getSecret(supabase, 'META_IG_ACCOUNT_ID'),
       getSecret(supabase, 'META_AD_ACCOUNT_ID'),
       getSecret(supabase, 'HUBSPOT_ACCESS_TOKEN'),
@@ -319,7 +401,7 @@ Deno.serve(async (req) => {
         })
       )
     } else if (source === 'all' || source === 'instagram') {
-      errors.push('Instagram: token not configured')
+      errors.push('Instagram: Token expirado ou não configurado. Gere um novo token no Meta Developer Portal.')
     }
 
     if ((source === 'all' || source === 'facebook_ads') && igToken && adAccountId) {
@@ -333,7 +415,7 @@ Deno.serve(async (req) => {
         })
       )
     } else if (source === 'all' || source === 'facebook_ads') {
-      errors.push('Facebook Ads: tokens not configured')
+      errors.push('Facebook Ads: Token expirado ou não configurado. Gere um novo token no Meta Developer Portal.')
     }
 
     if ((source === 'all' || source === 'hubspot') && hubspotToken) {
