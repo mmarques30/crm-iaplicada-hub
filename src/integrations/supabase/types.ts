@@ -1144,7 +1144,7 @@ export type Database = {
       }
     }
     Enums: {
-      product_type: "business" | "skills" | "academy"
+      product_type: string
     }
     CompositeTypes: {
       [_ in never]: never

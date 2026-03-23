@@ -70,6 +70,29 @@ const emptyFilters: PipelineFilters = {
   leadOrigin: "all",
 };
 
+function PipelineTabs({ product, onSelect }: { product: string; onSelect: (v: string) => void }) {
+  const { data: pipelines } = useQuery({
+    queryKey: ["pipelines-list"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pipelines")
+        .select("id, name, product")
+        .order("created_at");
+      return (data || []).filter((p: any) => p.product !== "skills");
+    },
+  });
+
+  return (
+    <Tabs value={product} onValueChange={onSelect}>
+      <TabsList>
+        {(pipelines || []).map((p: any) => (
+          <TabsTrigger key={p.id} value={p.product}>{p.name}</TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
+  );
+}
+
 export default function Pipeline() {
   const { product = "business" } = useParams<{ product: string }>();
   const navigate = useNavigate();
@@ -196,13 +219,7 @@ export default function Pipeline() {
             {totalDeals} negócios &middot; {formatCurrency(totalValue)} total
           </p>
         </div>
-        <Tabs value={product} onValueChange={(v) => { navigate(`/pipeline/${v}`); setFilters(emptyFilters); }}>
-          <TabsList>
-            <TabsTrigger value="business">Business</TabsTrigger>
-            <TabsTrigger value="skills">Skills</TabsTrigger>
-            <TabsTrigger value="academy">Academy</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <PipelineTabs product={product} onSelect={(v) => { navigate(`/pipeline/${v}`); setFilters(emptyFilters); }} />
       </div>
 
       {/* Lead Origin Tabs */}

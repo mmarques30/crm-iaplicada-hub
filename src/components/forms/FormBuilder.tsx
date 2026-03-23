@@ -112,6 +112,60 @@ const DEFAULT_UTM_FIELDS: FormField[] = [
 export default function FormBuilder({ open, onOpenChange, editFormId }: FormBuilderProps) {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("fields");
+  const [showNewPipeline, setShowNewPipeline] = useState(false);
+  const [newPipelineName, setNewPipelineName] = useState("");
+
+  // Fetch existing pipelines
+  const { data: pipelines } = useQuery({
+    queryKey: ["pipelines-for-forms"],
+    queryFn: async () => {
+      const { data } = await (supabase as any)
+        .from("pipelines")
+        .select("id, name, product")
+        .order("created_at");
+      return (data || []).filter((p: any) => p.product !== "skills");
+    },
+  });
+
+  const createPipelineMutation = useMutation({
+    mutationFn: async (name: string) => {
+      const slug = name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      // Create pipeline
+      const { data: pipeline, error: pipelineError } = await (supabase as any)
+        .from("pipelines")
+        .insert({ name, product: slug })
+        .select()
+        .single();
+      if (pipelineError) throw pipelineError;
+      // Create default stages
+      const defaultStages = [
+        { pipeline_id: pipeline.id, name: "Lead Capturado", display_order: 1, probability: 5, is_won: false, is_lost: false },
+        { pipeline_id: pipeline.id, name: "MQL", display_order: 2, probability: 20, is_won: false, is_lost: false },
+        { pipeline_id: pipeline.id, name: "SQL", display_order: 3, probability: 40, is_won: false, is_lost: false },
+        { pipeline_id: pipeline.id, name: "Contato Iniciado", display_order: 4, probability: 55, is_won: false, is_lost: false },
+        { pipeline_id: pipeline.id, name: "Negociação", display_order: 5, probability: 70, is_won: false, is_lost: false },
+        { pipeline_id: pipeline.id, name: "Fechado - Ganho", display_order: 6, probability: 100, is_won: true, is_lost: false },
+        { pipeline_id: pipeline.id, name: "Fechado - Perdido", display_order: 7, probability: 0, is_won: false, is_lost: true },
+      ];
+      const { error: stagesError } = await (supabase as any)
+        .from("stages")
+        .insert(defaultStages);
+      if (stagesError) throw stagesError;
+      return pipeline;
+    },
+    onSuccess: (pipeline: any) => {
+      queryClient.invalidateQueries({ queryKey: ["pipelines-for-forms"] });
+      queryClient.invalidateQueries({ queryKey: ["pipelines-sidebar"] });
+      queryClient.invalidateQueries({ queryKey: ["pipelines-list"] });
+      setFormData((prev) => ({ ...prev, product: pipeline.product }));
+      setShowNewPipeline(false);
+      setNewPipelineName("");
+      toast.success("Pipeline criado com estágios padrão!");
+    },
+    onError: (err: any) => {
+      toast.error("Erro ao criar pipeline: " + (err.message || "Tente novamente"));
+    },
+  });
   const [formData, setFormData] = useState<FormData>({
     name: "",
     slug: "",
@@ -766,20 +820,60 @@ export default function FormBuilder({ open, onOpenChange, editFormId }: FormBuil
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label>Produto</Label>
-                <Select
-                  value={formData.product}
-                  onValueChange={(v) => setFormData((prev) => ({ ...prev, product: v }))}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="academy">Academy</SelectItem>
-                    <SelectItem value="business">Business</SelectItem>
-                    <SelectItem value="skills">Skills</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Pipeline</Label>
+                {!showNewPipeline ? (
+                  <div className="space-y-2">
+                    <Select
+                      value={formData.product}
+                      onValueChange={(v) => {
+                        if (v === "__new__") {
+                          setShowNewPipeline(true);
+                        } else {
+                          setFormData((prev) => ({ ...prev, product: v }));
+                        }
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um pipeline" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(pipelines || []).map((p: any) => (
+                          <SelectItem key={p.id} value={p.product}>{p.name}</SelectItem>
+                        ))}
+                        <SelectItem value="__new__" className="text-primary font-medium">
+                          + Criar novo pipeline
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <Input
+                      value={newPipelineName}
+                      onChange={(e) => setNewPipelineName(e.target.value)}
+                      placeholder="Nome do pipeline (ex: Webinar IA)"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && newPipelineName.trim()) {
+                          createPipelineMutation.mutate(newPipelineName.trim());
+                        }
+                      }}
+                    />
+                    <Button
+                      size="sm"
+                      disabled={!newPipelineName.trim() || createPipelineMutation.isPending}
+                      onClick={() => createPipelineMutation.mutate(newPipelineName.trim())}
+                    >
+                      {createPipelineMutation.isPending ? "..." : "Criar"}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => { setShowNewPipeline(false); setNewPipelineName(""); }}
+                    >
+                      Cancelar
+                    </Button>
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label>URL de redirecionamento (pós-envio)</Label>
