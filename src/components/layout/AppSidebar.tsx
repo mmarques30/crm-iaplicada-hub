@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Brain, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Brain, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -145,6 +145,15 @@ export function AppSidebar() {
                     </CollapsibleContent>
                   )}
                 </Collapsible>
+              </SidebarMenuItem>
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/formularios" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                    <FileText className="h-4 w-4" />
+                    {!collapsed && <span>Formulários</span>}
+                  </NavLink>
+                </SidebarMenuButton>
               </SidebarMenuItem>
 
               <SidebarMenuItem>
