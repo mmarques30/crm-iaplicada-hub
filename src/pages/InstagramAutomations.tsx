@@ -107,7 +107,13 @@ export default function InstagramAutomations() {
     try {
       const resp = await fetch(
         `https://ciwdlceyjsnlnunktqzx.supabase.co/functions/v1/instagram-comments-cron`,
-        { method: "POST", headers: { "Content-Type": "application/json" } }
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "apikey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNpd2RsY2V5anNubG51bmt0cXp4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQyMTU3OTksImV4cCI6MjA4OTc5MTc5OX0.tl-7gEObYBB7wDUS5_pKh9UyRlJQNdnWPiRpMFYrbUM",
+          },
+        }
       );
       const data = await resp.json();
       if (data.success) {

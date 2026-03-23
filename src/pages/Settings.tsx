@@ -21,7 +21,7 @@ export default function Settings() {
     queryFn: async () => {
       const { data: pips } = await supabase.from("pipelines").select("*").order("product");
       const { data: stgs } = await supabase.from("stages").select("*").order("display_order");
-      return (pips || []).map((p) => ({
+      return (pips || []).filter((p) => p.product !== "skills").map((p) => ({
         ...p,
         stages: (stgs || []).filter((s) => s.pipeline_id === p.id),
       }));

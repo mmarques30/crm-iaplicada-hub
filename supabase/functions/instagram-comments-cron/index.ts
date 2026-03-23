@@ -27,7 +27,7 @@ Deno.serve(async (req) => {
     // Buscar token do Instagram
     let accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN') || null
     try {
-      const { data, error } = await supabase.rpc('get_secret', { secret_name: 'INSTAGRAM_ACCESS_TOKEN' })
+      const { data, error } = await supabase.rpc('get_secret', { secret_name: 'INSTAGRAM_ACCESS_TOKEN_V3' })
       if (!error && data) accessToken = data
     } catch (err) {
       console.warn('Failed to get token from vault, using env var:', err)
@@ -150,7 +150,11 @@ Deno.serve(async (req) => {
             const dmData = await dmResp.json()
             console.log('DM result:', JSON.stringify(dmData))
             if (dmData.error) {
-              dmError = dmData.error.message || 'DM error'
+              dmError = dmData.error.message || dmData.error.error_user_msg || JSON.stringify(dmData.error)
+            } else if (dmData.error_message) {
+              dmError = dmData.error_message
+            } else if (dmResp.status >= 400) {
+              dmError = `HTTP ${dmResp.status}: ${JSON.stringify(dmData)}`
             } else {
               dmSent = true
             }
@@ -170,11 +174,8 @@ Deno.serve(async (req) => {
             dm_error: dmError || null,
           })
 
-          // 4. Incrementar contador
-          await supabase
-            .from('instagram_automations')
-            .update({ replies_count: (auto.replies_count || 0) + processed + 1 })
-            .eq('id', auto.id)
+          // 4. Incrementar contador atomicamente
+          await supabase.rpc('increment_replies_count', { automation_uuid: auto.id })
 
           // 5. Criar/vincular contato no CRM
           try {
