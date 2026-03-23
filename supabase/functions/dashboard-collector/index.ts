@@ -100,41 +100,22 @@ async function refreshMetaToken(token: string, appId: string, appSecret: string)
 }
 
 // ============ INSTAGRAM COLLECTOR (otimizado — sem insights por post) ============
+// Usa Page Token (permanente) + IG Account ID direto
 async function collectInstagram(accessToken: string, igAccountId: string) {
   const baseUrl = 'https://graph.facebook.com/v21.0'
 
-  // Auto-descobrir IG Business Account
-  let resolvedIgId = igAccountId
-  try {
-    const pagesRes = await fetch(
-      `${baseUrl}/me/accounts?fields=id,name,instagram_business_account&access_token=${accessToken}`
-    )
-    const pagesData = await pagesRes.json()
-    console.log('me/accounts response:', JSON.stringify(pagesData).substring(0, 500))
-    if (pagesData.data) {
-      for (const page of pagesData.data) {
-        if (page.instagram_business_account?.id) {
-          resolvedIgId = page.instagram_business_account.id
-          console.log(`Auto-discovered IG: ${resolvedIgId} from page "${page.name}"`)
-          break
-        }
-      }
-    }
-    if (!resolvedIgId) throw new Error('No IG Business Account found via me/accounts and no fallback ID')
-  } catch (err) {
-    if (!resolvedIgId) throw err
-    console.warn('Auto-discover failed, using stored ID:', err)
-  }
+  if (!igAccountId) throw new Error('META_IG_ACCOUNT_ID not configured')
+  console.log(`Collecting Instagram for IG ID: ${igAccountId}`)
 
   const since = new Date(Date.now() - 28 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   const until = new Date().toISOString().split('T')[0]
 
   // Fetch profile, insights e media em PARALELO
   const [profileRes, dailyRes, totalRes, mediaRes] = await Promise.all([
-    fetch(`${baseUrl}/${resolvedIgId}?fields=id,username,name,followers_count,media_count&access_token=${accessToken}`),
-    fetch(`${baseUrl}/${resolvedIgId}/insights?metric=reach,follower_count&period=day&metric_type=time_series&since=${since}&until=${until}&access_token=${accessToken}`),
-    fetch(`${baseUrl}/${resolvedIgId}/insights?metric=profile_views,accounts_engaged,total_interactions,reach&period=day&metric_type=total_value&since=${since}&until=${until}&access_token=${accessToken}`),
-    fetch(`${baseUrl}/${resolvedIgId}/media?fields=id,caption,media_type,permalink,timestamp,like_count,comments_count&limit=25&access_token=${accessToken}`),
+    fetch(`${baseUrl}/${igAccountId}?fields=id,username,name,followers_count,media_count&access_token=${accessToken}`),
+    fetch(`${baseUrl}/${igAccountId}/insights?metric=reach,follower_count&period=day&metric_type=time_series&since=${since}&until=${until}&access_token=${accessToken}`),
+    fetch(`${baseUrl}/${igAccountId}/insights?metric=profile_views,accounts_engaged,total_interactions,reach&period=day&metric_type=total_value&since=${since}&until=${until}&access_token=${accessToken}`),
+    fetch(`${baseUrl}/${igAccountId}/media?fields=id,caption,media_type,permalink,timestamp,like_count,comments_count&limit=25&access_token=${accessToken}`),
   ])
 
   const [profile, dailyInsights, totalInsights, mediaData] = await Promise.all([
@@ -372,16 +353,19 @@ Deno.serve(async (req) => {
     const { source = 'all' } = await req.json().catch(() => ({ source: 'all' }))
     const supabase = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!)
 
-    const [igToken, igAccountId, adAccountId, hubspotToken] = await Promise.all([
-      resolveMetaToken(supabase),
+    // Instagram usa Page Token (permanente), Facebook Ads usa User Token (60 dias)
+    const [igToken, adsToken, igAccountId, adAccountId, hubspotToken] = await Promise.all([
+      getSecret(supabase, 'INSTAGRAM_ACCESS_TOKEN'),
+      getSecret(supabase, 'META_ADS_TOKEN'),
       getSecret(supabase, 'META_IG_ACCOUNT_ID'),
       getSecret(supabase, 'META_AD_ACCOUNT_ID'),
       getSecret(supabase, 'HUBSPOT_ACCESS_TOKEN'),
     ])
 
     console.log('Tokens:', {
-      ig: igToken ? 'SET' : 'MISSING', igId: igAccountId || 'MISSING',
-      adId: adAccountId || 'MISSING', hs: hubspotToken ? 'SET' : 'MISSING',
+      ig: igToken ? 'SET' : 'MISSING', ads: adsToken ? 'SET' : 'MISSING',
+      igId: igAccountId || 'MISSING', adId: adAccountId || 'MISSING',
+      hs: hubspotToken ? 'SET' : 'MISSING',
     })
 
     const results: Record<string, any> = {}
@@ -404,9 +388,9 @@ Deno.serve(async (req) => {
       errors.push('Instagram: Token expirado ou não configurado. Gere um novo token no Meta Developer Portal.')
     }
 
-    if ((source === 'all' || source === 'facebook_ads') && igToken && adAccountId) {
+    if ((source === 'all' || source === 'facebook_ads') && adsToken && adAccountId) {
       tasks.push(
-        collectFacebookAds(igToken, adAccountId).then(data => {
+        collectFacebookAds(adsToken, adAccountId).then(data => {
           results.facebook_ads = data
           console.log('FB Ads OK')
         }).catch(err => {
