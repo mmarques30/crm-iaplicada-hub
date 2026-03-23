@@ -4,43 +4,43 @@
 
 @layer base {
   :root {
-    --background: 220 60% 8%;
+    --background: 0 0% 4%;
     --foreground: 0 0% 100%;
 
-    --card: 220 40% 20%;
+    --card: 80 20% 12%;
     --card-foreground: 0 0% 100%;
 
-    --popover: 220 40% 20%;
+    --popover: 80 20% 12%;
     --popover-foreground: 0 0% 100%;
 
     --primary: 68 53% 50%;
-    --primary-foreground: 220 60% 8%;
+    --primary-foreground: 0 0% 4%;
 
-    --secondary: 220 30% 28%;
+    --secondary: 80 15% 18%;
     --secondary-foreground: 0 0% 90%;
 
-    --muted: 220 30% 24%;
-    --muted-foreground: 222 18% 58%;
+    --muted: 80 12% 15%;
+    --muted-foreground: 80 10% 50%;
 
-    --accent: 220 30% 28%;
+    --accent: 80 15% 18%;
     --accent-foreground: 0 0% 95%;
 
     --destructive: 352 80% 70%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 20% 22%;
-    --input: 220 20% 22%;
+    --border: 80 10% 16%;
+    --input: 80 10% 16%;
     --ring: 68 53% 50%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 220 55% 10%;
+    --sidebar-background: 80 15% 7%;
     --sidebar-foreground: 0 0% 90%;
     --sidebar-primary: 68 53% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 30% 18%;
+    --sidebar-accent: 80 12% 14%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 220 20% 18%;
+    --sidebar-border: 80 10% 13%;
     --sidebar-ring: 68 53% 50%;
 
     /* Brand scale (brandbook exact) */
@@ -112,7 +112,7 @@
     width: 400px;
     height: 400px;
     border-radius: 50%;
-    background: radial-gradient(circle, hsl(68 53% 50% / 0.08), hsl(73 55% 34% / 0.04), transparent 70%);
+    background: radial-gradient(circle, hsl(68 53% 50% / 0.06), hsl(80 20% 12% / 0.04), transparent 70%);
     filter: blur(60px);
     pointer-events: none;
   }

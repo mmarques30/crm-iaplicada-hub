@@ -910,6 +910,16 @@ export type Database = {
           secret: string
         }[]
       }
+      process_ig_comment: {
+        Args: {
+          p_comment_id: string
+          p_comment_text: string
+          p_media_id: string
+          p_user_id: string
+          p_username: string
+        }
+        Returns: Json
+      }
       qualify_academy: { Args: { p_contact_id: string }; Returns: string }
       qualify_business: { Args: { p_contact_id: string }; Returns: string }
       qualify_contact: {
