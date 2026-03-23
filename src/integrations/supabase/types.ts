@@ -366,6 +366,33 @@ export type Database = {
         }
         Relationships: []
       }
+      ig_poll_state: {
+        Row: {
+          automation_id: string
+          created_at: string | null
+          id: number
+          phase: string
+          post_id: string
+          request_id: number
+        }
+        Insert: {
+          automation_id: string
+          created_at?: string | null
+          id?: number
+          phase?: string
+          post_id: string
+          request_id: number
+        }
+        Update: {
+          automation_id?: string
+          created_at?: string | null
+          id?: number
+          phase?: string
+          post_id?: string
+          request_id?: number
+        }
+        Relationships: []
+      }
       instagram_automations: {
         Row: {
           comment_reply: string
@@ -910,6 +937,9 @@ export type Database = {
           secret: string
         }[]
       }
+      ig_poll_phase1: { Args: never; Returns: number }
+      ig_poll_phase2: { Args: never; Returns: Json }
+      poll_ig_comments: { Args: never; Returns: Json }
       process_ig_comment: {
         Args: {
           p_comment_id: string
