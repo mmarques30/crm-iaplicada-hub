@@ -10,25 +10,22 @@ interface MetricCardProps {
   decimals?: number
   icon: LucideIcon
   color?: string
+  borderColor?: string
   subtitle?: string
 }
 
-export function MetricCard({ title, value, prefix, suffix, decimals, icon: Icon, color = 'text-primary', subtitle }: MetricCardProps) {
+export function MetricCard({ title, value, prefix, suffix, decimals, icon: Icon, color = 'text-primary', borderColor, subtitle }: MetricCardProps) {
   return (
-    <Card>
-      <CardContent className="p-4 sm:pt-6 sm:px-6">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide truncate">{title}</p>
-            <p className={`text-lg sm:text-2xl font-bold mt-1 ${color}`}>
-              <AnimatedNumber value={value} prefix={prefix} suffix={suffix} decimals={decimals} />
-            </p>
-            {subtitle && <p className="text-xs text-muted-foreground mt-1 truncate">{subtitle}</p>}
-          </div>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-[hsl(var(--brand-100))] flex items-center justify-center shrink-0">
-            <Icon className={`h-4 w-4 sm:h-5 sm:w-5 ${color}`} />
-          </div>
+    <Card className="relative overflow-hidden" style={borderColor ? { borderTop: `3px solid ${borderColor}` } : undefined}>
+      <CardContent className="p-4 sm:p-5">
+        <div className="flex items-center gap-1.5 mb-2">
+          <Icon className={`h-3.5 w-3.5 ${color}`} />
+          <p className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
         </div>
+        <p className={`text-2xl sm:text-3xl font-bold font-mono tabular-nums ${color}`}>
+          <AnimatedNumber value={value} prefix={prefix} suffix={suffix} decimals={decimals} />
+        </p>
+        {subtitle && <p className="text-xs text-muted-foreground mt-1.5 truncate">{subtitle}</p>}
       </CardContent>
     </Card>
   )
