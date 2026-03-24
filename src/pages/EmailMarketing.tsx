@@ -184,8 +184,8 @@ export default function EmailMarketing() {
         <div className="grid grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <Mail className="h-5 w-5 text-emerald-600" />
+               <div className="w-10 h-10 rounded-lg bg-[#031411] flex items-center justify-center">
+                 <Mail className="h-5 w-5 text-[#2CBBA6]" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Entregues</p>
