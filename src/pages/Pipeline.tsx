@@ -379,7 +379,14 @@ export default function Pipeline() {
               <p className="text-sm">Nenhum estágio configurado para este pipeline</p>
             </div>
           ) : (
-            <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
+            <div
+              ref={scrollRef}
+              className={`flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin ${isDraggingScroll.current ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+              onMouseDown={onScrollMouseDown}
+              onMouseMove={onScrollMouseMove}
+              onMouseUp={onScrollMouseUp}
+              onMouseLeave={onScrollMouseUp}
+            >
               {allStages.map((stage) => (
                 <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} isClosed={stage.is_won || stage.is_lost} />
               ))}
