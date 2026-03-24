@@ -1,44 +1,39 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/format";
 import { productLabel } from "@/lib/format";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe } from "lucide-react";
-import { useState, useMemo } from "react";
+import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe, Plus, Loader2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Plus } from "lucide-react";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 const PAGE_SIZE = 20;
 
 type LeadOrigin = "all" | "pipeline" | "social";
 
-// Classificação de origem do lead:
-// - Pipeline/Formulário = preencheu formulário (HubSpot ou próprio), independente de onde veio o anúncio
-//   Indicadores: hubspot_id, first_conversion, fonte_registro
-// - Social = interação direta em rede social (comentou post, mandou DM)
-//   Indicadores: instagram_opt_in, whatsapp_opt_in via ManyChat, manychat_id SEM hubspot_id/first_conversion
 function getLeadOrigin(contact: any): "pipeline" | "social" {
-  // Se preencheu formulário (HubSpot ou próprio), é SEMPRE pipeline
-  // Mesmo que utm_source seja "instagram" — isso é rastreamento de anúncio, não interação social
   if (contact.hubspot_id) return "pipeline";
   if (contact.first_conversion) return "pipeline";
-
-  // Social = veio de comentário em post ou DM direta (sem preencher formulário)
   if (contact.instagram_opt_in) return "social";
   if (contact.whatsapp_opt_in) return "social";
   if (contact.manychat_id) return "social";
-
-  // Fallback: se não tem nenhum indicador claro, considerar pipeline
   return "pipeline";
 }
 
@@ -96,55 +91,91 @@ const emptyFilters: Filters = {
   whatsappOptIn: "",
 };
 
+/* ─── New Contact Form ──────────────────────────────────────── */
+
+interface NewContactForm {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone: string;
+  company: string;
+  cargo: string;
+  produto_interesse: string[];
+}
+
+const emptyContactForm: NewContactForm = {
+  first_name: "",
+  last_name: "",
+  email: "",
+  phone: "",
+  company: "",
+  cargo: "",
+  produto_interesse: [],
+};
+
 export default function Contacts() {
   const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
   const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(false);
-  const [contactDialogOpen, setContactDialogOpen] = useState(false);
-  const [savingContact, setSavingContact] = useState(false);
-  const [newContact, setNewContact] = useState({
-    first_name: "", last_name: "", email: "", phone: "", company: "", cargo: "", produto_interesse: ""
-  });
-
-  const resetContactDialog = () => setNewContact({
-    first_name: "", last_name: "", email: "", phone: "", company: "", cargo: "", produto_interesse: ""
-  });
-
-  const handleCreateContact = async () => {
-    if (!newContact.first_name.trim()) { toast.error("Nome é obrigatório"); return; }
-    setSavingContact(true);
-    try {
-      const insertData: any = {
-        first_name: newContact.first_name.trim(),
-        last_name: newContact.last_name.trim() || null,
-        email: newContact.email.trim() || null,
-        phone: newContact.phone.trim() || null,
-        company: newContact.company.trim() || null,
-        cargo: newContact.cargo || null,
-        produto_interesse: newContact.produto_interesse ? [newContact.produto_interesse] : null,
-      };
-      const { error } = await supabase.from("contacts").insert(insertData);
-      if (error) throw error;
-      toast.success("Contato criado com sucesso!");
-      queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      setContactDialogOpen(false);
-      resetContactDialog();
-    } catch (err: any) {
-      toast.error("Erro ao criar contato: " + err.message);
-    } finally {
-      setSavingContact(false);
-    }
-  };
   const [leadOrigin, setLeadOrigin] = useState<LeadOrigin>("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [contactForm, setContactForm] = useState<NewContactForm>(emptyContactForm);
 
   const activeFilterCount = useMemo(
     () => Object.values(filters).filter(Boolean).length,
     [filters]
   );
+
+  const createContact = useMutation({
+    mutationFn: async () => {
+      if (!contactForm.first_name.trim()) {
+        throw new Error("Nome é obrigatório");
+      }
+
+      const insertData: Record<string, any> = {
+        first_name: contactForm.first_name.trim(),
+      };
+
+      if (contactForm.last_name.trim()) insertData.last_name = contactForm.last_name.trim();
+      if (contactForm.email.trim()) insertData.email = contactForm.email.trim().toLowerCase();
+      if (contactForm.phone.trim()) insertData.phone = contactForm.phone.trim();
+      if (contactForm.company.trim()) insertData.company = contactForm.company.trim();
+      if (contactForm.cargo.trim()) insertData.cargo = contactForm.cargo.trim();
+      if (contactForm.produto_interesse.length > 0) insertData.produto_interesse = contactForm.produto_interesse;
+
+      const { data, error } = await supabase
+        .from("contacts")
+        .insert(insertData)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success("Contato criado com sucesso!");
+      setDialogOpen(false);
+      setContactForm(emptyContactForm);
+      navigate(`/contacts/${data.id}`);
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Erro ao criar contato");
+    },
+  });
+
+  const toggleProduto = (value: string) => {
+    setContactForm((prev) => ({
+      ...prev,
+      produto_interesse: prev.produto_interesse.includes(value)
+        ? prev.produto_interesse.filter((v) => v !== value)
+        : [...prev.produto_interesse, value],
+    }));
+  };
 
   // Build Supabase query with origin-based filtering
   const { data, isLoading, isError, refetch } = useQuery({
@@ -162,17 +193,13 @@ export default function Contacts() {
         );
       }
 
-      // Lead origin filter at database level
       if (leadOrigin === "social") {
-        // Social = comentou post ou mandou DM (SEM ter preenchido formulário)
-        // Tem instagram_opt_in, whatsapp_opt_in ou manychat_id, MAS não tem hubspot_id nem first_conversion
         q = q.or(
           `instagram_opt_in.eq.true,whatsapp_opt_in.eq.true,manychat_id.not.is.null`
         );
         q = q.is("hubspot_id", null);
         q = q.is("first_conversion", null);
       } else if (leadOrigin === "pipeline") {
-        // Pipeline = preencheu formulário (HubSpot ou próprio)
         q = q.or("hubspot_id.not.is.null,first_conversion.not.is.null");
       }
 
@@ -273,7 +300,6 @@ export default function Contacts() {
   const originBadge = (contact: any) => {
     const origin = getLeadOrigin(contact);
     if (origin === "social") {
-      // Social = veio de comentário ou DM, sem formulário
       if (contact.instagram_opt_in || contact.manychat_id?.startsWith("ig_")) {
         return <Badge className="text-[10px] bg-pink-100 text-pink-700">Instagram</Badge>;
       }
@@ -282,7 +308,6 @@ export default function Contacts() {
       }
       return <Badge className="text-[10px] bg-pink-100 text-pink-700">Social</Badge>;
     }
-    // Pipeline = preencheu formulário
     if (contact.first_conversion || contact.hubspot_id) {
       return <Badge className="text-[10px] bg-emerald-100 text-emerald-700">Formulário</Badge>;
     }
@@ -296,10 +321,122 @@ export default function Contacts() {
           <h1 className="text-2xl font-bold">Contatos</h1>
           <p className="text-sm text-muted-foreground">{displayTotal} contatos</p>
         </div>
-        <Button size="sm" className="gap-1.5" onClick={() => setContactDialogOpen(true)}>
-          <Plus className="h-4 w-4" />
-          Novo Contato
-        </Button>
+
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              Novo Contato
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Novo Contato</DialogTitle>
+              <DialogDescription>
+                Adicione um contato manualmente ao CRM
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name">Nome *</Label>
+                  <Input
+                    id="first_name"
+                    placeholder="Nome"
+                    value={contactForm.first_name}
+                    onChange={(e) => setContactForm((p) => ({ ...p, first_name: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="last_name">Sobrenome</Label>
+                  <Input
+                    id="last_name"
+                    placeholder="Sobrenome"
+                    value={contactForm.last_name}
+                    onChange={(e) => setContactForm((p) => ({ ...p, last_name: e.target.value }))}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="email@exemplo.com"
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm((p) => ({ ...p, email: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Telefone</Label>
+                <Input
+                  id="phone"
+                  placeholder="(11) 99999-9999"
+                  value={contactForm.phone}
+                  onChange={(e) => setContactForm((p) => ({ ...p, phone: e.target.value }))}
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label htmlFor="company">Empresa</Label>
+                  <Input
+                    id="company"
+                    placeholder="Nome da empresa"
+                    value={contactForm.company}
+                    onChange={(e) => setContactForm((p) => ({ ...p, company: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="cargo">Cargo</Label>
+                  <Select
+                    value={contactForm.cargo}
+                    onValueChange={(v) => setContactForm((p) => ({ ...p, cargo: v }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CARGO_OPTIONS.map((o) => (
+                        <SelectItem key={o} value={o}>{o}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Produto de Interesse</Label>
+                <div className="flex gap-2">
+                  {PRODUTO_OPTIONS.map((o) => (
+                    <Button
+                      key={o.value}
+                      type="button"
+                      variant={contactForm.produto_interesse.includes(o.value) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleProduto(o.value)}
+                    >
+                      {o.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => { setDialogOpen(false); setContactForm(emptyContactForm); }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={() => createContact.mutate()}
+                disabled={createContact.isPending || !contactForm.first_name.trim()}
+              >
+                {createContact.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Criar Contato
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {/* Lead Origin Tabs */}
@@ -496,7 +633,7 @@ export default function Contacts() {
                       <p className="text-xs">
                         {search || activeFilterCount > 0
                           ? "Tente ajustar os filtros ou a busca"
-                          : "Os contatos aparecerão aqui quando forem cadastrados"}
+                          : "Clique em \"Novo Contato\" para começar"}
                       </p>
                     </div>
                   </TableCell>
@@ -546,62 +683,6 @@ export default function Contacts() {
           </Button>
         </div>
       )}
-
-      {/* Dialog Novo Contato */}
-      <Dialog open={contactDialogOpen} onOpenChange={(open) => { setContactDialogOpen(open); if (!open) resetContactDialog(); }}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Novo Contato</DialogTitle>
-            <DialogDescription>Cadastre um novo contato no CRM</DialogDescription>
-          </DialogHeader>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Nome *</Label>
-              <Input placeholder="Nome" value={newContact.first_name} onChange={(e) => setNewContact(p => ({ ...p, first_name: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Sobrenome</Label>
-              <Input placeholder="Sobrenome" value={newContact.last_name} onChange={(e) => setNewContact(p => ({ ...p, last_name: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Email</Label>
-              <Input placeholder="email@exemplo.com" type="email" value={newContact.email} onChange={(e) => setNewContact(p => ({ ...p, email: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Telefone</Label>
-              <Input placeholder="(11) 99999-9999" value={newContact.phone} onChange={(e) => setNewContact(p => ({ ...p, phone: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Empresa</Label>
-              <Input placeholder="Nome da empresa" value={newContact.company} onChange={(e) => setNewContact(p => ({ ...p, company: e.target.value }))} />
-            </div>
-            <div className="space-y-2">
-              <Label>Cargo</Label>
-              <Select value={newContact.cargo} onValueChange={(v) => setNewContact(p => ({ ...p, cargo: v }))}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {CARGO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2 col-span-2">
-              <Label>Produto de Interesse</Label>
-              <Select value={newContact.produto_interesse} onValueChange={(v) => setNewContact(p => ({ ...p, produto_interesse: v }))}>
-                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                <SelectContent>
-                  {PRODUTO_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setContactDialogOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreateContact} disabled={savingContact}>
-              {savingContact ? "Criando..." : "Criar Contato"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

@@ -6,7 +6,7 @@ export type ActivityDirection = 'inbound' | 'outbound'
 export interface Pipeline {
   id: string
   name: string
-  product: ProductType
+  product: string
   created_at: string
 }
 
