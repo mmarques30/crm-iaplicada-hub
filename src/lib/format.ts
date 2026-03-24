@@ -21,17 +21,17 @@ export const productLabel: Record<string, string> = {
 
 export const qualificationColor = (status: string) => {
   switch (status) {
-    case 'sql': return 'border-l-qualification-sql';
-    case 'mql': return 'border-l-qualification-mql';
-    default: return 'border-l-qualification-lead';
+    case 'sql': return 'border-l-[#AFC040]';
+    case 'mql': return 'border-l-[#4A9FE0]';
+    default: return 'border-l-[#2CBBA6]';
   }
 };
 
 export const qualificationBadgeVariant = (status: string) => {
   switch (status) {
-    case 'sql': return 'bg-qualification-sql/15 text-qualification-sql';
-    case 'mql': return 'bg-qualification-mql/15 text-qualification-mql';
-    default: return 'bg-muted text-muted-foreground';
+    case 'sql': return 'bg-[#141A04] text-[#AFC040]';
+    case 'mql': return 'bg-[#040E1A] text-[#4A9FE0]';
+    default: return 'bg-[#031411] text-[#2CBBA6]';
   }
 };
 
@@ -55,9 +55,9 @@ export const formatDateTime = (date: string | null | undefined) => {
 
 export const productColor = (product: string) => {
   const colors: Record<string, string> = {
-    business: 'bg-blue-500/15 text-blue-400',
-    skills: 'bg-purple-500/15 text-purple-400',
-    academy: 'bg-green-500/15 text-green-400',
+    business: 'bg-[#141A04] text-[#AFC040]',
+    skills: 'bg-[#031411] text-[#2CBBA6]',
+    academy: 'bg-[#040E1A] text-[#4A9FE0]',
   };
   return colors[product] ?? 'bg-muted text-muted-foreground';
 };

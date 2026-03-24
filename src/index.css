@@ -62,6 +62,25 @@
     /* ── Border hover ────────────────────────────────── */
     --border-hover: 80 35% 16%;    /* #2E3A18 */
 
+    /* ── Semantic hex vars (for inline styles & charts) ── */
+    --c-teal: #2CBBA6;
+    --c-teal-s: #031411;
+    --c-amber: #E8A43C;
+    --c-amber-s: #1A1206;
+    --c-green: #AFC040;
+    --c-green-s: #141A04;
+    --c-coral: #E8684A;
+    --c-coral-s: #1A0804;
+    --c-blue: #4A9FE0;
+    --c-blue-s: #040E1A;
+    --c-card: #131608;
+    --c-raised: #191D0C;
+    --c-border: #1E2610;
+    --c-border-h: #2E3A18;
+    --c-text-p: #E8EDD8;
+    --c-text-s: #7A8460;
+    --c-text-m: #3D4A28;
+
     /* ── Chart scale ─────────────────────────────────── */
     --chart-1: 168 64% 45%;       /* teal */
     --chart-2: 33 78% 57%;        /* amber */

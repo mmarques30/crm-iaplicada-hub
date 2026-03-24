@@ -1,14 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { MetricCard } from '@/components/dashboard/MetricCard'
+import { KPICard } from '@/components/dashboard/KPICard'
 import { SourceSummaryCard } from '@/components/dashboard/SourceSummaryCard'
 import { useDashboardSnapshot, useCollectDashboardData } from '@/hooks/useDashboardData'
 import { formatCurrency, formatDateTime } from '@/lib/format'
 import { Users, Eye, Heart, Target, DollarSign, TrendingUp, RefreshCw, Loader2, Instagram, Facebook, BarChart3 } from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
+import { Button } from '@/components/ui/button'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, AreaChart, Area,
@@ -16,7 +16,10 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 
-const COLORS = ['hsl(73,55%,34%)', 'hsl(68,53%,50%)', 'hsl(66,47%,57%)', 'hsl(160,100%,39%)', 'hsl(66,42%,65%)', 'hsl(40,98%,57%)']
+const SEMANTIC_COLORS = ['#2CBBA6', '#4A9FE0', '#AFC040', '#E8A43C']
+const TOOLTIP_STYLE = { background: '#191D0C', border: '1px solid #2E3A18', borderRadius: 8, fontFamily: 'Sora', fontSize: 12, color: '#E8EDD8' }
+const AXIS_TICK = { fontSize: 11, fill: '#7A8460' }
+const GRID_STROKE = '#1E2610'
 
 export default function PainelGeral() {
   const { data: snapshot, isLoading } = useDashboardSnapshot()
@@ -61,12 +64,12 @@ export default function PainelGeral() {
   const cpl = fb?.metrics?.avgCPL || 0
 
   const funnelData = [
-    { name: 'Impressões', value: fb?.metrics?.totalImpressions || 0, fill: 'hsl(68,53%,50%)' },
-    { name: 'Alcance', value: totalReach, fill: 'hsl(73,55%,34%)' },
-    { name: 'Cliques', value: fb?.metrics?.totalClicks || 0, fill: 'hsl(66,47%,57%)' },
-    { name: 'Contatos CRM', value: contactCount || 0, fill: 'hsl(66,42%,65%)' },
-    { name: 'Deals Ativos', value: crmTotals.activeDeals, fill: 'hsl(40,98%,57%)' },
-    { name: 'Deals Ganhos', value: crmTotals.wonDeals, fill: 'hsl(160,100%,39%)' },
+    { name: 'Impressões', value: fb?.metrics?.totalImpressions || 0, fill: '#2CBBA6' },
+    { name: 'Alcance', value: totalReach, fill: '#4A9FE0' },
+    { name: 'Cliques', value: fb?.metrics?.totalClicks || 0, fill: '#AFC040' },
+    { name: 'Contatos CRM', value: contactCount || 0, fill: '#E8A43C' },
+    { name: 'Deals Ativos', value: crmTotals.activeDeals, fill: '#2CBBA6' },
+    { name: 'Deals Ganhos', value: crmTotals.wonDeals, fill: '#AFC040' },
   ].filter(d => d.value > 0)
   const maxFunnel = funnelData[0]?.value || 1
 
@@ -87,6 +90,7 @@ export default function PainelGeral() {
       return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
     },
   })
+
   const painelInsightsData = {
     instagram: ig ? {
       followers: ig.metrics?.followers,
@@ -116,12 +120,8 @@ export default function PainelGeral() {
     data: painelInsightsData,
   })
 
-  const tooltipStyle = { borderRadius: 8, border: "1px solid hsl(220, 20%, 22%)", backgroundColor: "hsl(220, 40%, 20%)", color: "#fff" }
-  const tickStyle = { fill: 'hsl(222, 18%, 58%)' }
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
-      {/* Hero Header */}
       <div className="flex flex-col sm:flex-row items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold">Visão Consolidada</h1>
@@ -129,9 +129,9 @@ export default function PainelGeral() {
             Dashboard integrado — Instagram, Facebook Ads e CRM Interno
           </p>
           <div className="flex flex-wrap gap-2 mt-3">
-            {ig && <Badge className="bg-pink-500/15 text-pink-400 border-0">Instagram</Badge>}
-            {fb && <Badge className="bg-blue-500/15 text-blue-400 border-0">Facebook Ads</Badge>}
-            <Badge className="bg-green-500/15 text-green-400 border-0">CRM Interno</Badge>
+            {ig && <Badge className="bg-[#141A04] text-[#AFC040] border-0">Instagram</Badge>}
+            {fb && <Badge className="bg-[#040E1A] text-[#4A9FE0] border-0">Facebook Ads</Badge>}
+            <Badge className="bg-[#031411] text-[#2CBBA6] border-0">CRM Interno</Badge>
             {!ig && !fb && <Badge variant="secondary">Aguardando dados externos</Badge>}
           </div>
         </div>
@@ -157,32 +157,27 @@ export default function PainelGeral() {
 
       {/* 6 KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        <MetricCard title="Seguidores" value={followers} icon={Users} color="text-pink-400" borderColor="hsl(340,80%,55%)" />
-        <MetricCard title="Alcance Total" value={totalReach} icon={Eye} color="text-blue-400" borderColor="hsl(210,80%,55%)" />
-        <MetricCard title="Engajamento" value={engagement} icon={Heart} color="text-red-400" borderColor="hsl(352,80%,60%)" />
-        <MetricCard title="Leads Ads" value={leads} icon={Target} color="text-amber-400" borderColor="hsl(40,98%,57%)" />
-        <MetricCard title="Investimento" value={investment} prefix="R$ " decimals={2} icon={DollarSign} color="text-green-400" borderColor="hsl(160,100%,39%)" />
-        <MetricCard title="CPL Médio" value={cpl} prefix="R$ " decimals={2} icon={TrendingUp} color="text-primary" borderColor="hsl(68,53%,50%)" />
+        <KPICard label="Seguidores" value={followers} icon={Users} accentColor="#2CBBA6" />
+        <KPICard label="Alcance Total" value={totalReach} icon={Eye} accentColor="#4A9FE0" />
+        <KPICard label="Engajamento" value={engagement} icon={Heart} accentColor="#AFC040" />
+        <KPICard label="Leads Ads" value={leads} icon={Target} accentColor="#E8A43C" />
+        <KPICard label="Investimento" value={formatCurrency(investment)} icon={DollarSign} accentColor="#E8A43C" />
+        <KPICard label="CPL Médio" value={formatCurrency(cpl)} icon={TrendingUp} accentColor="#E8684A" />
       </div>
 
       {/* Tabs */}
       <Tabs defaultValue="overview">
-        <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          <TabsTrigger value="funnel">Funil</TabsTrigger>
-          <TabsTrigger value="channels">Canais</TabsTrigger>
-          <TabsTrigger value="growth">Crescimento</TabsTrigger>
-          <TabsTrigger value="roi">ROI</TabsTrigger>
-          <TabsTrigger value="insights">Insights</TabsTrigger>
+        <TabsList className="flex-wrap h-auto bg-transparent border-b border-[var(--c-border)] rounded-none p-0 gap-1">
+          {['overview', 'funnel', 'channels', 'growth', 'roi', 'insights'].map(tab => (
+            <TabsTrigger key={tab} value={tab} className="data-[state=active]:bg-[#AFC040] data-[state=active]:text-[#0D0D0D] data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">
+              {tab === 'overview' ? 'Visão Geral' : tab === 'funnel' ? 'Funil' : tab === 'channels' ? 'Canais' : tab === 'growth' ? 'Crescimento' : tab === 'roi' ? 'ROI' : 'Insights'}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <SourceSummaryCard
-              title="Instagram"
-              icon={Instagram}
-              accentColor="#E1306C"
-              detailLink="/analytics/instagram"
+            <SourceSummaryCard title="Instagram" icon={Instagram} accentColor="#AFC040" detailLink="/analytics/instagram"
               metrics={[
                 { label: 'Seguidores', value: ig?.metrics?.followers || 0 },
                 { label: 'Alcance', value: ig?.metrics?.totalReach || 0 },
@@ -190,11 +185,7 @@ export default function PainelGeral() {
                 { label: 'Posts', value: ig?.posts?.length || 0 },
               ]}
             />
-            <SourceSummaryCard
-              title="Facebook Ads"
-              icon={Facebook}
-              accentColor="#1877F2"
-              detailLink="/analytics/facebook-ads"
+            <SourceSummaryCard title="Facebook Ads" icon={Facebook} accentColor="#4A9FE0" detailLink="/analytics/facebook-ads"
               metrics={[
                 { label: 'Investimento', value: formatCurrency(fb?.metrics?.totalSpend || 0) },
                 { label: 'Impressões', value: fb?.metrics?.totalImpressions || 0 },
@@ -202,11 +193,7 @@ export default function PainelGeral() {
                 { label: 'CPL', value: formatCurrency(fb?.metrics?.avgCPL || 0) },
               ]}
             />
-            <SourceSummaryCard
-              title="CRM Interno"
-              icon={BarChart3}
-              accentColor="hsl(68,53%,50%)"
-              detailLink="/analytics/crm"
+            <SourceSummaryCard title="CRM Interno" icon={BarChart3} accentColor="#2CBBA6" detailLink="/analytics/crm"
               metrics={[
                 { label: 'Contatos', value: contactCount || 0 },
                 { label: 'Deals Ativos', value: crmTotals.activeDeals },
@@ -238,9 +225,9 @@ export default function PainelGeral() {
                             <span className="font-bold font-mono tabular-nums">{item.value.toLocaleString('pt-BR')}</span>
                           </div>
                         </div>
-                        <div className="h-9 bg-white/[0.04] rounded-lg overflow-hidden">
+                        <div className="h-9 bg-[var(--c-raised)] rounded-lg overflow-hidden">
                           <div
-                            className="h-full rounded-lg transition-all duration-700 ease-out flex items-center px-3"
+                            className="h-full rounded-lg transition-all duration-700 ease-out"
                             style={{
                               width: `${Math.max((item.value / maxFunnel) * 100, 3)}%`,
                               backgroundColor: item.fill,
@@ -261,27 +248,23 @@ export default function PainelGeral() {
         <TabsContent value="channels" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Deals por Canal de Origem</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-base">Deals por Canal de Origem</CardTitle></CardHeader>
               <CardContent>
                 {(dealsByChannel || []).length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
                     <BarChart data={dealsByChannel} layout="vertical">
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,20%,22%)" />
-                      <XAxis type="number" tick={tickStyle} />
-                      <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, ...tickStyle }} />
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Bar dataKey="value" name="Deals" fill="hsl(68,53%,50%)" radius={[0, 4, 4, 0]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Bar dataKey="value" name="Deals" fill="#2CBBA6" radius={[0, 4, 4, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados de canais</p>}
               </CardContent>
             </Card>
             <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Métricas por Produto</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-base">Métricas por Produto</CardTitle></CardHeader>
               <CardContent>
                 {(productMetrics || []).length > 0 ? (
                   <ResponsiveContainer width="100%" height={300}>
@@ -290,13 +273,12 @@ export default function PainelGeral() {
                       ativos: Number(pm.active_deals),
                       ganhos: Number(pm.won_deals),
                     }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,20%,22%)" />
-                      <XAxis dataKey="name" tick={{ fontSize: 13, ...tickStyle }} />
-                      <YAxis tick={tickStyle} />
-                      <Tooltip contentStyle={tooltipStyle} />
-                      <Legend />
-                      <Bar dataKey="ativos" name="Deals Ativos" fill="hsl(68,53%,50%)" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="ganhos" name="Deals Ganhos" fill="hsl(160,100%,39%)" radius={[4, 4, 0, 0]} />
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 13, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Bar dataKey="ativos" name="Deals Ativos" fill="#4A9FE0" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="ganhos" name="Deals Ganhos" fill="#AFC040" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
@@ -307,18 +289,16 @@ export default function PainelGeral() {
 
         <TabsContent value="growth" className="mt-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Alcance Diário (Instagram)</CardTitle>
-            </CardHeader>
+            <CardHeader><CardTitle className="text-base">Alcance Diário (Instagram)</CardTitle></CardHeader>
             <CardContent>
               {dailyReach.length > 0 ? (
                 <ResponsiveContainer width="100%" height={350}>
                   <AreaChart data={dailyReach}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(220,20%,22%)" />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, ...tickStyle }} />
-                    <YAxis tick={tickStyle} />
-                    <Tooltip contentStyle={tooltipStyle} />
-                    <Area type="monotone" dataKey="alcance" stroke="hsl(68,53%,50%)" fill="hsl(68,53%,50%)" fillOpacity={0.1} />
+                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                    <XAxis dataKey="date" tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} />
+                    <Area type="monotone" dataKey="alcance" stroke="#2CBBA6" fill="#2CBBA6" fillOpacity={0.15} />
                   </AreaChart>
                 </ResponsiveContainer>
               ) : <p className="text-center text-muted-foreground py-8">Sem dados de crescimento</p>}
@@ -328,7 +308,7 @@ export default function PainelGeral() {
 
         <TabsContent value="roi" className="mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card style={{ borderTop: '3px solid #1877F2' }}>
+            <Card style={{ borderTop: '3px solid #4A9FE0' }}>
               <CardContent className="p-5 space-y-2">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Facebook Ads</p>
                 <div className="space-y-1">
@@ -338,17 +318,17 @@ export default function PainelGeral() {
                 </div>
               </CardContent>
             </Card>
-            <Card style={{ borderTop: '3px solid #E1306C' }}>
+            <Card style={{ borderTop: '3px solid #AFC040' }}>
               <CardContent className="p-5 space-y-2">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Instagram Orgânico</p>
                 <div className="space-y-1">
                   <div className="flex justify-between text-sm"><span className="text-muted-foreground">Alcance</span><span className="font-bold font-mono">{(ig?.metrics?.totalReach || 0).toLocaleString('pt-BR')}</span></div>
                   <div className="flex justify-between text-sm"><span className="text-muted-foreground">Engajamento</span><span className="font-bold font-mono">{ig?.metrics?.avgEngagement || 0}%</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo</span><span className="font-bold font-mono text-green-400">R$ 0</span></div>
+                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo</span><span className="font-bold font-mono" style={{ color: '#AFC040' }}>R$ 0</span></div>
                 </div>
               </CardContent>
             </Card>
-            <Card style={{ borderTop: '3px solid hsl(160,100%,39%)' }}>
+            <Card style={{ borderTop: '3px solid #2CBBA6' }}>
               <CardContent className="p-5 space-y-2">
                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">CRM Interno</p>
                 <div className="space-y-1">

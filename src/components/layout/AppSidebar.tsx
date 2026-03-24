@@ -23,6 +23,8 @@ const PIPELINE_ICONS: Record<string, typeof Briefcase> = {
 };
 const DEFAULT_PIPELINE_ICON = Layers;
 
+const ACTIVE_CLASS = "bg-[#141A04] text-[#AFC040] font-semibold";
+
 const analyticsItems = [
   { title: "Visão Geral", url: "/painel", icon: BarChart3 },
   { title: "Instagram", url: "/analytics/instagram", icon: Instagram },
@@ -84,7 +86,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/" end activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                  <NavLink to="/" end activeClassName={ACTIVE_CLASS}>
                     <LayoutDashboard className="h-4 w-4" />
                     {!collapsed && <span>Dashboard</span>}
                   </NavLink>
@@ -95,7 +97,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <Collapsible open={pipelineOpen || isPipelineActive} onOpenChange={setPipelineOpen}>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className={`w-full ${isPipelineActive ? 'bg-sidebar-accent text-sidebar-primary font-medium' : ''}`}>
+                    <SidebarMenuButton className={`w-full ${isPipelineActive ? ACTIVE_CLASS : ''}`}>
                       <Kanban className="h-4 w-4" />
                       {!collapsed && (
                         <>
@@ -114,7 +116,7 @@ export function AppSidebar() {
                             to={item.url}
                             end
                             className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                            activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                            activeClassName={ACTIVE_CLASS}
                           >
                             <item.icon className="h-3.5 w-3.5" />
                             <span>{item.title}</span>
@@ -128,7 +130,7 @@ export function AppSidebar() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/contacts" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                  <NavLink to="/contacts" activeClassName={ACTIVE_CLASS}>
                     <Users className="h-4 w-4" />
                     {!collapsed && <span>Contatos</span>}
                   </NavLink>
@@ -139,7 +141,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <Collapsible open={analyticsOpen || isAnalyticsActive} onOpenChange={setAnalyticsOpen}>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className={`w-full ${isAnalyticsActive ? 'bg-sidebar-accent text-sidebar-primary font-medium' : ''}`}>
+                    <SidebarMenuButton className={`w-full ${isAnalyticsActive ? ACTIVE_CLASS : ''}`}>
                       <BarChart3 className="h-4 w-4" />
                       {!collapsed && (
                         <>
@@ -158,7 +160,7 @@ export function AppSidebar() {
                             to={item.url}
                             end
                             className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                            activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                            activeClassName={ACTIVE_CLASS}
                           >
                             <item.icon className="h-3.5 w-3.5" />
                             <span>{item.title}</span>
@@ -174,7 +176,7 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <Collapsible open={emailOpen || isEmailActive} onOpenChange={setEmailOpen}>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className={`w-full ${isEmailActive ? 'bg-sidebar-accent text-sidebar-primary font-medium' : ''}`}>
+                    <SidebarMenuButton className={`w-full ${isEmailActive ? ACTIVE_CLASS : ''}`}>
                       <Mail className="h-4 w-4" />
                       {!collapsed && (
                         <>
@@ -187,44 +189,23 @@ export function AppSidebar() {
                   {!collapsed && (
                     <CollapsibleContent>
                       <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                        <NavLink
-                          to="/email"
-                          end
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                        >
+                        <NavLink to="/email" end className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                           <BarChart3 className="h-3.5 w-3.5" />
                           <span>Visão Geral</span>
                         </NavLink>
-                        <NavLink
-                          to="/email/templates"
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                        >
+                        <NavLink to="/email/templates" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                           <FileText className="h-3.5 w-3.5" />
                           <span>Templates</span>
                         </NavLink>
-                        <NavLink
-                          to="/email/campaigns"
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                        >
+                        <NavLink to="/email/campaigns" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                           <Send className="h-3.5 w-3.5" />
                           <span>Campanhas</span>
                         </NavLink>
-                        <NavLink
-                          to="/email/workflows"
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                        >
+                        <NavLink to="/email/workflows" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                           <Workflow className="h-3.5 w-3.5" />
                           <span>Automações</span>
                         </NavLink>
-                        <NavLink
-                          to="/email/lists"
-                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
-                        >
+                        <NavLink to="/email/lists" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                           <Users className="h-3.5 w-3.5" />
                           <span>Listas</span>
                         </NavLink>
@@ -236,7 +217,7 @@ export function AppSidebar() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/formularios" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                  <NavLink to="/formularios" activeClassName={ACTIVE_CLASS}>
                     <FileText className="h-4 w-4" />
                     {!collapsed && <span>Formulários</span>}
                   </NavLink>
@@ -245,7 +226,7 @@ export function AppSidebar() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/tarefas" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                  <NavLink to="/tarefas" activeClassName={ACTIVE_CLASS}>
                     <ListTodo className="h-4 w-4" />
                     {!collapsed && <span>Tarefas</span>}
                   </NavLink>
@@ -254,7 +235,7 @@ export function AppSidebar() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/instagram" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                  <NavLink to="/instagram" activeClassName={ACTIVE_CLASS}>
                     <Instagram className="h-4 w-4" />
                     {!collapsed && <span>Automações IG</span>}
                   </NavLink>
@@ -263,7 +244,7 @@ export function AppSidebar() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
-                  <NavLink to="/settings" activeClassName="bg-sidebar-accent text-sidebar-primary font-medium">
+                  <NavLink to="/settings" activeClassName={ACTIVE_CLASS}>
                     <Settings className="h-4 w-4" />
                     {!collapsed && <span>Configurações</span>}
                   </NavLink>

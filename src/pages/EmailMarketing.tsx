@@ -84,11 +84,11 @@ export default function EmailMarketing() {
   const isLoading = tLoading || cLoading || wLoading || lLoading;
 
   const statusLabel: Record<string, { label: string; color: string }> = {
-    draft: { label: "Rascunho", color: "bg-yellow-100 text-yellow-700" },
-    scheduled: { label: "Agendada", color: "bg-blue-100 text-blue-700" },
-    sending: { label: "Enviando", color: "bg-orange-100 text-orange-700" },
-    sent: { label: "Enviada", color: "bg-green-100 text-green-700" },
-    cancelled: { label: "Cancelada", color: "bg-red-100 text-red-700" },
+    draft: { label: "Rascunho", color: "bg-[#191D0C] text-[#7A8460]" },
+    scheduled: { label: "Agendada", color: "bg-[#040E1A] text-[#4A9FE0]" },
+    sending: { label: "Enviando", color: "bg-[#1A1206] text-[#E8A43C]" },
+    sent: { label: "Enviada", color: "bg-[#141A04] text-[#AFC040]" },
+    cancelled: { label: "Cancelada", color: "bg-[#1A0804] text-[#E8684A]" },
   };
 
   return (
@@ -117,8 +117,8 @@ export default function EmailMarketing() {
                     <p className="text-xs text-muted-foreground">Templates</p>
                     <p className="text-2xl font-bold">{templateCount}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-purple-600" />
+                   <div className="w-10 h-10 rounded-lg bg-[#141A04] flex items-center justify-center">
+                     <FileText className="h-5 w-5 text-[#AFC040]" />
                   </div>
                 </div>
               </CardContent>
@@ -132,12 +132,12 @@ export default function EmailMarketing() {
                     <p className="text-2xl font-bold">{campaignStats?.total || 0}</p>
                     <div className="flex gap-2 mt-1">
                       {(campaignStats?.scheduled || 0) > 0 && (
-                        <Badge className="text-[10px] bg-blue-100 text-blue-700">{campaignStats?.scheduled} agendadas</Badge>
+                        <Badge className="text-[10px] bg-[#040E1A] text-[#4A9FE0]">{campaignStats?.scheduled} agendadas</Badge>
                       )}
                     </div>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <Send className="h-5 w-5 text-blue-600" />
+                   <div className="w-10 h-10 rounded-lg bg-[#040E1A] flex items-center justify-center">
+                     <Send className="h-5 w-5 text-[#4A9FE0]" />
                   </div>
                 </div>
               </CardContent>
@@ -151,12 +151,12 @@ export default function EmailMarketing() {
                     <p className="text-2xl font-bold">{workflowStats?.total || 0}</p>
                     <div className="flex gap-2 mt-1">
                       {(workflowStats?.active || 0) > 0 && (
-                        <Badge className="text-[10px] bg-green-100 text-green-700">{workflowStats?.active} ativas</Badge>
+                       <Badge className="text-[10px] bg-[#141A04] text-[#AFC040]">{workflowStats?.active} ativas</Badge>
                       )}
                     </div>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                    <Workflow className="h-5 w-5 text-green-600" />
+                   <div className="w-10 h-10 rounded-lg bg-[#141A04] flex items-center justify-center">
+                     <Workflow className="h-5 w-5 text-[#AFC040]" />
                   </div>
                 </div>
               </CardContent>
@@ -169,8 +169,8 @@ export default function EmailMarketing() {
                     <p className="text-xs text-muted-foreground">Listas / Segmentos</p>
                     <p className="text-2xl font-bold">{listCount}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-orange-600" />
+                   <div className="w-10 h-10 rounded-lg bg-[#1A1206] flex items-center justify-center">
+                     <Users className="h-5 w-5 text-[#E8A43C]" />
                   </div>
                 </div>
               </CardContent>
@@ -184,8 +184,8 @@ export default function EmailMarketing() {
         <div className="grid grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <Mail className="h-5 w-5 text-emerald-600" />
+               <div className="w-10 h-10 rounded-lg bg-[#031411] flex items-center justify-center">
+                 <Mail className="h-5 w-5 text-[#2CBBA6]" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Entregues</p>
@@ -195,8 +195,8 @@ export default function EmailMarketing() {
           </Card>
           <Card>
             <CardContent className="pt-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
-                <Eye className="h-5 w-5 text-sky-600" />
+               <div className="w-10 h-10 rounded-lg bg-[#040E1A] flex items-center justify-center">
+                 <Eye className="h-5 w-5 text-[#4A9FE0]" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Taxa de Abertura</p>
@@ -206,8 +206,8 @@ export default function EmailMarketing() {
           </Card>
           <Card>
             <CardContent className="pt-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-violet-100 flex items-center justify-center">
-                <MousePointerClick className="h-5 w-5 text-violet-600" />
+               <div className="w-10 h-10 rounded-lg bg-[#141A04] flex items-center justify-center">
+                 <MousePointerClick className="h-5 w-5 text-[#AFC040]" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Taxa de Cliques</p>
@@ -222,8 +222,8 @@ export default function EmailMarketing() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="cursor-pointer hover:shadow-md transition-shadow border-dashed" onClick={() => navigate("/email/templates")}>
           <CardContent className="pt-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
-              <Plus className="h-6 w-6 text-purple-500" />
+             <div className="w-12 h-12 rounded-xl bg-[#141A04] flex items-center justify-center">
+               <Plus className="h-6 w-6 text-[#AFC040]" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">Criar Template</p>
@@ -235,8 +235,8 @@ export default function EmailMarketing() {
 
         <Card className="cursor-pointer hover:shadow-md transition-shadow border-dashed" onClick={() => navigate("/email/campaigns")}>
           <CardContent className="pt-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-              <Send className="h-6 w-6 text-blue-500" />
+             <div className="w-12 h-12 rounded-xl bg-[#040E1A] flex items-center justify-center">
+               <Send className="h-6 w-6 text-[#4A9FE0]" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">Agendar Campanha</p>
@@ -248,8 +248,8 @@ export default function EmailMarketing() {
 
         <Card className="cursor-pointer hover:shadow-md transition-shadow border-dashed" onClick={() => navigate("/email/workflows")}>
           <CardContent className="pt-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
-              <Workflow className="h-6 w-6 text-green-500" />
+             <div className="w-12 h-12 rounded-xl bg-[#141A04] flex items-center justify-center">
+               <Workflow className="h-6 w-6 text-[#AFC040]" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">Criar Automação</p>
