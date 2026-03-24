@@ -19,7 +19,7 @@ export type Database = {
           id: string
           name: string
           slug: string
-          product: Database["public"]["Enums"]["product_type"]
+          product: string
           redirect_url: string | null
           notify_emails: string[] | null
           is_active: boolean
@@ -31,7 +31,7 @@ export type Database = {
           id?: string
           name: string
           slug: string
-          product: Database["public"]["Enums"]["product_type"]
+          product: string
           redirect_url?: string | null
           notify_emails?: string[] | null
           is_active?: boolean
@@ -43,7 +43,7 @@ export type Database = {
           id?: string
           name?: string
           slug?: string
-          product?: Database["public"]["Enums"]["product_type"]
+          product?: string
           redirect_url?: string | null
           notify_emails?: string[] | null
           is_active?: boolean
@@ -282,7 +282,7 @@ export type Database = {
           owner_id: string | null
           phone: string | null
           produto_interesse:
-            | Database["public"]["Enums"]["product_type"][]
+            | string[]
             | null
           renda_mensal: string | null
           state: string | null
@@ -327,7 +327,7 @@ export type Database = {
           owner_id?: string | null
           phone?: string | null
           produto_interesse?:
-            | Database["public"]["Enums"]["product_type"][]
+            | string[]
             | null
           renda_mensal?: string | null
           state?: string | null
@@ -372,7 +372,7 @@ export type Database = {
           owner_id?: string | null
           phone?: string | null
           produto_interesse?:
-            | Database["public"]["Enums"]["product_type"][]
+            | string[]
             | null
           renda_mensal?: string | null
           state?: string | null
@@ -426,7 +426,7 @@ export type Database = {
           name: string
           owner_id: string | null
           pipeline_id: string
-          product: Database["public"]["Enums"]["product_type"]
+          product: string
           qualification_status: string
           stage_entered_at: string | null
           stage_id: string
@@ -446,7 +446,7 @@ export type Database = {
           name: string
           owner_id?: string | null
           pipeline_id: string
-          product: Database["public"]["Enums"]["product_type"]
+          product: string
           qualification_status?: string
           stage_entered_at?: string | null
           stage_id: string
@@ -466,7 +466,7 @@ export type Database = {
           name?: string
           owner_id?: string | null
           pipeline_id?: string
-          product?: Database["public"]["Enums"]["product_type"]
+          product?: string
           qualification_status?: string
           stage_entered_at?: string | null
           stage_id?: string
@@ -511,7 +511,7 @@ export type Database = {
           delay_days: number
           id: string
           is_active: boolean
-          product: Database["public"]["Enums"]["product_type"]
+          product: string
           sequence_order: number
           subject: string
         }
@@ -521,7 +521,7 @@ export type Database = {
           delay_days?: number
           id?: string
           is_active?: boolean
-          product: Database["public"]["Enums"]["product_type"]
+          product: string
           sequence_order: number
           subject: string
         }
@@ -531,7 +531,7 @@ export type Database = {
           delay_days?: number
           id?: string
           is_active?: boolean
-          product?: Database["public"]["Enums"]["product_type"]
+          product?: string
           sequence_order?: number
           subject?: string
         }
@@ -737,19 +737,19 @@ export type Database = {
           created_at: string | null
           id: string
           name: string
-          product: Database["public"]["Enums"]["product_type"]
+          product: string
         }
         Insert: {
           created_at?: string | null
           id?: string
           name: string
-          product: Database["public"]["Enums"]["product_type"]
+          product: string
         }
         Update: {
           created_at?: string | null
           id?: string
           name?: string
-          product?: Database["public"]["Enums"]["product_type"]
+          product?: string
         }
         Relationships: []
       }
@@ -938,7 +938,7 @@ export type Database = {
         Row: {
           avg_days: number | null
           display_order: number | null
-          product: Database["public"]["Enums"]["product_type"] | null
+          product: string | null
           stage_name: string | null
           transitions: number | null
         }
@@ -989,7 +989,7 @@ export type Database = {
           owner_id: string | null
           phone: string | null
           produto_interesse:
-            | Database["public"]["Enums"]["product_type"][]
+            | string[]
             | null
           renda_mensal: string | null
           state: string | null
@@ -1029,7 +1029,7 @@ export type Database = {
           owner_id: string | null
           pipeline_id: string | null
           pipeline_name: string | null
-          product: Database["public"]["Enums"]["product_type"] | null
+          product: string | null
           qualification_status: string | null
           stage_entered_at: string | null
           stage_id: string | null
@@ -1073,7 +1073,7 @@ export type Database = {
       mql_volume: {
         Row: {
           mql_count: number | null
-          product: Database["public"]["Enums"]["product_type"] | null
+          product: string | null
           total_count: number | null
           week: string | null
         }
@@ -1085,7 +1085,7 @@ export type Database = {
           avg_deal_size: number | null
           lost_deals: number | null
           pipeline_value: number | null
-          product: Database["public"]["Enums"]["product_type"] | null
+          product: string | null
           win_rate: number | null
           won_deals: number | null
         }
@@ -1095,7 +1095,7 @@ export type Database = {
         Row: {
           deal_count: number | null
           display_order: number | null
-          product: Database["public"]["Enums"]["product_type"] | null
+          product: string | null
           stage_name: string | null
           total_amount: number | null
         }
@@ -1133,7 +1133,7 @@ export type Database = {
       qualify_contact: {
         Args: {
           p_contact_id: string
-          p_product: Database["public"]["Enums"]["product_type"]
+          p_product: string
         }
         Returns: string
       }
@@ -1144,7 +1144,7 @@ export type Database = {
       }
     }
     Enums: {
-      product_type: string
+      [_ in never]: never
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1271,8 +1271,6 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {
-      product_type: ["business", "skills", "academy"],
-    },
+    Enums: {},
   },
 } as const
