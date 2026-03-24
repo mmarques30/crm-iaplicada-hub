@@ -70,7 +70,7 @@ export default function Dashboard() {
           acc[key].total_amount += Number(item.total_amount) || 0;
           return acc;
         }, {})
-      ).sort((a, b) => a.display_order - b.display_order)
+      ).sort((a: any, b: any) => a.display_order - b.display_order)
     : (stageConversion || []).map(s => ({
         stage_name: s.stage_name || "",
         deal_count: s.deal_count || 0,
