@@ -23,16 +23,16 @@ export default function CrmAnalytics() {
   const { data: productMetrics } = useQuery({
     queryKey: ['product_metrics'],
     queryFn: async () => {
-      const { data } = await supabase.from('product_metrics').select('*')
-      return data || []
+      const { data } = await (supabase as any).from('product_metrics').select('*')
+      return (data || []) as any[]
     },
   })
 
   const { data: stageConversion } = useQuery({
     queryKey: ['stage_conversion'],
     queryFn: async () => {
-      const { data } = await supabase.from('stage_conversion').select('*').order('display_order')
-      return data || []
+      const { data } = await (supabase as any).from('stage_conversion').select('*').order('display_order')
+      return (data || []) as any[]
     },
   })
 
