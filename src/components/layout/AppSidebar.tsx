@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers, Mail, Send, Workflow } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -37,8 +37,10 @@ export function AppSidebar() {
   const location = useLocation();
   const isPipelineActive = location.pathname.startsWith("/pipeline");
   const isAnalyticsActive = location.pathname.startsWith("/painel") || location.pathname.startsWith("/analytics") || location.pathname.startsWith("/financeiro");
+  const isEmailActive = location.pathname.startsWith("/email");
   const [pipelineOpen, setPipelineOpen] = useState(isPipelineActive);
   const [analyticsOpen, setAnalyticsOpen] = useState(isAnalyticsActive);
+  const [emailOpen, setEmailOpen] = useState(isEmailActive);
 
   const { data: pipelines } = useQuery({
     queryKey: ["pipelines-sidebar"],
@@ -162,6 +164,70 @@ export function AppSidebar() {
                             <span>{item.title}</span>
                           </NavLink>
                         ))}
+                      </div>
+                    </CollapsibleContent>
+                  )}
+                </Collapsible>
+              </SidebarMenuItem>
+
+              {/* Email Marketing with submenu */}
+              <SidebarMenuItem>
+                <Collapsible open={emailOpen || isEmailActive} onOpenChange={setEmailOpen}>
+                  <CollapsibleTrigger asChild>
+                    <SidebarMenuButton className={`w-full ${isEmailActive ? 'bg-sidebar-accent text-sidebar-primary font-medium' : ''}`}>
+                      <Mail className="h-4 w-4" />
+                      {!collapsed && (
+                        <>
+                          <span className="flex-1 text-left">Email Marketing</span>
+                          <ChevronDown className={`h-3 w-3 transition-transform ${emailOpen || isEmailActive ? 'rotate-180' : ''}`} />
+                        </>
+                      )}
+                    </SidebarMenuButton>
+                  </CollapsibleTrigger>
+                  {!collapsed && (
+                    <CollapsibleContent>
+                      <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
+                        <NavLink
+                          to="/email"
+                          end
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        >
+                          <BarChart3 className="h-3.5 w-3.5" />
+                          <span>Visão Geral</span>
+                        </NavLink>
+                        <NavLink
+                          to="/email/templates"
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        >
+                          <FileText className="h-3.5 w-3.5" />
+                          <span>Templates</span>
+                        </NavLink>
+                        <NavLink
+                          to="/email/campaigns"
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        >
+                          <Send className="h-3.5 w-3.5" />
+                          <span>Campanhas</span>
+                        </NavLink>
+                        <NavLink
+                          to="/email/workflows"
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        >
+                          <Workflow className="h-3.5 w-3.5" />
+                          <span>Automações</span>
+                        </NavLink>
+                        <NavLink
+                          to="/email/lists"
+                          className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                          activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                        >
+                          <Users className="h-3.5 w-3.5" />
+                          <span>Listas</span>
+                        </NavLink>
                       </div>
                     </CollapsibleContent>
                   )}
