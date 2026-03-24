@@ -20,8 +20,8 @@ export default function DealDetail() {
   const { data: deal, isLoading, isError } = useQuery({
     queryKey: ["deal", id],
     queryFn: async () => {
-      const { data } = await supabase.from("deals_full").select("*").eq("id", id!).single();
-      return data;
+      const { data } = await (supabase as any).from("deals_full").select("*").eq("id", id!).single();
+      return data as any;
     },
   });
 
