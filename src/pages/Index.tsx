@@ -4,16 +4,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatCurrency, formatPercent } from "@/lib/format";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
-  ComposedChart, ScatterChart, Scatter, AreaChart, Area,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine,
+  AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  ComposedChart, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
+  Tooltip, ResponsiveContainer, ReferenceLine, Legend,
 } from "recharts";
 import {
   DollarSign, Users, Target, BarChart3, Filter, Download, Calendar,
-  TrendingUp, TrendingDown,
+  ArrowUpRight, ArrowDownRight, TrendingUp, AlertTriangle,
 } from "lucide-react";
 import { useDashboardSnapshot } from "@/hooks/useDashboardData";
 
@@ -21,15 +22,11 @@ import { useDashboardSnapshot } from "@/hooks/useDashboardData";
    SEMANTIC COLORS (hex for Recharts — matches CSS vars)
    ═══════════════════════════════════════════════════════════════ */
 const C = {
-  volMain: "#1D8A7A",  volBright: "#2CBBA6",  volSurf: "#031411",
-  revMain: "#B07830",  revBright: "#E8A43C",  revSurf: "#1A1206",
-  convMain: "#738925", convBright: "#AFC040",  convSurf: "#141A04",
-  actMain: "#2B6CB0",  actBright: "#4A9FE0",  actSurf: "#040E1A",
-  negMain: "#C94A2F",  negBright: "#E8684A",  negSurf: "#1A0804",
-  purple: "#9B7FE8",
-  bg: "#0A0C09",       card: "#121509",       raised: "#191E0C",
-  border: "#1E2610",   borderH: "#2E3A18",
-  textP: "#E8EDD8",    textS: "#7A8460",      textM: "#4A5230",
+  teal: "#2CBBA6",   amber: "#E8A43C",  green: "#AFC040",
+  coral: "#E8684A",  blue: "#4A9FE0",   purple: "#9B7FE8",
+  bg: "#0A0C09",     card: "#121509",    raised: "#191E0C",
+  border: "#1E2610", borderH: "#2E3A18",
+  textP: "#E8EDD8",  textS: "#7A8460",  textM: "#4A5230",
 };
 
 const TOOLTIP_STYLE = {
@@ -50,29 +47,10 @@ interface StageRow { stage_name: string; deal_count: number; total_amount: numbe
 interface ProductMetric { product: string; active_deals: number; won_deals: number; lost_deals: number; pipeline_value: number; avg_deal_size: number; win_rate: number; }
 
 /* ═══════════════════════════════════════════════════════════════
-   FUNNEL ZONE COLOR HELPER
-   ═══════════════════════════════════════════════════════════════ */
-const STAGE_ORDER = [
-  "Lead Capturado", "MQL", "Contato Iniciado", "Conectado", "SQL",
-  "Reunião Agendada", "Reunião Realizada", "Inscrito",
-  "Negociação", "Contrato Enviado", "Negócio Fechado",
-  "Perdido", "Negócio Perdido",
-];
-
-function stageColor(name: string): string {
-  const topFunnel = ["Lead Capturado", "MQL", "Contato Iniciado", "Conectado", "SQL"];
-  const midFunnel = ["Reunião Agendada", "Reunião Realizada", "Inscrito"];
-  const bottomFunnel = ["Negociação", "Contrato Enviado", "Negócio Fechado"];
-  if (topFunnel.includes(name)) return C.volBright;
-  if (midFunnel.includes(name)) return C.actBright;
-  if (bottomFunnel.includes(name)) return C.convBright;
-  return C.negBright;
-}
-
-/* ═══════════════════════════════════════════════════════════════
    DASHBOARD COMPONENT
    ═══════════════════════════════════════════════════════════════ */
 const SalesPipelineDashboard = () => {
+  const [selectedPeriod] = useState("30d");
   const [activeTab, setActiveTab] = useState("pipeline");
 
   /* ── Queries ─────────────────────────────────────────────── */
@@ -129,27 +107,30 @@ const SalesPipelineDashboard = () => {
   })).sort((a, b) => b.leads - a.leads), [deals]);
 
   const fbAds = snapshot?.data?.facebook_ads;
+  const fbCampaigns = fbAds?.campaigns || [];
   const totalAdSpend = fbAds?.metrics?.totalSpend || 0;
   const wonRevenue = (deals || []).filter((d) => d.is_won).reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
   const roi = totalAdSpend > 0 ? (wonRevenue / totalAdSpend).toFixed(2) : "—";
+  const productMetrics = (metrics || []).filter((m) => m.product !== "skills");
 
-  /* ── Funnel + velocity data ──────────────────────────────── */
-  const maxStageCount = Math.max(...pipelineStages.map(s => s.deal_count), 1);
-
-  const funnelRows = useMemo(() =>
-    pipelineStages.map((s, i) => ({
-      ...s,
-      color: stageColor(s.stage_name),
-      widthPct: s.deal_count > 0 ? Math.max((s.deal_count / maxStageCount) * 100, 2) : 2,
+  /* ── Funnel data for AreaChart ───────────────────────────── */
+  const funnelData = useMemo(() => {
+    const abbrev: Record<string, string> = {
+      "Lead Capturado": "Lead", "MQL": "MQL", "Contato Iniciado": "Contato", "Conectado": "Conect.",
+      "SQL": "SQL", "Reunião Agendada": "Reu. Ag.", "Reunião Realizada": "Reu. Re.",
+      "Inscrito": "Inscr.", "Negociação": "Negoc.", "Perdido": "Perdido",
+      "Contrato Enviado": "Contrato", "Negócio Fechado": "Fechado", "Negócio Perdido": "N. Perd."
+    };
+    return pipelineStages.map((s, i) => ({
+      name: abbrev[s.stage_name] || s.stage_name.substring(0, 8),
+      fullName: s.stage_name,
+      count: s.deal_count,
+      amount: s.total_amount,
       conversion: i > 0 && pipelineStages[i - 1].deal_count > 0
         ? Math.round((s.deal_count / pipelineStages[i - 1].deal_count) * 100) : 100,
-      isEmpty: s.deal_count === 0,
-    })), [pipelineStages, maxStageCount]);
-
-  /* ── Ticket stages ───────────────────────────────────────── */
-  const ticketStages = pipelineStages.filter(s =>
-    ["Contato Iniciado", "Reunião Agendada", "Reunião Realizada", "Negociação"].includes(s.stage_name)
-  );
+      zone: i < 4 ? "top" : i < 8 ? "mid" : "bottom",
+    }));
+  }, [pipelineStages]);
 
   /* ── Deals em Risco donut ────────────────────────────────── */
   const riskData = useMemo(() => {
@@ -157,14 +138,15 @@ const SalesPipelineDashboard = () => {
     const won = allDeals.filter(d => d.is_won === true).length;
     const lost = allDeals.filter(d => d.is_won === false).length;
     const active = allDeals.filter(d => d.is_won === null).length;
-    const atRisk = Math.floor(active * 0.3);
+    const atRisk = Math.floor(active * 0.3); // estimate
     return [
-      { name: "Ganhos", value: won, color: C.convBright },
-      { name: "Em progresso", value: Math.max(active - atRisk, 0), color: C.actBright },
-      { name: "Em risco", value: atRisk, color: C.revBright },
-      { name: "Perdidos", value: lost, color: C.negBright },
+      { name: "Ganhos", value: won, color: C.green },
+      { name: "Em progresso", value: Math.max(active - atRisk, 0), color: C.blue },
+      { name: "Em risco", value: atRisk, color: C.amber },
+      { name: "Perdidos", value: lost, color: C.coral },
     ].filter(d => d.value > 0);
   }, [deals]);
+
   const totalDeals = riskData.reduce((s, d) => s + d.value, 0);
 
   /* ── MOCK: Monthly channel performance (Tab 2) ───────────── */
@@ -263,18 +245,11 @@ const SalesPipelineDashboard = () => {
     return [...past, ...future];
   }, []);
 
-  /* ── Channel donut (Tab 2) ───────────────────────────────── */
-  const channelDonut = useMemo(() => {
-    const colors = [C.volBright, C.actBright, C.convBright, C.revBright, C.negBright];
-    return leadSources.slice(0, 5).map((s, i) => ({ ...s, color: colors[i % colors.length] }));
-  }, [leadSources]);
-  const totalChannelLeads = channelDonut.reduce((s, d) => s + d.leads, 0);
-
   /* ── Sparkline helper ────────────────────────────────────── */
   const MiniSparkline = ({ data, up }: { data: number[]; up: boolean }) => (
     <ResponsiveContainer width={60} height={24}>
       <LineChart data={data.map((v, i) => ({ i, v }))} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
-        <Line type="monotone" dataKey="v" stroke={up ? C.convBright : C.negBright} strokeWidth={1.5} dot={false} isAnimationActive={false} />
+        <Line type="monotone" dataKey="v" stroke={up ? C.green : C.coral} strokeWidth={1.5} dot={false} isAnimationActive={false} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -287,6 +262,20 @@ const SalesPipelineDashboard = () => {
       isUp: Math.random() > 0.4,
     })), [pipelineStages]);
 
+  const maxStageCount = Math.max(...pipelineStages.map(s => s.deal_count), 1);
+
+  /* ── Ticket stages ───────────────────────────────────────── */
+  const ticketStages = pipelineStages.filter(s =>
+    ["Contato Iniciado", "Reunião Agendada", "Reunião Realizada", "Negociação"].includes(s.stage_name)
+  );
+
+  /* ── Channel donut (Tab 2) ───────────────────────────────── */
+  const channelDonut = useMemo(() => {
+    const colors = [C.teal, C.blue, C.green, C.amber, C.coral];
+    return leadSources.slice(0, 5).map((s, i) => ({ ...s, color: colors[i % colors.length] }));
+  }, [leadSources]);
+  const totalChannelLeads = channelDonut.reduce((s, d) => s + d.leads, 0);
+
   /* ════════════════════════════════════════════════════════════
      RENDER
      ════════════════════════════════════════════════════════════ */
@@ -296,47 +285,38 @@ const SalesPipelineDashboard = () => {
       {/* ── Header ─────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-[28px] font-bold tracking-tight text-foreground">Dashboard de Vendas</h1>
-          <p className="text-[13px] mt-1" style={{ color: C.textM }}>IAplicada · Visão Operacional</p>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Dashboard de Vendas</h1>
+          <p className="text-muted-foreground text-sm mt-1">Visão completa do pipeline, leads e performance de marketing</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-secondary">
-            <Calendar className="h-3.5 w-3.5 mr-2" />Últimos 30 dias
+          <Button variant="ghost" size="sm" className="text-muted-foreground">
+            <Calendar className="h-4 w-4 mr-2" />Últimos 30 dias
           </Button>
-          <Button variant="outline" size="sm" className="border-border text-foreground hover:bg-secondary">
-            <Filter className="h-3.5 w-3.5 mr-2" />Filtros
+          <Button variant="ghost" size="sm" className="text-muted-foreground">
+            <Filter className="h-4 w-4 mr-2" />Filtros
           </Button>
-          <Button size="sm" className="font-bold" style={{ background: C.convBright, color: C.bg }}>
-            <Download className="h-3.5 w-3.5 mr-2" />Exportar
+          <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
+            <Download className="h-4 w-4 mr-2" />Exportar
           </Button>
         </div>
       </div>
 
       {/* ── KPI Cards ──────────────────────────────────────── */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-        {([
-          { title: "Valor no Pipeline", value: formatCurrency(totals.pipeline), icon: DollarSign, desc: `${totals.active} deals ativos`, accentColor: C.revBright, trendUp: true, trend: "+18.2% vs. mês anterior", borderColor: C.revBright },
-          { title: "Total de Leads", value: totalLeads.toString(), icon: Users, desc: "cadastrados no CRM", accentColor: C.volBright, trendUp: true, trend: "+12.5% vs. mês anterior", borderColor: C.volBright },
-          { title: "Taxa de Conversão", value: formatPercent(winRate), icon: Target, desc: "média do pipeline", accentColor: C.convBright, trendUp: true, trend: "+3.2% vs. mês anterior", borderColor: C.convBright },
-          { title: "ROI de Ads", value: roi === "—" ? "—" : `${roi}x`, icon: BarChart3, desc: "retorno sobre investimento", accentColor: C.revBright, trendUp: false, trend: "-2.1% vs. mês anterior", borderColor: C.negBright },
-        ]).map((kpi, i) => (
-          <Card key={i} className="card-hover relative overflow-hidden" style={{ borderLeft: `3px solid ${kpi.borderColor}` }}>
+        {[
+          { title: "Valor no Pipeline", value: formatCurrency(totals.pipeline), icon: <DollarSign />, desc: `${totals.active} deals ativos`, color: C.amber },
+          { title: "Total de Leads", value: totalLeads.toString(), icon: <Users />, desc: "cadastrados no CRM", color: C.teal },
+          { title: "Taxa de Conversão", value: formatPercent(winRate), icon: <Target />, desc: "média do pipeline", color: C.green },
+          { title: "ROI de Ads", value: roi === "—" ? "—" : `${roi}x`, icon: <BarChart3 />, desc: "retorno sobre investimento", color: C.blue },
+        ].map((kpi, i) => (
+          <Card key={i} className="card-hover relative overflow-hidden">
             <CardContent className="p-5">
-              <div className="absolute top-4 right-4 opacity-60">
-                <kpi.icon className="h-4 w-4" style={{ color: kpi.accentColor }} />
-              </div>
-              <p className="text-xs text-muted-foreground mb-2">{kpi.title}</p>
+              <div className="absolute top-4 right-4 text-muted-foreground opacity-60">{kpi.icon}</div>
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">{kpi.title}</p>
               {metricsLoading ? <Skeleton className="h-9 w-28" /> : (
                 <>
-                  <p className="text-[28px] font-bold tabular-nums leading-tight" style={{ color: kpi.accentColor }}>{kpi.value}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{kpi.desc}</p>
-                  <div className="flex items-center gap-1 mt-2">
-                    {kpi.trendUp
-                      ? <TrendingUp className="h-3 w-3" style={{ color: C.convBright }} />
-                      : <TrendingDown className="h-3 w-3" style={{ color: C.negBright }} />
-                    }
-                    <span className="text-[11px]" style={{ color: kpi.trendUp ? C.convBright : C.negBright }}>{kpi.trend}</span>
-                  </div>
+                  <p className="text-3xl font-bold tabular-nums" style={{ color: kpi.color }}>{kpi.value}</p>
+                  <p className="text-xs text-muted-foreground mt-1.5">{kpi.desc}</p>
                 </>
               )}
             </CardContent>
@@ -355,8 +335,7 @@ const SalesPipelineDashboard = () => {
               { v: "growth", l: "Crescimento" },
             ].map(t => (
               <TabsTrigger key={t.v} value={t.v}
-                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground data-[state=active]:font-bold transition-colors"
-                style={activeTab === t.v ? { background: C.convBright, color: C.bg } : undefined}
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:font-semibold transition-colors"
               >{t.l}</TabsTrigger>
             ))}
           </TabsList>
@@ -364,7 +343,7 @@ const SalesPipelineDashboard = () => {
 
         {/* ═══ TAB 1: Pipeline ═════════════════════════════════ */}
         <TabsContent value="pipeline" className="space-y-4">
-          {/* 1-A: Funnel — Horizontal Bar Rows */}
+          {/* 1-A: Funnel AreaChart */}
           <Card className="card-hover">
             <CardHeader>
               <CardTitle className="text-foreground font-semibold">Funil de Vendas</CardTitle>
@@ -372,139 +351,138 @@ const SalesPipelineDashboard = () => {
             </CardHeader>
             <CardContent>
               {stagesLoading ? (
-                <div className="space-y-3">{Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
-              ) : funnelRows.length === 0 ? (
+                <div className="h-[320px] flex items-center justify-center"><Skeleton className="h-64 w-full" /></div>
+              ) : funnelData.length === 0 ? (
                 <div className="h-60 flex flex-col items-center justify-center gap-3 text-muted-foreground">
                   <BarChart3 className="h-12 w-12 opacity-30" />
                   <p className="text-sm">Nenhum deal cadastrado ainda</p>
                 </div>
               ) : (
-                <div className="space-y-1.5">
-                  {funnelRows.map((row) => (
-                    <div
-                      key={row.stage_name}
-                      className="flex items-center gap-3 py-1.5"
-                      style={{ opacity: row.isEmpty ? 0.35 : 1 }}
-                    >
-                      <span className="text-xs w-[160px] shrink-0 truncate" style={{ color: C.textS }}>{row.stage_name}</span>
-                      <div className="flex-1 h-2 rounded bg-border overflow-hidden">
-                        <div
-                          className="h-full rounded transition-all duration-500"
-                          style={{
-                            width: `${row.widthPct}%`,
-                            background: `linear-gradient(90deg, ${row.color}cc, ${row.color})`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-xs font-bold tabular-nums w-[52px] text-right" style={{ color: row.isEmpty ? C.textM : row.color }}>
-                        {row.deal_count}
-                      </span>
-                      <span className="text-[11px] w-[72px] text-right tabular-nums" style={{ color: C.textM }}>
-                        {row.conversion}% conv.
-                      </span>
-                    </div>
-                  ))}
-                </div>
+                <ResponsiveContainer width="100%" height={320}>
+                  <AreaChart data={funnelData} margin={CHART_MARGIN}>
+                    <defs>
+                      <linearGradient id="funnelGrad" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor={C.teal} stopOpacity={0.4} />
+                        <stop offset="40%" stopColor={C.blue} stopOpacity={0.35} />
+                        <stop offset="100%" stopColor={C.green} stopOpacity={0.3} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid {...GRID_PROPS} />
+                    <XAxis dataKey="name" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <Tooltip
+                      {...TOOLTIP_STYLE}
+                      formatter={(value: number, _: string, props: any) => [
+                        `${value} deals — ${formatCurrency(props.payload.amount)}`,
+                        props.payload.fullName,
+                      ]}
+                      labelFormatter={(label: string, payload: any[]) =>
+                        payload?.[0]?.payload ? `${payload[0].payload.fullName} (${payload[0].payload.conversion}% conv.)` : label
+                      }
+                    />
+                    <Area type="stepAfter" dataKey="count" stroke={C.teal} strokeWidth={2} fill="url(#funnelGrad)" animationDuration={600} />
+                  </AreaChart>
+                </ResponsiveContainer>
               )}
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            {/* 1-B: Velocidade do Pipeline — Compact div rows */}
-            <Card className="card-hover">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* 1-B: Velocidade do Pipeline */}
+            <Card className="card-hover lg:col-span-1">
               <CardHeader className="pb-3">
-                <CardTitle className="text-foreground font-semibold text-[15px]">Velocidade do Pipeline</CardTitle>
-                <CardDescription className="text-xs">Deals por estágio</CardDescription>
+                <CardTitle className="text-foreground font-semibold text-base">Velocidade do Pipeline</CardTitle>
+                <CardDescription>Deals por estágio do funil</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-1">
+              <CardContent className="space-y-2">
                 {velocityTrends.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">Aguardando dados</p>
-                ) : velocityTrends.map(s => {
-                  const color = stageColor(s.stage_name);
-                  return (
-                    <div key={s.stage_name} className={`flex items-center gap-2 h-9 ${s.deal_count === 0 ? "opacity-35" : ""}`}>
-                      <span className="text-xs w-28 truncate" style={{ color: C.textS }}>{s.stage_name}</span>
-                      {s.deal_count > 0 && (
-                        <div className="flex-1 h-1.5 rounded-full overflow-hidden" style={{ background: C.border }}>
-                          <div className="h-full rounded-full" style={{ width: `${(s.deal_count / maxStageCount) * 100}%`, background: color }} />
-                        </div>
-                      )}
-                      <span className="text-xs font-bold tabular-nums w-6 text-right" style={{ color: s.deal_count > 0 ? color : C.textM }}>{s.deal_count}</span>
-                      <MiniSparkline data={s.trend} up={s.isUp} />
+                  <p className="text-sm text-muted-foreground">Sem dados</p>
+                ) : velocityTrends.map(s => (
+                  <div key={s.stage_name} className={`flex items-center gap-2 py-1.5 ${s.deal_count === 0 ? "opacity-50" : ""}`}>
+                    <span className="text-xs text-muted-foreground w-24 truncate">{s.stage_name}</span>
+                    <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: `${(s.deal_count / maxStageCount) * 100}%`, background: `linear-gradient(90deg, ${C.teal}, ${C.green})` }} />
                     </div>
-                  );
-                })}
+                    <span className="text-xs font-bold tabular-nums w-6 text-right" style={{ color: C.teal }}>{s.deal_count}</span>
+                    <MiniSparkline data={s.trend} up={s.isUp} />
+                  </div>
+                ))}
               </CardContent>
             </Card>
 
-            {/* 1-C: Ticket Médio — Row list */}
-            <Card className="card-hover">
+            {/* 1-C: Ticket Médio BarChart */}
+            <Card className="card-hover lg:col-span-1">
               <CardHeader className="pb-3">
-                <CardTitle className="text-foreground font-semibold text-[15px]">Ticket Médio por Estágio</CardTitle>
-                <CardDescription className="text-xs">Valor médio das oportunidades</CardDescription>
+                <CardTitle className="text-foreground font-semibold text-base">Ticket Médio por Estágio</CardTitle>
+                <CardDescription>Valor médio das oportunidades</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-0">
+              <CardContent>
                 {ticketStages.length === 0 ? (
                   <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">Aguardando dados</div>
-                ) : ticketStages.map(s => {
-                  const avg = s.deal_count > 0 ? Math.round(s.total_amount / s.deal_count) : 0;
-                  const hasValue = avg > 0;
-                  return (
-                    <div key={s.stage_name} className="flex items-center justify-between py-3 border-b border-border last:border-b-0">
-                      <span className="text-sm" style={{ color: C.textS }}>{s.stage_name}</span>
-                      {hasValue ? (
-                        <span className="text-sm font-bold tabular-nums" style={{ color: C.revBright }}>{formatCurrency(avg)}</span>
-                      ) : (
-                        <span className="text-sm" style={{ color: C.textM, opacity: 0.5 }}>—</span>
-                      )}
+                ) : (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <BarChart data={ticketStages.map(s => ({
+                      name: s.stage_name.replace("Reunião Agendada", "Reu. Ag.").replace("Reunião Realizada", "Reu. Re.").replace("Contato Iniciado", "Contato"),
+                      avg: s.deal_count > 0 ? Math.round(s.total_amount / s.deal_count) : 0,
+                    }))} margin={{ top: 20, right: 8, bottom: 8, left: 8 }}>
+                      <CartesianGrid {...GRID_PROPS} />
+                      <XAxis dataKey="name" tick={{ ...AXIS_TICK, fontSize: 10 }} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
+                      <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [formatCurrency(v), "Ticket médio"]} />
+                      <Bar dataKey="avg" radius={[4, 4, 0, 0]} maxBarSize={40}>
+                        {ticketStages.map((s, i) => (
+                          <Cell key={i} fill={s.deal_count > 0 ? C.amber : C.borderH} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* 1-D: Deals em Risco Donut */}
+            <Card className="card-hover lg:col-span-1">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-foreground font-semibold text-base">Deals em Risco</CardTitle>
+                <CardDescription>Distribuição de status</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {riskData.length === 0 ? (
+                  <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">Sem deals</div>
+                ) : (
+                  <div className="relative">
+                    <ResponsiveContainer width="100%" height={200}>
+                      <PieChart>
+                        <Pie data={riskData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value" animationDuration={600}>
+                          {riskData.map((d, i) => <Cell key={i} fill={d.color} stroke="none" />)}
+                        </Pie>
+                        <Tooltip {...TOOLTIP_STYLE} formatter={(v: number, name: string) => [v, name]} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                      <div className="text-center">
+                        <p className="text-2xl font-bold tabular-nums text-foreground">{totalDeals}</p>
+                        <p className="text-[10px] text-muted-foreground">deals</p>
+                      </div>
                     </div>
-                  );
-                })}
+                    <div className="flex flex-wrap justify-center gap-3 mt-2">
+                      {riskData.map(d => (
+                        <div key={d.name} className="flex items-center gap-1.5">
+                          <div className="w-2 h-2 rounded-sm" style={{ background: d.color }} />
+                          <span className="text-[10px] text-muted-foreground">{d.name} ({d.value})</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
-
-          {/* 1-D: Deals em Risco Donut */}
-          <Card className="card-hover">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-foreground font-semibold text-[15px]">Deals em Risco</CardTitle>
-              <CardDescription className="text-xs">Distribuição de status</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {riskData.length === 0 ? (
-                <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">Sem deals</div>
-              ) : (
-                <div className="relative">
-                  <ResponsiveContainer width="100%" height={200}>
-                    <PieChart>
-                      <Pie data={riskData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value" animationDuration={600}>
-                        {riskData.map((d, i) => <Cell key={i} fill={d.color} stroke="none" />)}
-                      </Pie>
-                      <Tooltip {...TOOLTIP_STYLE} formatter={(v: number, name: string) => [v, name]} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <div className="text-center">
-                      <p className="text-2xl font-bold tabular-nums text-foreground">{totalDeals}</p>
-                      <p className="text-[10px] text-muted-foreground">deals</p>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap justify-center gap-3 mt-2">
-                    {riskData.map(d => (
-                      <div key={d.name} className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-sm" style={{ background: d.color }} />
-                        <span className="text-[10px] text-muted-foreground">{d.name} ({d.value})</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* ═══ TAB 2: Canais de Leads ══════════════════════════ */}
         <TabsContent value="leads" className="space-y-4">
+          {/* 2-A: ComposedChart */}
           <Card className="card-hover">
             <CardHeader>
               <CardTitle className="text-foreground font-semibold">Performance por Canal</CardTitle>
@@ -512,7 +490,7 @@ const SalesPipelineDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-4 mb-4">
-                {[{ l: "Orgânico", c: C.volBright }, { l: "Pago", c: C.revBright }, { l: "Referral", c: C.convBright }, { l: "Direto", c: C.actBright }, { l: "Conversão %", c: C.negBright }].map(item => (
+                {[{ l: "Orgânico", c: C.teal }, { l: "Pago", c: C.amber }, { l: "Referral", c: C.green }, { l: "Direto", c: C.blue }, { l: "Conversão %", c: C.coral }].map(item => (
                   <div key={item.l} className="flex items-center gap-1.5">
                     <div className="w-2.5 h-2.5 rounded-sm" style={{ background: item.c }} />
                     <span className="text-xs text-muted-foreground">{item.l}</span>
@@ -526,17 +504,18 @@ const SalesPipelineDashboard = () => {
                   <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                   <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `${v}%`} />
                   <Tooltip {...TOOLTIP_STYLE} />
-                  <Bar yAxisId="left" dataKey="organico" fill={C.volBright} radius={[3, 3, 0, 0]} maxBarSize={16} name="Orgânico" />
-                  <Bar yAxisId="left" dataKey="pago" fill={C.revBright} radius={[3, 3, 0, 0]} maxBarSize={16} name="Pago" />
-                  <Bar yAxisId="left" dataKey="referral" fill={C.convBright} radius={[3, 3, 0, 0]} maxBarSize={16} name="Referral" />
-                  <Bar yAxisId="left" dataKey="direto" fill={C.actBright} radius={[3, 3, 0, 0]} maxBarSize={16} name="Direto" />
-                  <Line yAxisId="right" type="monotone" dataKey="conversion" stroke={C.negBright} strokeWidth={2} dot={{ r: 3, fill: C.negBright }} activeDot={{ r: 5, stroke: C.textP, strokeWidth: 1 }} name="Conversão %" />
+                  <Bar yAxisId="left" dataKey="organico" fill={C.teal} radius={[3, 3, 0, 0]} maxBarSize={16} name="Orgânico" />
+                  <Bar yAxisId="left" dataKey="pago" fill={C.amber} radius={[3, 3, 0, 0]} maxBarSize={16} name="Pago" />
+                  <Bar yAxisId="left" dataKey="referral" fill={C.green} radius={[3, 3, 0, 0]} maxBarSize={16} name="Referral" />
+                  <Bar yAxisId="left" dataKey="direto" fill={C.blue} radius={[3, 3, 0, 0]} maxBarSize={16} name="Direto" />
+                  <Line yAxisId="right" type="monotone" dataKey="conversion" stroke={C.coral} strokeWidth={2} dot={{ r: 3, fill: C.coral }} activeDot={{ r: 5, stroke: C.textP, strokeWidth: 1 }} name="Conversão %" />
                 </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           <div className="grid gap-4 md:grid-cols-3">
+            {/* 2-B: Channel Donut */}
             <Card className="card-hover md:col-span-1">
               <CardHeader className="pb-3">
                 <CardTitle className="text-foreground font-semibold text-base">Distribuição por Canal</CardTitle>
@@ -556,7 +535,7 @@ const SalesPipelineDashboard = () => {
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ top: 0, height: 200 }}>
                       <div className="text-center">
-                        <p className="text-xl font-bold tabular-nums" style={{ color: C.volBright }}>{totalChannelLeads}</p>
+                        <p className="text-xl font-bold tabular-nums" style={{ color: C.teal }}>{totalChannelLeads}</p>
                         <p className="text-[10px] text-muted-foreground">leads</p>
                       </div>
                     </div>
@@ -573,6 +552,7 @@ const SalesPipelineDashboard = () => {
               </CardContent>
             </Card>
 
+            {/* 2-C: CAC Horizontal Bars */}
             <Card className="card-hover md:col-span-2">
               <CardHeader className="pb-3">
                 <CardTitle className="text-foreground font-semibold text-base">CAC por Canal</CardTitle>
@@ -587,7 +567,7 @@ const SalesPipelineDashboard = () => {
                     <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [formatCurrency(v), "CAC"]} />
                     <ReferenceLine x={avgCAC} stroke={C.textS} strokeDasharray="4 4" label={{ value: `Média: R$${avgCAC}`, fill: C.textS, fontSize: 10, position: "top" }} />
                     <Bar dataKey="cac" radius={[0, 4, 4, 0]} maxBarSize={20}>
-                      {cacData.map((d, i) => <Cell key={i} fill={d.cac > avgCAC ? C.negBright : C.convBright} />)}
+                      {cacData.map((d, i) => <Cell key={i} fill={d.cac > avgCAC ? C.coral : C.green} />)}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -598,6 +578,7 @@ const SalesPipelineDashboard = () => {
 
         {/* ═══ TAB 3: Marketing & Ads ══════════════════════════ */}
         <TabsContent value="marketing" className="space-y-4">
+          {/* 3-A: Investment vs Return */}
           <Card className="card-hover">
             <CardHeader>
               <CardTitle className="text-foreground font-semibold">Investimento vs Retorno</CardTitle>
@@ -608,8 +589,8 @@ const SalesPipelineDashboard = () => {
                 <ComposedChart data={investData} margin={CHART_MARGIN}>
                   <defs>
                     <linearGradient id="spendGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={C.revBright} stopOpacity={0.25} />
-                      <stop offset="100%" stopColor={C.revBright} stopOpacity={0.02} />
+                      <stop offset="0%" stopColor={C.amber} stopOpacity={0.25} />
+                      <stop offset="100%" stopColor={C.amber} stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid {...GRID_PROPS} />
@@ -617,16 +598,17 @@ const SalesPipelineDashboard = () => {
                   <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
                   <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `${v}x`} />
                   <Tooltip {...TOOLTIP_STYLE} />
-                  <Area yAxisId="left" type="monotone" dataKey="spend" fill="url(#spendGrad)" stroke={C.revBright} strokeWidth={2} name="Investimento" />
-                  <Area yAxisId="left" type="monotone" dataKey="revenue" fill="none" stroke={C.convBright} strokeWidth={2} name="Receita" />
+                  <Area yAxisId="left" type="monotone" dataKey="spend" fill="url(#spendGrad)" stroke={C.amber} strokeWidth={2} name="Investimento" />
+                  <Area yAxisId="left" type="monotone" dataKey="revenue" fill="none" stroke={C.green} strokeWidth={2} strokeDasharray="0" name="Receita" />
                   <Line yAxisId="right" type="monotone" dataKey="roi" stroke={C.purple} strokeWidth={2.5} dot={{ r: 3, fill: C.purple }} activeDot={{ r: 5, stroke: C.textP, strokeWidth: 1 }} name="ROI" />
-                  <ReferenceLine yAxisId="right" y={1} stroke={C.negBright} strokeDasharray="4 4" label={{ value: "ROI 1x", fill: C.negBright, fontSize: 10, position: "right" }} />
+                  <ReferenceLine yAxisId="right" y={1} stroke={C.coral} strokeDasharray="4 4" label={{ value: "ROI 1x", fill: C.coral, fontSize: 10, position: "right" }} />
                 </ComposedChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
+            {/* 3-B: Scatter */}
             <Card className="card-hover">
               <CardHeader className="pb-3">
                 <CardTitle className="text-foreground font-semibold text-base">Performance de Campanhas</CardTitle>
@@ -643,7 +625,7 @@ const SalesPipelineDashboard = () => {
                     <ReferenceLine y={avgLeads} stroke={C.textM} strokeDasharray="3 3" />
                     <Scatter data={scatterData} animationDuration={600}>
                       {scatterData.map((d, i) => (
-                        <Cell key={i} fill={d.leads > avgLeads ? C.convBright : C.negBright} r={Math.max(4, d.rate * 0.8)} />
+                        <Cell key={i} fill={d.leads > avgLeads ? C.green : C.coral} r={Math.max(4, d.rate * 0.8)} />
                       ))}
                     </Scatter>
                   </ScatterChart>
@@ -655,6 +637,7 @@ const SalesPipelineDashboard = () => {
               </CardContent>
             </Card>
 
+            {/* 3-C: Weekly ROI Sparklines */}
             <Card className="card-hover">
               <CardHeader className="pb-3">
                 <CardTitle className="text-foreground font-semibold text-base">ROI por Período</CardTitle>
@@ -667,17 +650,17 @@ const SalesPipelineDashboard = () => {
                     return (
                       <div key={i} className="rounded-lg border border-border p-3 card-hover">
                         <p className="text-[10px] text-muted-foreground mb-1">{w.week}</p>
-                        <p className="text-xl font-bold tabular-nums" style={{ color: C.revBright }}>{w.roi}x</p>
+                        <p className="text-xl font-bold tabular-nums" style={{ color: C.amber }}>{w.roi}x</p>
                         <div className="mt-1">
                           <ResponsiveContainer width="100%" height={40}>
                             <AreaChart data={w.trend.map((v, j) => ({ j, v }))} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
                               <defs>
                                 <linearGradient id={`wk${i}`} x1="0" y1="0" x2="0" y2="1">
-                                  <stop offset="0%" stopColor={isUp ? C.convBright : C.negBright} stopOpacity={0.3} />
-                                  <stop offset="100%" stopColor={isUp ? C.convBright : C.negBright} stopOpacity={0} />
+                                  <stop offset="0%" stopColor={isUp ? C.green : C.coral} stopOpacity={0.3} />
+                                  <stop offset="100%" stopColor={isUp ? C.green : C.coral} stopOpacity={0} />
                                 </linearGradient>
                               </defs>
-                              <Area type="monotone" dataKey="v" stroke={isUp ? C.convBright : C.negBright} strokeWidth={1.5} fill={`url(#wk${i})`} dot={false} isAnimationActive={false} />
+                              <Area type="monotone" dataKey="v" stroke={isUp ? C.green : C.coral} strokeWidth={1.5} fill={`url(#wk${i})`} dot={false} isAnimationActive={false} />
                             </AreaChart>
                           </ResponsiveContainer>
                         </div>
@@ -692,6 +675,7 @@ const SalesPipelineDashboard = () => {
 
         {/* ═══ TAB 4: Crescimento ══════════════════════════════ */}
         <TabsContent value="growth" className="space-y-4">
+          {/* 4-A: Revenue vs Target */}
           <Card className="card-hover">
             <CardHeader>
               <CardTitle className="text-foreground font-semibold">Receita Acumulada vs Meta</CardTitle>
@@ -702,22 +686,23 @@ const SalesPipelineDashboard = () => {
                 <AreaChart data={revenueTarget} margin={CHART_MARGIN}>
                   <defs>
                     <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={C.revBright} stopOpacity={0.25} />
-                      <stop offset="100%" stopColor={C.revBright} stopOpacity={0.02} />
+                      <stop offset="0%" stopColor={C.amber} stopOpacity={0.25} />
+                      <stop offset="100%" stopColor={C.amber} stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid {...GRID_PROPS} />
                   <XAxis dataKey="month" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                   <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v: number, name: string) => [formatCurrency(v), name === "revenue" ? "Receita" : "Meta"]} />
-                  <Area type="monotone" dataKey="revenue" fill="url(#revGrad)" stroke={C.revBright} strokeWidth={2} animationDuration={600} name="Receita" />
-                  <Line type="monotone" dataKey="target" stroke={C.convBright} strokeWidth={2} strokeDasharray="6 3" dot={false} name="Meta" />
+                  <Area type="monotone" dataKey="revenue" fill="url(#revGrad)" stroke={C.amber} strokeWidth={2} animationDuration={600} name="Receita" />
+                  <Line type="monotone" dataKey="target" stroke={C.green} strokeWidth={2} strokeDasharray="6 3" dot={false} name="Meta" />
                 </AreaChart>
               </ResponsiveContainer>
             </CardContent>
           </Card>
 
           <div className="grid gap-4 md:grid-cols-2">
+            {/* 4-B: Sales Cycle */}
             <Card className="card-hover">
               <CardHeader className="pb-3">
                 <CardTitle className="text-foreground font-semibold text-base">Ciclo de Vendas</CardTitle>
@@ -729,16 +714,17 @@ const SalesPipelineDashboard = () => {
                     <CartesianGrid {...GRID_PROPS} />
                     <XAxis dataKey="stage" tick={{ ...AXIS_TICK, fontSize: 10 }} axisLine={false} tickLine={false} />
                     <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} label={{ value: "dias", angle: -90, position: "insideLeft", fill: C.textS, fontSize: 10 }} />
-                    <Tooltip {...TOOLTIP_STYLE} formatter={(v: number, name: string) => [`${v} dias`, name === "days" ? "Média" : name === "max" ? "Máximo" : "Mínimo"]} />
-                    <Area type="monotone" dataKey="max" fill={C.actBright} fillOpacity={0.1} stroke="none" />
+                    <Tooltip {...TOOLTIP_STYLE} formatter={(v: number, name: string) => [name === "days" ? `${v} dias` : `${v} dias`, name === "days" ? "Média" : name === "max" ? "Máximo" : "Mínimo"]} />
+                    <Area type="monotone" dataKey="max" fill={C.blue} fillOpacity={0.1} stroke="none" />
                     <Area type="monotone" dataKey="min" fill={C.card} fillOpacity={1} stroke="none" />
-                    <Line type="monotone" dataKey="days" stroke={C.actBright} strokeWidth={2} dot={{ r: 3, fill: C.actBright }} activeDot={{ r: 5, stroke: C.textP, strokeWidth: 1 }} />
-                    <ReferenceLine y={14} stroke={C.revBright} strokeDasharray="4 4" label={{ value: "Benchmark: 14d", fill: C.revBright, fontSize: 10, position: "right" }} />
+                    <Line type="monotone" dataKey="days" stroke={C.blue} strokeWidth={2} dot={{ r: 3, fill: C.blue }} activeDot={{ r: 5, stroke: C.textP, strokeWidth: 1 }} />
+                    <ReferenceLine y={14} stroke={C.amber} strokeDasharray="4 4" label={{ value: "Benchmark: 14d", fill: C.amber, fontSize: 10, position: "right" }} />
                   </ComposedChart>
                 </ResponsiveContainer>
               </CardContent>
             </Card>
 
+            {/* 4-C: Cohort Heatmap */}
             <Card className="card-hover">
               <CardHeader className="pb-3">
                 <CardTitle className="text-foreground font-semibold text-base">Cohort de Fechamento</CardTitle>
@@ -765,7 +751,7 @@ const SalesPipelineDashboard = () => {
                             return (
                               <td key={col} className="py-1.5 px-2 text-center">
                                 <div className="rounded px-2 py-1 tabular-nums font-medium" style={{
-                                  background: `color-mix(in srgb, ${C.convBright} ${Math.round(intensity * 60)}%, ${C.raised})`,
+                                  background: `color-mix(in srgb, ${C.green} ${Math.round(intensity * 60)}%, ${C.raised})`,
                                   color: intensity > 0.4 ? C.textP : C.textS,
                                 }}>
                                   {val}%
@@ -782,6 +768,7 @@ const SalesPipelineDashboard = () => {
             </Card>
           </div>
 
+          {/* 4-D: Forecast */}
           <Card className="card-hover">
             <CardHeader>
               <CardTitle className="text-foreground font-semibold">Previsão Próximos 90 Dias</CardTitle>
@@ -792,8 +779,8 @@ const SalesPipelineDashboard = () => {
                 <AreaChart data={forecastData} margin={CHART_MARGIN}>
                   <defs>
                     <linearGradient id="actualGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor={C.revBright} stopOpacity={0.2} />
-                      <stop offset="100%" stopColor={C.revBright} stopOpacity={0} />
+                      <stop offset="0%" stopColor={C.amber} stopOpacity={0.2} />
+                      <stop offset="100%" stopColor={C.amber} stopOpacity={0} />
                     </linearGradient>
                     <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="0%" stopColor={C.purple} stopOpacity={0.2} />
@@ -806,7 +793,7 @@ const SalesPipelineDashboard = () => {
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v: number | null, name: string) => [v ? formatCurrency(v) : "—", name === "actual" ? "Realizado" : name === "forecast" ? "Projeção" : name]} />
                   <Area type="monotone" dataKey="forecastHigh" fill={C.purple} fillOpacity={0.08} stroke="none" />
                   <Area type="monotone" dataKey="forecastLow" fill={C.card} fillOpacity={1} stroke="none" />
-                  <Area type="monotone" dataKey="actual" fill="url(#actualGrad)" stroke={C.revBright} strokeWidth={2} connectNulls={false} />
+                  <Area type="monotone" dataKey="actual" fill="url(#actualGrad)" stroke={C.amber} strokeWidth={2} connectNulls={false} />
                   <Line type="monotone" dataKey="forecast" stroke={C.purple} strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: C.purple }} connectNulls={false} />
                   <ReferenceLine x="Mar" stroke={C.textS} strokeDasharray="3 3" label={{ value: "Hoje", fill: C.textS, fontSize: 10, position: "top" }} />
                 </AreaChart>
