@@ -4,70 +4,70 @@
 
 @layer base {
   :root {
-    --background: 0 0% 4%;
-    --foreground: 0 0% 100%;
+    /* ── Page / Surface / Raised ─────────────────────── */
+    --background: 80 18% 4%;       /* #0A0C09 */
+    --foreground: 80 30% 90%;      /* #E8EDD8 */
 
-    --card: 80 20% 12%;
-    --card-foreground: 0 0% 100%;
+    --card: 80 30% 6%;             /* #121509 */
+    --card-foreground: 80 30% 90%;
 
-    --popover: 80 20% 12%;
-    --popover-foreground: 0 0% 100%;
+    --popover: 80 30% 6%;
+    --popover-foreground: 80 30% 90%;
 
-    --primary: 68 53% 50%;
-    --primary-foreground: 0 0% 4%;
+    --primary: 74 55% 34%;         /* #738925 */
+    --primary-foreground: 80 18% 4%;
 
-    --secondary: 80 15% 18%;
-    --secondary-foreground: 0 0% 90%;
+    --secondary: 80 25% 9%;        /* #191E0C raised */
+    --secondary-foreground: 80 30% 90%;
 
-    --muted: 80 12% 15%;
-    --muted-foreground: 80 10% 50%;
+    --muted: 80 20% 8%;
+    --muted-foreground: 78 16% 39%; /* #6B7355 → actually 78 16 39 */
 
-    --accent: 80 15% 18%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 72 51% 50%;          /* #AFC040 */
+    --accent-foreground: 80 18% 4%;
 
-    --destructive: 352 80% 70%;
-    --destructive-foreground: 0 0% 100%;
+    --destructive: 12 80% 60%;     /* coral #E8684A */
+    --destructive-foreground: 80 30% 90%;
 
-    --border: 80 10% 16%;
-    --input: 80 10% 16%;
-    --ring: 68 53% 50%;
+    --border: 80 28% 11%;          /* #1E2610 */
+    --input: 80 28% 11%;
+    --ring: 74 55% 34%;
 
     --radius: 0.75rem;
 
-    --sidebar-background: 80 15% 7%;
-    --sidebar-foreground: 0 0% 90%;
-    --sidebar-primary: 68 53% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 80 12% 14%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 80 10% 13%;
-    --sidebar-ring: 68 53% 50%;
+    /* ── Sidebar ─────────────────────────────────────── */
+    --sidebar-background: 80 20% 5%;
+    --sidebar-foreground: 80 30% 90%;
+    --sidebar-primary: 72 51% 50%;
+    --sidebar-primary-foreground: 80 18% 4%;
+    --sidebar-accent: 80 25% 9%;
+    --sidebar-accent-foreground: 80 30% 90%;
+    --sidebar-border: 80 28% 9%;
+    --sidebar-ring: 74 55% 34%;
 
-    /* Brand scale (brandbook exact) */
-    --brand-900: 73 55% 34%;
-    --brand-800: 71 55% 39%;
-    --brand-700: 69 48% 45%;
-    --brand-600: 68 53% 50%;
-    --brand-500: 66 47% 57%;
-    --brand-400: 66 42% 65%;
-    --brand-300: 66 36% 75%;
-    --brand-200: 65 33% 85%;
-    --brand-100: 64 45% 94%;
+    /* ── Semantic data colors ────────────────────────── */
+    --teal: 168 64% 45%;           /* #2CBBA6 volume/counts */
+    --teal-surface: 168 40% 5%;
+    --amber: 33 78% 57%;           /* #E8A43C revenue/R$ */
+    --amber-surface: 33 30% 6%;
+    --green: 72 51% 50%;           /* #AFC040 conversion/wins */
+    --green-surface: 72 60% 5%;
+    --coral: 12 78% 60%;           /* #E8684A loss/decline */
+    --coral-surface: 12 40% 6%;
+    --blue: 207 70% 58%;           /* #4A9FE0 activity */
+    --blue-surface: 207 40% 6%;
+    --purple: 254 70% 70%;         /* #9B7FE8 forecasts */
+    --purple-surface: 254 30% 7%;
 
-    --chart-1: 68 53% 50%;
-    --chart-2: 73 55% 34%;
-    --chart-3: 66 47% 57%;
-    --chart-4: 66 36% 75%;
-    --chart-5: 65 33% 85%;
+    /* ── Border hover ────────────────────────────────── */
+    --border-hover: 80 35% 16%;    /* #2E3A18 */
 
-    --qualification-lead: 0 0% 45%;
-    --qualification-mql: 45 90% 50%;
-    --qualification-sql: 120 60% 40%;
-
-    /* Status colors */
-    --success: 160 100% 39%;
-    --warning: 40 98% 57%;
-    --danger: 352 100% 70%;
+    /* ── Chart scale ─────────────────────────────────── */
+    --chart-1: 168 64% 45%;       /* teal */
+    --chart-2: 33 78% 57%;        /* amber */
+    --chart-3: 72 51% 50%;        /* green */
+    --chart-4: 12 78% 60%;        /* coral */
+    --chart-5: 207 70% 58%;       /* blue */
   }
 }
 
@@ -82,7 +82,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-family: 'Mona Sans', 'Sora', system-ui, -apple-system, sans-serif;
+    font-family: 'Sora', system-ui, -apple-system, sans-serif;
   }
 }
 
@@ -112,12 +112,20 @@
     width: 400px;
     height: 400px;
     border-radius: 50%;
-    background: radial-gradient(circle, hsl(68 53% 50% / 0.06), hsl(80 20% 12% / 0.04), transparent 70%);
+    background: radial-gradient(circle, hsl(74 55% 34% / 0.06), hsl(80 30% 6% / 0.04), transparent 70%);
     filter: blur(60px);
     pointer-events: none;
   }
 
   .glass-border {
     border: 1px solid hsl(0 0% 100% / 0.06);
+  }
+
+  .card-hover {
+    transition: border-color 200ms ease, box-shadow 200ms ease;
+  }
+  .card-hover:hover {
+    border-color: hsl(var(--border-hover));
+    box-shadow: 0 0 0 1px hsl(var(--primary) / 0.3);
   }
 }
