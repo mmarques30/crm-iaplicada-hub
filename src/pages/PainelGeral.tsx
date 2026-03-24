@@ -28,8 +28,8 @@ export default function PainelGeral() {
   const { data: productMetrics } = useQuery({
     queryKey: ['product_metrics'],
     queryFn: async () => {
-      const { data } = await supabase.from('product_metrics').select('*')
-      return data || []
+      const { data } = await (supabase as any).from('product_metrics').select('*')
+      return (data || []) as any[]
     },
   })
 

@@ -26,18 +26,18 @@ export default function Dashboard() {
   const { data: metrics, isLoading: metricsLoading, isError: metricsError, refetch: refetchMetrics } = useQuery({
     queryKey: ["product_metrics"],
     queryFn: async () => {
-      const { data } = await supabase.from("product_metrics").select("*");
-      return data || [];
+      const { data } = await (supabase as any).from("product_metrics").select("*");
+      return (data || []) as any[];
     },
   });
 
   const { data: stageConversion, isLoading: chartLoading, isError: chartError, refetch: refetchChart } = useQuery({
     queryKey: ["stage_conversion", product],
     queryFn: async () => {
-      let q = supabase.from("stage_conversion").select("*").order("display_order");
-      if (product !== "all") q = q.eq("product", product as "business" | "skills" | "academy");
+      let q = (supabase as any).from("stage_conversion").select("*").order("display_order");
+      if (product !== "all") q = q.eq("product", product);
       const { data } = await q;
-      return data || [];
+      return (data || []) as any[];
     },
   });
 
