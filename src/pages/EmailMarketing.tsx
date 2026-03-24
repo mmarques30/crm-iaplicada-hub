@@ -235,8 +235,8 @@ export default function EmailMarketing() {
 
         <Card className="cursor-pointer hover:shadow-md transition-shadow border-dashed" onClick={() => navigate("/email/campaigns")}>
           <CardContent className="pt-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-blue-50 flex items-center justify-center">
-              <Send className="h-6 w-6 text-blue-500" />
+             <div className="w-12 h-12 rounded-xl bg-[#040E1A] flex items-center justify-center">
+               <Send className="h-6 w-6 text-[#4A9FE0]" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">Agendar Campanha</p>
