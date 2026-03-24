@@ -374,11 +374,41 @@ function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: 
   navigate: (path: string) => void;
   isClosed?: boolean;
 }) {
+  const [collapsed, setCollapsed] = useState(false);
+
+  if (collapsed) {
+    return (
+      <div
+        className="flex-shrink-0 w-12 flex flex-col items-center cursor-pointer rounded-lg border bg-muted/50 hover:bg-muted transition-colors"
+        onClick={() => setCollapsed(false)}
+      >
+        <div className="py-2 px-1">
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <span
+            className="text-xs font-semibold text-muted-foreground"
+            style={{ writingMode: "vertical-lr", textOrientation: "mixed" }}
+          >
+            {stage.name}
+          </span>
+        </div>
+        <Badge variant="secondary" className="text-[10px] mb-2 mx-1">{deals.length}</Badge>
+      </div>
+    );
+  }
+
   return (
-    <div className={`flex-shrink-0 ${isClosed ? 'w-60' : 'w-72'} flex flex-col`}>
+    <div className={`flex-shrink-0 w-72 flex flex-col`}>
       <div className={`rounded-t-lg px-3 py-2 ${stage.is_won ? 'bg-brand-600/20' : stage.is_lost ? 'bg-destructive/10' : 'bg-muted'}`}>
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold truncate">{stage.name}</h3>
+          <button
+            onClick={() => setCollapsed(true)}
+            className="flex items-center gap-1 hover:opacity-70 transition-opacity"
+          >
+            <X className="h-3 w-3 text-muted-foreground" />
+            <h3 className="text-sm font-semibold truncate">{stage.name}</h3>
+          </button>
           <Badge variant="secondary" className="text-xs">{deals.length}</Badge>
         </div>
         <p className="text-xs text-muted-foreground">{formatCurrency(total)}</p>
