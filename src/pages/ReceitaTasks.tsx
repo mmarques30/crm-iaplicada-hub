@@ -33,9 +33,9 @@ const CONTEXT_LABELS: Record<string, string> = {
 }
 
 const PRIORITY_DOT: Record<string, string> = {
-  Alta: 'bg-red-500',
-  Média: 'bg-amber-500',
-  Baixa: 'bg-muted-foreground',
+  Alta: 'bg-[#E8684A]',
+  Média: 'bg-[#E8A43C]',
+  Baixa: 'bg-[#2CBBA6]',
 }
 
 export default function ReceitaTasks() {
