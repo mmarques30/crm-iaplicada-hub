@@ -151,7 +151,7 @@ export default function EmailMarketing() {
                     <p className="text-2xl font-bold">{workflowStats?.total || 0}</p>
                     <div className="flex gap-2 mt-1">
                       {(workflowStats?.active || 0) > 0 && (
-                        <Badge className="text-[10px] bg-green-100 text-green-700">{workflowStats?.active} ativas</Badge>
+                       <Badge className="text-[10px] bg-[#141A04] text-[#AFC040]">{workflowStats?.active} ativas</Badge>
                       )}
                     </div>
                   </div>
