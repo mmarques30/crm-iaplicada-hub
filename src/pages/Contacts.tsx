@@ -11,6 +11,11 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Plus } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const PAGE_SIZE = 20;
@@ -94,10 +99,46 @@ const emptyFilters: Filters = {
 export default function Contacts() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [savingContact, setSavingContact] = useState(false);
+  const [newContact, setNewContact] = useState({
+    first_name: "", last_name: "", email: "", phone: "", company: "", cargo: "", produto_interesse: ""
+  });
+
+  const resetContactDialog = () => setNewContact({
+    first_name: "", last_name: "", email: "", phone: "", company: "", cargo: "", produto_interesse: ""
+  });
+
+  const handleCreateContact = async () => {
+    if (!newContact.first_name.trim()) { toast.error("Nome é obrigatório"); return; }
+    setSavingContact(true);
+    try {
+      const insertData: any = {
+        first_name: newContact.first_name.trim(),
+        last_name: newContact.last_name.trim() || null,
+        email: newContact.email.trim() || null,
+        phone: newContact.phone.trim() || null,
+        company: newContact.company.trim() || null,
+        cargo: newContact.cargo || null,
+        produto_interesse: newContact.produto_interesse ? [newContact.produto_interesse] : null,
+      };
+      const { error } = await supabase.from("contacts").insert(insertData);
+      if (error) throw error;
+      toast.success("Contato criado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      setContactDialogOpen(false);
+      resetContactDialog();
+    } catch (err: any) {
+      toast.error("Erro ao criar contato: " + err.message);
+    } finally {
+      setSavingContact(false);
+    }
+  };
   const [leadOrigin, setLeadOrigin] = useState<LeadOrigin>("all");
 
   const activeFilterCount = useMemo(
@@ -255,6 +296,10 @@ export default function Contacts() {
           <h1 className="text-2xl font-bold">Contatos</h1>
           <p className="text-sm text-muted-foreground">{displayTotal} contatos</p>
         </div>
+        <Button size="sm" className="gap-1.5" onClick={() => setContactDialogOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Novo Contato
+        </Button>
       </div>
 
       {/* Lead Origin Tabs */}
@@ -501,6 +546,62 @@ export default function Contacts() {
           </Button>
         </div>
       )}
+
+      {/* Dialog Novo Contato */}
+      <Dialog open={contactDialogOpen} onOpenChange={(open) => { setContactDialogOpen(open); if (!open) resetContactDialog(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Novo Contato</DialogTitle>
+            <DialogDescription>Cadastre um novo contato no CRM</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nome *</Label>
+              <Input placeholder="Nome" value={newContact.first_name} onChange={(e) => setNewContact(p => ({ ...p, first_name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Sobrenome</Label>
+              <Input placeholder="Sobrenome" value={newContact.last_name} onChange={(e) => setNewContact(p => ({ ...p, last_name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input placeholder="email@exemplo.com" type="email" value={newContact.email} onChange={(e) => setNewContact(p => ({ ...p, email: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Telefone</Label>
+              <Input placeholder="(11) 99999-9999" value={newContact.phone} onChange={(e) => setNewContact(p => ({ ...p, phone: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Empresa</Label>
+              <Input placeholder="Nome da empresa" value={newContact.company} onChange={(e) => setNewContact(p => ({ ...p, company: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Cargo</Label>
+              <Select value={newContact.cargo} onValueChange={(v) => setNewContact(p => ({ ...p, cargo: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {CARGO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label>Produto de Interesse</Label>
+              <Select value={newContact.produto_interesse} onValueChange={(v) => setNewContact(p => ({ ...p, produto_interesse: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {PRODUTO_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setContactDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateContact} disabled={savingContact}>
+              {savingContact ? "Criando..." : "Criar Contato"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
