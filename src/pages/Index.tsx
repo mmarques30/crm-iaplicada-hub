@@ -387,96 +387,168 @@ const SalesPipelineDashboard = () => {
             </CardContent>
           </Card>
 
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* 1-B: Velocidade do Pipeline */}
-            <Card className="card-hover lg:col-span-1">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-foreground font-semibold text-base">Velocidade do Pipeline</CardTitle>
-                <CardDescription>Deals por estágio do funil</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                {velocityTrends.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">Sem dados</p>
-                ) : velocityTrends.map(s => (
-                  <div key={s.stage_name} className={`flex items-center gap-2 py-1.5 ${s.deal_count === 0 ? "opacity-50" : ""}`}>
-                    <span className="text-xs text-muted-foreground w-24 truncate">{s.stage_name}</span>
-                    <div className="flex-1 h-1.5 rounded-full bg-secondary overflow-hidden">
-                      <div className="h-full rounded-full" style={{ width: `${(s.deal_count / maxStageCount) * 100}%`, background: `linear-gradient(90deg, ${C.teal}, ${C.green})` }} />
-                    </div>
-                    <span className="text-xs font-bold tabular-nums w-6 text-right" style={{ color: C.teal }}>{s.deal_count}</span>
-                    <MiniSparkline data={s.trend} up={s.isUp} />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+          {/* ── 3 Cards Inferiores ── */}
+          <div className="grid items-stretch gap-[12px]" style={{ gridTemplateColumns: '1.35fr 1fr 0.9fr' }}>
 
-            {/* 1-C: Ticket Médio BarChart */}
-            <Card className="card-hover lg:col-span-1">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-foreground font-semibold text-base">Ticket Médio por Estágio</CardTitle>
-                <CardDescription>Valor médio das oportunidades</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {ticketStages.length === 0 ? (
-                  <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">Aguardando dados</div>
-                ) : (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={ticketStages.map(s => ({
-                      name: s.stage_name.replace("Reunião Agendada", "Reu. Ag.").replace("Reunião Realizada", "Reu. Re.").replace("Contato Iniciado", "Contato"),
-                      avg: s.deal_count > 0 ? Math.round(s.total_amount / s.deal_count) : 0,
-                    }))} margin={{ top: 20, right: 8, bottom: 8, left: 8 }}>
-                      <CartesianGrid {...GRID_PROPS} />
-                      <XAxis dataKey="name" tick={{ ...AXIS_TICK, fontSize: 10 }} axisLine={false} tickLine={false} />
-                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
-                      <Tooltip {...TOOLTIP_STYLE} formatter={(v: number) => [formatCurrency(v), "Ticket médio"]} />
-                      <Bar dataKey="avg" radius={[4, 4, 0, 0]} maxBarSize={40}>
-                        {ticketStages.map((s, i) => (
-                          <Cell key={i} fill={s.deal_count > 0 ? C.amber : C.borderH} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
+            {/* CARD 1 — Velocidade do Pipeline */}
+            <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+              <p className="text-[13px] font-bold text-foreground mb-[3px]">Velocidade do Pipeline</p>
+              <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>4 estágios com deals ativos</p>
 
-            {/* 1-D: Deals em Risco Donut */}
-            <Card className="card-hover lg:col-span-1">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-foreground font-semibold text-base">Deals em Risco</CardTitle>
-                <CardDescription>Distribuição de status</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {riskData.length === 0 ? (
-                  <div className="h-[200px] flex items-center justify-center text-muted-foreground text-sm">Sem deals</div>
-                ) : (
-                  <div className="relative">
-                    <ResponsiveContainer width="100%" height={200}>
-                      <PieChart>
-                        <Pie data={riskData} cx="50%" cy="50%" innerRadius={55} outerRadius={80} paddingAngle={3} dataKey="value" animationDuration={600}>
-                          {riskData.map((d, i) => <Cell key={i} fill={d.color} stroke="none" />)}
-                        </Pie>
-                        <Tooltip {...TOOLTIP_STYLE} formatter={(v: number, name: string) => [v, name]} />
-                      </PieChart>
-                    </ResponsiveContainer>
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="text-center">
-                        <p className="text-2xl font-bold tabular-nums text-foreground">{totalDeals}</p>
-                        <p className="text-[10px] text-muted-foreground">deals</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap justify-center gap-3 mt-2">
-                      {riskData.map(d => (
-                        <div key={d.name} className="flex items-center gap-1.5">
-                          <div className="w-2 h-2 rounded-sm" style={{ background: d.color }} />
-                          <span className="text-[10px] text-muted-foreground">{d.name} ({d.value})</span>
-                        </div>
-                      ))}
-                    </div>
+              {/* Zone: Entrada */}
+              <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Entrada</p>
+              <div className="flex items-center gap-[10px] py-[7px] border-b border-[#191D0C]">
+                <div className="w-[6px] h-[6px] rounded-full" style={{ background: '#2CBBA6' }} />
+                <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>Contato Iniciado</span>
+                <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
+                  <div className="h-full rounded-full" style={{ width: '100%', background: '#2CBBA6' }} />
+                </div>
+                <span className="text-[13px] font-bold tabular-nums w-[22px] text-right" style={{ color: '#2CBBA6' }}>25</span>
+              </div>
+
+              {/* Zone: Atividade */}
+              <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Atividade</p>
+              <div className="flex items-center gap-[10px] py-[7px] border-b border-[#191D0C]">
+                <div className="w-[6px] h-[6px] rounded-full" style={{ background: '#4A9FE0' }} />
+                <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>Reunião Agendada</span>
+                <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
+                  <div className="h-full rounded-full" style={{ width: '8%', background: '#4A9FE0' }} />
+                </div>
+                <span className="text-[13px] font-bold tabular-nums w-[22px] text-right" style={{ color: '#4A9FE0' }}>1</span>
+              </div>
+              <div className="flex items-center gap-[10px] py-[7px] border-b border-[#191D0C]">
+                <div className="w-[6px] h-[6px] rounded-full" style={{ background: '#4A9FE0' }} />
+                <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>Reunião Realizada</span>
+                <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
+                  <div className="h-full rounded-full" style={{ width: '16%', background: '#4A9FE0' }} />
+                </div>
+                <span className="text-[13px] font-bold tabular-nums w-[22px] text-right" style={{ color: '#4A9FE0' }}>2</span>
+              </div>
+
+              {/* Zone: Conversão */}
+              <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Conversão</p>
+              <div className="flex items-center gap-[10px] py-[7px]">
+                <div className="w-[6px] h-[6px] rounded-full" style={{ background: '#AFC040' }} />
+                <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>Negociação</span>
+                <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
+                  <div className="h-full rounded-full" style={{ width: '8%', background: '#AFC040' }} />
+                </div>
+                <span className="text-[13px] font-bold tabular-nums w-[22px] text-right" style={{ color: '#AFC040' }}>1</span>
+              </div>
+
+              <div className="flex-1" />
+              {/* Alert */}
+              <div className="rounded-r-[8px] border-l-[3px] border-l-primary p-[10px_12px] mt-[14px]" style={{ background: '#191D0C' }}>
+                <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Gargalo</p>
+                <p className="text-[11px] leading-[1.5]" style={{ color: '#AFC040' }}>86% dos deals parados em Contato Iniciado.</p>
+              </div>
+            </div>
+
+            {/* CARD 2 — Receita em Aberto */}
+            <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+              <p className="text-[13px] font-bold text-foreground mb-[3px]">Receita em Aberto</p>
+              <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>Potencial dos 4 deals ativos</p>
+
+              {/* Central block */}
+              <div className="text-center py-[20px] pb-[18px] border-b border-[#191D0C]">
+                <p className="text-[9px] uppercase mb-[8px]" style={{ color: '#3D4A28' }}>Total potencial</p>
+                <p className="text-[32px] font-bold leading-none" style={{ color: '#E8A43C' }}>R$ 210k</p>
+                <p className="text-[10px] mt-[6px]" style={{ color: '#3D4A28' }}>se todos os deals fecharem</p>
+              </div>
+
+              {/* Fase 1 */}
+              <div className="py-[12px] border-b border-[#191D0C]">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Fase de reunião</p>
+                    <p className="text-[10px]" style={{ color: '#3D4A28' }}>2 deals</p>
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  <div className="text-right">
+                    <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>R$ 90k</p>
+                    <p className="text-[9px]" style={{ color: '#3D4A28' }}>43% do total</p>
+                  </div>
+                </div>
+                <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
+                  <div className="h-full rounded-full" style={{ width: '43%', background: '#E8A43C', opacity: 0.6 }} />
+                </div>
+              </div>
+
+              {/* Fase 2 */}
+              <div className="py-[12px]">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Fase de negociação</p>
+                    <p className="text-[10px]" style={{ color: '#3D4A28' }}>1 deal · maior ticket</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>R$ 120k</p>
+                    <p className="text-[9px]" style={{ color: '#AFC040' }}>57% do total ↑</p>
+                  </div>
+                </div>
+                <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
+                  <div className="h-full rounded-full" style={{ width: '57%', background: '#E8A43C' }} />
+                </div>
+              </div>
+
+              <div className="flex-1" />
+              {/* Alert */}
+              <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#B07830' }}>
+                <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Prioridade</p>
+                <p className="text-[11px] leading-[1.5]" style={{ color: '#E8A43C' }}>1 deal concentra 57% da receita potencial.</p>
+              </div>
+            </div>
+
+            {/* CARD 3 — Status dos Deals */}
+            <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+              <p className="text-[13px] font-bold text-foreground mb-[3px]">Status dos Deals</p>
+              <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>122 deals no total</p>
+
+              {/* SVG Donut */}
+              <div className="flex justify-center py-[12px] pb-[16px]">
+                <svg viewBox="0 0 110 110" width="110" height="110">
+                  {/* Base */}
+                  <circle cx="55" cy="55" r="42" fill="none" stroke="#1A1F0D" strokeWidth="14" />
+                  {/* Perdidos 66% */}
+                  <circle cx="55" cy="55" r="42" fill="none" stroke="#E8684A" strokeWidth="14"
+                    strokeDasharray="175 264" strokeDashoffset="66" strokeLinecap="butt" />
+                  {/* Em progresso 17% */}
+                  <circle cx="55" cy="55" r="42" fill="none" stroke="#4A9FE0" strokeWidth="14"
+                    strokeDasharray="45 264" strokeDashoffset="-109" strokeLinecap="butt" />
+                  {/* Em risco 7% */}
+                  <circle cx="55" cy="55" r="42" fill="none" stroke="#E8A43C" strokeWidth="14"
+                    strokeDasharray="18 264" strokeDashoffset="-154" strokeLinecap="butt" />
+                  {/* Ganhos 10% */}
+                  <circle cx="55" cy="55" r="42" fill="none" stroke="#AFC040" strokeWidth="14"
+                    strokeDasharray="26 264" strokeDashoffset="-172" strokeLinecap="butt" />
+                  <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#E8EDD8" style={{ fontFamily: 'Sora, sans-serif' }}>122</text>
+                  <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#4A5230" style={{ fontFamily: 'Sora, sans-serif' }}>deals</text>
+                </svg>
+              </div>
+
+              {/* Legend */}
+              {[
+                { name: 'Perdidos', count: 81, color: '#E8684A' },
+                { name: 'Em progresso', count: 21, color: '#4A9FE0' },
+                { name: 'Em risco', count: 8, color: '#E8A43C' },
+                { name: 'Ganhos', count: 12, color: '#AFC040' },
+              ].map((item, i, arr) => (
+                <div key={item.name} className={`flex items-center justify-between py-[8px] ${i < arr.length - 1 ? 'border-b border-[#191D0C]' : ''}`}>
+                  <div className="flex items-center gap-[6px]">
+                    <div className="w-[8px] h-[8px] rounded-full" style={{ background: item.color }} />
+                    <span className="text-[11px]" style={{ color: '#C8D4A8' }}>{item.name}</span>
+                  </div>
+                  <span className="text-[13px] font-bold tabular-nums" style={{ color: item.color }}>{item.count}</span>
+                </div>
+              ))}
+
+              <div className="flex-1" />
+              {/* Alert */}
+              <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#C94A2F' }}>
+                <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Atenção</p>
+                <p className="text-[11px] leading-[1.5]" style={{ color: '#E8684A' }}>66% dos deals foram perdidos.</p>
+              </div>
+            </div>
+
           </div>
         </TabsContent>
 
