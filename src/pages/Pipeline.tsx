@@ -199,7 +199,6 @@ export default function Pipeline() {
         <Tabs value={product} onValueChange={(v) => { navigate(`/pipeline/${v}`); setFilters(emptyFilters); }}>
           <TabsList>
             <TabsTrigger value="business">Business</TabsTrigger>
-            <TabsTrigger value="skills">Skills</TabsTrigger>
             <TabsTrigger value="academy">Academy</TabsTrigger>
           </TabsList>
         </Tabs>
