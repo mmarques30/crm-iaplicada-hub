@@ -23,16 +23,16 @@ export default function CrmAnalytics() {
   const { data: productMetrics } = useQuery({
     queryKey: ['product_metrics'],
     queryFn: async () => {
-      const { data } = await supabase.from('product_metrics').select('*')
-      return data || []
+      const { data } = await (supabase as any).from('product_metrics').select('*')
+      return (data || []) as any[]
     },
   })
 
   const { data: stageConversion } = useQuery({
     queryKey: ['stage_conversion'],
     queryFn: async () => {
-      const { data } = await supabase.from('stage_conversion').select('*').order('display_order')
-      return data || []
+      const { data } = await (supabase as any).from('stage_conversion').select('*').order('display_order')
+      return (data || []) as any[]
     },
   })
 
@@ -47,9 +47,9 @@ export default function CrmAnalytics() {
   const { data: dealsByChannel } = useQuery({
     queryKey: ['deals_by_channel_crm'],
     queryFn: async () => {
-      const { data } = await supabase.from('deals_full').select('canal_origem')
+      const { data } = await (supabase as any).from('deals_full').select('canal_origem')
       const channels: Record<string, number> = {}
-      for (const d of data || []) {
+      for (const d of (data || []) as any[]) {
         const ch = d.canal_origem || 'Não informado'
         channels[ch] = (channels[ch] || 0) + 1
       }
