@@ -132,7 +132,7 @@ export default function EmailMarketing() {
                     <p className="text-2xl font-bold">{campaignStats?.total || 0}</p>
                     <div className="flex gap-2 mt-1">
                       {(campaignStats?.scheduled || 0) > 0 && (
-                        <Badge className="text-[10px] bg-blue-100 text-blue-700">{campaignStats?.scheduled} agendadas</Badge>
+                        <Badge className="text-[10px] bg-[#040E1A] text-[#4A9FE0]">{campaignStats?.scheduled} agendadas</Badge>
                       )}
                     </div>
                   </div>
