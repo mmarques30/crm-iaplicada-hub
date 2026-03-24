@@ -315,12 +315,12 @@ const SalesPipelineDashboard = () => {
       {/* ── KPI Cards ──────────────────────────────────────── */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {([
-          { title: "Valor no Pipeline", value: formatCurrency(totals.pipeline), icon: DollarSign, desc: `${totals.active} deals ativos`, accentColor: C.revBright, trendUp: true, trend: "+18.2% vs. mês anterior" },
-          { title: "Total de Leads", value: totalLeads.toString(), icon: Users, desc: "cadastrados no CRM", accentColor: C.volBright, trendUp: true, trend: "+12.5% vs. mês anterior" },
-          { title: "Taxa de Conversão", value: formatPercent(winRate), icon: Target, desc: "média do pipeline", accentColor: C.convBright, trendUp: true, trend: "+3.2% vs. mês anterior" },
-          { title: "ROI de Ads", value: roi === "—" ? "—" : `${roi}x`, icon: BarChart3, desc: "retorno sobre investimento", accentColor: C.revBright, trendUp: false, trend: "-2.1% vs. mês anterior", borderOverride: C.negBright },
-        ] as const).map((kpi, i) => (
-          <Card key={i} className="card-hover relative overflow-hidden" style={{ borderLeft: `3px solid ${kpi.borderOverride || kpi.accentColor}` }}>
+          { title: "Valor no Pipeline", value: formatCurrency(totals.pipeline), icon: DollarSign, desc: `${totals.active} deals ativos`, accentColor: C.revBright, trendUp: true, trend: "+18.2% vs. mês anterior", borderColor: C.revBright },
+          { title: "Total de Leads", value: totalLeads.toString(), icon: Users, desc: "cadastrados no CRM", accentColor: C.volBright, trendUp: true, trend: "+12.5% vs. mês anterior", borderColor: C.volBright },
+          { title: "Taxa de Conversão", value: formatPercent(winRate), icon: Target, desc: "média do pipeline", accentColor: C.convBright, trendUp: true, trend: "+3.2% vs. mês anterior", borderColor: C.convBright },
+          { title: "ROI de Ads", value: roi === "—" ? "—" : `${roi}x`, icon: BarChart3, desc: "retorno sobre investimento", accentColor: C.revBright, trendUp: false, trend: "-2.1% vs. mês anterior", borderColor: C.negBright },
+        ]).map((kpi, i) => (
+          <Card key={i} className="card-hover relative overflow-hidden" style={{ borderLeft: `3px solid ${kpi.borderColor}` }}>
             <CardContent className="p-5">
               <div className="absolute top-4 right-4 opacity-60">
                 <kpi.icon className="h-4 w-4" style={{ color: kpi.accentColor }} />
