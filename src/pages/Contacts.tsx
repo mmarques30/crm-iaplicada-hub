@@ -99,10 +99,46 @@ const emptyFilters: Filters = {
 export default function Contacts() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState(searchParams.get("q") || "");
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [contactDialogOpen, setContactDialogOpen] = useState(false);
+  const [savingContact, setSavingContact] = useState(false);
+  const [newContact, setNewContact] = useState({
+    first_name: "", last_name: "", email: "", phone: "", company: "", cargo: "", produto_interesse: ""
+  });
+
+  const resetContactDialog = () => setNewContact({
+    first_name: "", last_name: "", email: "", phone: "", company: "", cargo: "", produto_interesse: ""
+  });
+
+  const handleCreateContact = async () => {
+    if (!newContact.first_name.trim()) { toast.error("Nome é obrigatório"); return; }
+    setSavingContact(true);
+    try {
+      const insertData: any = {
+        first_name: newContact.first_name.trim(),
+        last_name: newContact.last_name.trim() || null,
+        email: newContact.email.trim() || null,
+        phone: newContact.phone.trim() || null,
+        company: newContact.company.trim() || null,
+        cargo: newContact.cargo || null,
+        produto_interesse: newContact.produto_interesse ? [newContact.produto_interesse] : null,
+      };
+      const { error } = await supabase.from("contacts").insert(insertData);
+      if (error) throw error;
+      toast.success("Contato criado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      setContactDialogOpen(false);
+      resetContactDialog();
+    } catch (err: any) {
+      toast.error("Erro ao criar contato: " + err.message);
+    } finally {
+      setSavingContact(false);
+    }
+  };
   const [leadOrigin, setLeadOrigin] = useState<LeadOrigin>("all");
 
   const activeFilterCount = useMemo(
