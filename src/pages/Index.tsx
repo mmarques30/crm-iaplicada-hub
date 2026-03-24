@@ -180,7 +180,7 @@ const SalesPipelineDashboard = () => {
       {},
     ),
   )
-    .map(([name, data]) => ({
+    .map(([name, data]: [string, { leads: number; won: number; revenue: number }]) => ({
       name,
       leads: data.leads,
       conversion: data.leads > 0 ? Math.round((data.won / data.leads) * 100) : 0,
