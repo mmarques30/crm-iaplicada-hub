@@ -546,6 +546,62 @@ export default function Contacts() {
           </Button>
         </div>
       )}
+
+      {/* Dialog Novo Contato */}
+      <Dialog open={contactDialogOpen} onOpenChange={(open) => { setContactDialogOpen(open); if (!open) resetContactDialog(); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Novo Contato</DialogTitle>
+            <DialogDescription>Cadastre um novo contato no CRM</DialogDescription>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Nome *</Label>
+              <Input placeholder="Nome" value={newContact.first_name} onChange={(e) => setNewContact(p => ({ ...p, first_name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Sobrenome</Label>
+              <Input placeholder="Sobrenome" value={newContact.last_name} onChange={(e) => setNewContact(p => ({ ...p, last_name: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input placeholder="email@exemplo.com" type="email" value={newContact.email} onChange={(e) => setNewContact(p => ({ ...p, email: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Telefone</Label>
+              <Input placeholder="(11) 99999-9999" value={newContact.phone} onChange={(e) => setNewContact(p => ({ ...p, phone: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Empresa</Label>
+              <Input placeholder="Nome da empresa" value={newContact.company} onChange={(e) => setNewContact(p => ({ ...p, company: e.target.value }))} />
+            </div>
+            <div className="space-y-2">
+              <Label>Cargo</Label>
+              <Select value={newContact.cargo} onValueChange={(v) => setNewContact(p => ({ ...p, cargo: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {CARGO_OPTIONS.map((o) => <SelectItem key={o} value={o}>{o}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 col-span-2">
+              <Label>Produto de Interesse</Label>
+              <Select value={newContact.produto_interesse} onValueChange={(v) => setNewContact(p => ({ ...p, produto_interesse: v }))}>
+                <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                <SelectContent>
+                  {PRODUTO_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setContactDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateContact} disabled={savingContact}>
+              {savingContact ? "Criando..." : "Criar Contato"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
