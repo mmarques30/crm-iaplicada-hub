@@ -348,30 +348,17 @@ export default function Pipeline() {
         </div>
       ) : (
         <DragDropContext onDragEnd={onDragEnd}>
-          {activeStages.length === 0 ? (
+          {allStages.length === 0 ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3 text-muted-foreground">
               <Columns3 className="h-12 w-12 opacity-30" />
               <p className="text-sm">Nenhum estágio configurado para este pipeline</p>
             </div>
           ) : (
-            <>
-              <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
-                {activeStages.map((stage) => (
-                  <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} />
-                ))}
-              </div>
-
-              {closedStages.length > 0 && (
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Estágios Finais</p>
-                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
-                    {closedStages.map((stage) => (
-                      <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} isClosed />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+            <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
+              {allStages.map((stage) => (
+                <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} isClosed={stage.is_won || stage.is_lost} />
+              ))}
+            </div>
           )}
         </DragDropContext>
       )}
