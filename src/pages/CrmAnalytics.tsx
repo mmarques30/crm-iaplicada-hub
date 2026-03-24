@@ -47,9 +47,9 @@ export default function CrmAnalytics() {
   const { data: dealsByChannel } = useQuery({
     queryKey: ['deals_by_channel_crm'],
     queryFn: async () => {
-      const { data } = await supabase.from('deals_full').select('canal_origem')
+      const { data } = await (supabase as any).from('deals_full').select('canal_origem')
       const channels: Record<string, number> = {}
-      for (const d of data || []) {
+      for (const d of (data || []) as any[]) {
         const ch = d.canal_origem || 'Não informado'
         channels[ch] = (channels[ch] || 0) + 1
       }

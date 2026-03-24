@@ -45,11 +45,11 @@ export default function ContactDetail() {
   const { data: deals } = useQuery({
     queryKey: ["contact_deals", id],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data } = await (supabase as any)
         .from("deals_full")
         .select("*")
         .eq("contact_id", id!);
-      return data || [];
+      return (data || []) as any[];
     },
   });
 
