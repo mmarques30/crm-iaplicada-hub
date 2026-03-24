@@ -1,18 +1,27 @@
 
 
-## Remover "Skills" do Menu Lateral
+## Funil de Vendas como Gráfico de Barras Vertical + Fix Build Errors
 
-### Problema
-O item "Skills" ainda aparece no submenu Pipeline do sidebar, apesar de ter sido desativado na página Pipeline.
+### Correções
 
-### Correção
-**Arquivo:** `src/components/layout/AppSidebar.tsx`, linha 19-22
+#### 1. Fix TS error em `src/pages/Index.tsx` (linha 183)
+O `.map(([name, data])` infere `data` como `unknown`. Adicionar type assertion:
+```tsx
+.map(([name, data]: [string, { leads: number; won: number; revenue: number }]) => ({
+```
 
-Remover a entrada `{ title: "Skills", url: "/pipeline/skills", icon: Brain }` do array `pipelineItems`, mantendo apenas Business e Academy.
+#### 2. Substituir funil horizontal por BarChart vertical (linhas 282-333)
+Trocar a visualização atual (lista com Progress bars horizontais) por um `BarChart` vertical do Recharts, mostrando cada estágio como uma barra com a quantidade de deals.
 
-Também remover o import `Brain` do lucide-react (linha 1), já que não será mais usado.
+- Importar `BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell` de `recharts`
+- Importar `ChartContainer, ChartTooltip, ChartTooltipContent` de `@/components/ui/chart`
+- Cada barra representa um estágio, com altura proporcional ao `deal_count`
+- Cor primária da marca (`#9EB038`) com gradiente para barras
+- Tooltip mostrando: nome do estágio, quantidade de deals, valor total, % conversão
+- Labels no eixo X com nomes dos estágios
 
+### Arquivo modificado
 | Arquivo | Alteração |
 |---|---|
-| `src/components/layout/AppSidebar.tsx` | Remover item Skills do `pipelineItems` + remover import `Brain` |
+| `src/pages/Index.tsx` | Fix type assertion linha 183 + substituir funil por BarChart vertical |
 
