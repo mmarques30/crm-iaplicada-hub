@@ -1,27 +1,26 @@
 
 
-## Funil de Vendas como Gráfico de Barras Vertical + Fix Build Errors
+## Corrigir Dados nos Cards do Dashboard
 
-### Correções
+### Problema Identificado
+A query de contatos em `src/pages/Index.tsx` (linha 132) usa o nome de coluna errado `lifecyclestage` quando o nome real na tabela é `lifecycle_stage`. Isso causa um erro 400 do Supabase, resultando em `contacts = null` e o card "Total de Leads" mostrando 0.
 
-#### 1. Fix TS error em `src/pages/Index.tsx` (linha 183)
-O `.map(([name, data])` infere `data` como `unknown`. Adicionar type assertion:
+Os demais dados (product_metrics, stage_conversion, deals) estão retornando corretamente (status 200).
+
+### Correção
+
+**Arquivo:** `src/pages/Index.tsx`, linha 132
+
+Trocar:
 ```tsx
-.map(([name, data]: [string, { leads: number; won: number; revenue: number }]) => ({
+const { data } = await supabase.from("contacts").select("id, lifecyclestage, created_at");
+```
+Por:
+```tsx
+const { data } = await supabase.from("contacts").select("id, lifecycle_stage, created_at");
 ```
 
-#### 2. Substituir funil horizontal por BarChart vertical (linhas 282-333)
-Trocar a visualização atual (lista com Progress bars horizontais) por um `BarChart` vertical do Recharts, mostrando cada estágio como uma barra com a quantidade de deals.
-
-- Importar `BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell` de `recharts`
-- Importar `ChartContainer, ChartTooltip, ChartTooltipContent` de `@/components/ui/chart`
-- Cada barra representa um estágio, com altura proporcional ao `deal_count`
-- Cor primária da marca (`#9EB038`) com gradiente para barras
-- Tooltip mostrando: nome do estágio, quantidade de deals, valor total, % conversão
-- Labels no eixo X com nomes dos estágios
-
-### Arquivo modificado
-| Arquivo | Alteração |
-|---|---|
-| `src/pages/Index.tsx` | Fix type assertion linha 183 + substituir funil por BarChart vertical |
+### Resultado Esperado
+- O card "Total de Leads" passará a mostrar o total real de contatos
+- A query não retornará mais erro 400
 
