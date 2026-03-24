@@ -17,7 +17,6 @@ import logoImg from "@/assets/logo.png";
 
 const pipelineItems = [
   { title: "Business", url: "/pipeline/business", icon: Briefcase },
-  { title: "Skills", url: "/pipeline/skills", icon: Brain },
   { title: "Academy", url: "/pipeline/academy", icon: GraduationCap },
 ];
 

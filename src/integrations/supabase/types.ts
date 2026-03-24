@@ -60,10 +60,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "activities_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "activities_deal_id_fkey"
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activities_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_full"
             referencedColumns: ["id"]
           },
         ]
@@ -294,6 +308,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "deals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "deals_pipeline_id_fkey"
             columns: ["pipeline_id"]
             isOneToOne: false
@@ -390,6 +411,13 @@ export type Database = {
             foreignKeyName: "form_fields_form_id_fkey"
             columns: ["form_id"]
             isOneToOne: false
+            referencedRelation: "form_metrics"
+            referencedColumns: ["form_id"]
+          },
+          {
+            foreignKeyName: "form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
             referencedRelation: "forms"
             referencedColumns: ["id"]
           },
@@ -456,11 +484,32 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "form_submissions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "form_submissions_deal_id_fkey"
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "form_metrics"
+            referencedColumns: ["form_id"]
           },
           {
             foreignKeyName: "form_submissions_form_id_fkey"
@@ -631,6 +680,13 @@ export type Database = {
             referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "instagram_comment_logs_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications: {
@@ -676,10 +732,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "notifications_related_contact_id_fkey"
+            columns: ["related_contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "notifications_related_deal_id_fkey"
             columns: ["related_deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_related_deal_id_fkey"
+            columns: ["related_deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals_full"
             referencedColumns: ["id"]
           },
         ]
@@ -875,11 +945,197 @@ export type Database = {
             referencedRelation: "contacts"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "vendas_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      avg_time_in_stage: {
+        Row: {
+          avg_days: number | null
+          display_order: number | null
+          product: string | null
+          stage_name: string | null
+          transitions: number | null
+        }
+        Relationships: []
+      }
+      contacts_full: {
+        Row: {
+          active_deals_count: number | null
+          activities_count: number | null
+          address: string | null
+          area_atuacao: string | null
+          cargo: string | null
+          city: string | null
+          company: string | null
+          country: string | null
+          created_at: string | null
+          days_since_creation: number | null
+          days_since_last_activity: number | null
+          deals_count: number | null
+          email: string | null
+          faixa_de_faturamento: string | null
+          first_conversion: string | null
+          first_conversion_date: string | null
+          first_name: string | null
+          fonte_registro: string | null
+          full_name: string | null
+          hubspot_id: number | null
+          hubspot_owner: string | null
+          id: string | null
+          instagram_opt_in: boolean | null
+          last_activity_at: string | null
+          last_activity_date: string | null
+          last_activity_subject: string | null
+          last_activity_type: string | null
+          last_deal_amount: number | null
+          last_deal_name: string | null
+          last_deal_product: string | null
+          last_deal_stage: string | null
+          last_name: string | null
+          lead_status: string | null
+          lifecycle_stage: string | null
+          linkedin_url: string | null
+          lost_deals_count: number | null
+          manychat_id: string | null
+          marketing_status: string | null
+          motivo_para_aprender_ia: string | null
+          numero_de_liderados: string | null
+          objetivo_com_a_comunidade: string | null
+          owner_id: string | null
+          phone: string | null
+          produto_interesse: string[] | null
+          renda_mensal: string | null
+          state: string | null
+          total_deal_value: number | null
+          updated_at: string | null
+          utm_campaign: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          website_url: string | null
+          whatsapp: string | null
+          whatsapp_opt_in: boolean | null
+          won_deal_value: number | null
+          won_deals_count: number | null
+          zip_code: string | null
+        }
+        Relationships: []
+      }
+      deals_full: {
+        Row: {
+          amount: number | null
+          canal_origem: string | null
+          closed_at: string | null
+          contact_company: string | null
+          contact_email: string | null
+          contact_first_name: string | null
+          contact_id: string | null
+          contact_last_name: string | null
+          contact_phone: string | null
+          created_at: string | null
+          days_in_stage: number | null
+          hubspot_id: number | null
+          id: string | null
+          is_won: boolean | null
+          motivo_perda: string | null
+          name: string | null
+          owner_id: string | null
+          pipeline_id: string | null
+          pipeline_name: string | null
+          product: string | null
+          qualification_status: string | null
+          stage_entered_at: string | null
+          stage_id: string | null
+          stage_name: string | null
+          stage_order: number | null
+          stage_probability: number | null
+          ultimo_contato: string | null
+          updated_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts_full"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_pipeline_id_fkey"
+            columns: ["pipeline_id"]
+            isOneToOne: false
+            referencedRelation: "pipelines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "deals_stage_id_fkey"
+            columns: ["stage_id"]
+            isOneToOne: false
+            referencedRelation: "stages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      form_metrics: {
+        Row: {
+          form_id: string | null
+          form_name: string | null
+          last_submission_at: string | null
+          product: string | null
+          slug: string | null
+          submissions_last_30d: number | null
+          submissions_last_7d: number | null
+          total_submissions: number | null
+          unique_sources: number | null
+        }
+        Relationships: []
+      }
+      mql_volume: {
+        Row: {
+          mql_count: number | null
+          product: string | null
+          total_count: number | null
+          week: string | null
+        }
+        Relationships: []
+      }
+      product_metrics: {
+        Row: {
+          active_deals: number | null
+          avg_deal_size: number | null
+          lost_deals: number | null
+          pipeline_value: number | null
+          product: string | null
+          win_rate: number | null
+          won_deals: number | null
+        }
+        Relationships: []
+      }
+      stage_conversion: {
+        Row: {
+          deal_count: number | null
+          display_order: number | null
+          product: string | null
+          stage_name: string | null
+          total_amount: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       create_secret: {
