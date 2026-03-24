@@ -222,8 +222,8 @@ export default function EmailMarketing() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="cursor-pointer hover:shadow-md transition-shadow border-dashed" onClick={() => navigate("/email/templates")}>
           <CardContent className="pt-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-purple-50 flex items-center justify-center">
-              <Plus className="h-6 w-6 text-purple-500" />
+             <div className="w-12 h-12 rounded-xl bg-[#141A04] flex items-center justify-center">
+               <Plus className="h-6 w-6 text-[#AFC040]" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">Criar Template</p>
