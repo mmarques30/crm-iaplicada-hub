@@ -117,8 +117,8 @@ export default function EmailMarketing() {
                     <p className="text-xs text-muted-foreground">Templates</p>
                     <p className="text-2xl font-bold">{templateCount}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-purple-600" />
+                   <div className="w-10 h-10 rounded-lg bg-[#141A04] flex items-center justify-center">
+                     <FileText className="h-5 w-5 text-[#AFC040]" />
                   </div>
                 </div>
               </CardContent>
