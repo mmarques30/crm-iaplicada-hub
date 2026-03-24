@@ -214,7 +214,7 @@ function ContactLists() {
   // Remove member mutation
   const removeMember = useMutation({
     mutationFn: async ({ membershipId, listId }: { membershipId: string; listId: string }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from("contact_list_memberships")
         .delete()
         .eq("id", membershipId);

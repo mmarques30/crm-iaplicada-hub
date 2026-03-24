@@ -105,7 +105,7 @@ export default function EmailTemplates() {
       }
       const { data, error } = await supabase
         .from("email_templates_v2")
-        .insert(insertData)
+        .insert([insertData] as any)
         .select()
         .single();
       if (error) throw error;

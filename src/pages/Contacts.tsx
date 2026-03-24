@@ -149,7 +149,7 @@ export default function Contacts() {
 
       const { data, error } = await supabase
         .from("contacts")
-        .insert(insertData)
+        .insert([insertData] as any)
         .select()
         .single();
 

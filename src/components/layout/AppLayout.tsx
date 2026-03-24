@@ -50,7 +50,9 @@ export function AppLayout() {
             </div>
           </header>
           <main className="flex-1 overflow-auto relative z-10">
-            <Outlet />
+            <div className="max-w-[1440px] mx-auto">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>
