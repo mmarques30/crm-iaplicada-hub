@@ -248,8 +248,8 @@ export default function EmailMarketing() {
 
         <Card className="cursor-pointer hover:shadow-md transition-shadow border-dashed" onClick={() => navigate("/email/workflows")}>
           <CardContent className="pt-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-xl bg-green-50 flex items-center justify-center">
-              <Workflow className="h-6 w-6 text-green-500" />
+             <div className="w-12 h-12 rounded-xl bg-[#141A04] flex items-center justify-center">
+               <Workflow className="h-6 w-6 text-[#AFC040]" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium">Criar Automação</p>

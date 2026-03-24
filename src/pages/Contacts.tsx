@@ -286,9 +286,9 @@ export default function Contacts() {
   const qualificationBadge = (status: string | undefined) => {
     if (!status) return <span className="text-muted-foreground text-xs">—</span>;
     const styles: Record<string, string> = {
-      sql: "bg-qualification-sql/15 text-qualification-sql",
-      mql: "bg-qualification-mql/15 text-qualification-mql",
-      lead: "bg-muted text-muted-foreground",
+      sql: "bg-[#141A04] text-[#AFC040]",
+      mql: "bg-[#040E1A] text-[#4A9FE0]",
+      lead: "bg-[#031411] text-[#2CBBA6]",
     };
     return (
       <Badge className={`text-[10px] ${styles[status] || styles.lead}`}>
@@ -301,17 +301,17 @@ export default function Contacts() {
     const origin = getLeadOrigin(contact);
     if (origin === "social") {
       if (contact.instagram_opt_in || contact.manychat_id?.startsWith("ig_")) {
-        return <Badge className="text-[10px] bg-pink-100 text-pink-700">Instagram</Badge>;
+        return <Badge className="text-[10px] bg-[#141A04] text-[#AFC040]">Instagram</Badge>;
       }
       if (contact.whatsapp_opt_in) {
-        return <Badge className="text-[10px] bg-green-100 text-green-700">WhatsApp</Badge>;
+        return <Badge className="text-[10px] bg-[#031411] text-[#2CBBA6]">WhatsApp</Badge>;
       }
-      return <Badge className="text-[10px] bg-pink-100 text-pink-700">Social</Badge>;
+      return <Badge className="text-[10px] bg-[#031411] text-[#2CBBA6]">Social</Badge>;
     }
     if (contact.first_conversion || contact.hubspot_id) {
-      return <Badge className="text-[10px] bg-emerald-100 text-emerald-700">Formulário</Badge>;
+      return <Badge className="text-[10px] bg-[#141A04] text-[#AFC040]">Formulário</Badge>;
     }
-    return <Badge className="text-[10px] bg-blue-100 text-blue-700">Pipeline</Badge>;
+    return <Badge className="text-[10px] bg-[#1A1206] text-[#E8A43C]">Pipeline</Badge>;
   };
 
   return (

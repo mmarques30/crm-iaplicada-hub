@@ -216,8 +216,8 @@ export default function ReceitaTasks() {
                     >
                       <SelectTrigger className={`h-8 w-32 text-xs font-medium border-0 ${
                         task.status === 'concluido'
-                          ? 'bg-green-500/15 text-green-400'
-                          : 'bg-amber-500/15 text-amber-400'
+                          ? 'bg-[#141A04] text-[#AFC040]'
+                          : 'bg-[#1A1206] text-[#E8A43C]'
                       }`}>
                         <SelectValue />
                       </SelectTrigger>
