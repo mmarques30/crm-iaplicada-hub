@@ -1,34 +1,32 @@
 
 
-## Corrigir Badges e Elementos com Cores Light-Mode no Tema Dark
+## Ajustar Layout do Pipeline: Tudo em Uma Linha + Remover Skills
 
 ### Problema
-As variáveis CSS estão corretas (preto + verde escuro), mas várias páginas usam cores hardcoded de tema claro (`bg-emerald-100 text-emerald-800`, `bg-blue-100 text-blue-800`, etc.) que criam elementos com fundo claro/azulado no tema dark.
+1. Os "Estágios Finais" (Negócio Fechado, Negócio Perdido) ficam abaixo dos estágios ativos, em uma seção separada. Deveriam ficar lado a lado na mesma linha horizontal.
+2. A aba "Skills" no seletor de pipeline não deveria existir.
 
-### Arquivos e Correções
+### Correções em `src/pages/Pipeline.tsx`
 
-#### 1. `src/pages/CrmAnalytics.tsx`
-- `bg-emerald-100 text-emerald-800` → `bg-emerald-500/15 text-emerald-400`
+#### 1. Unificar todos os estágios em uma única linha horizontal
+Remover a separação entre `activeStages` e `closedStages`. Todas as colunas (incluindo Negócio Fechado e Negócio Perdido) ficam na mesma `div` com scroll horizontal, lado a lado.
 
-#### 2. `src/pages/FacebookAdsPage.tsx`
-- `bg-blue-100 text-blue-800` → `bg-blue-500/15 text-blue-400`
+Substituir o bloco atual (linhas 341-358) que renderiza duas seções separadas por uma única:
+```tsx
+<div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
+  {(stages || []).map((stage) => (
+    <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} 
+      total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate}
+      isClosed={stage.is_won || stage.is_lost} />
+  ))}
+</div>
+```
 
-#### 3. `src/pages/InstagramAnalytics.tsx`
-- `bg-pink-100 text-pink-800` → `bg-pink-500/15 text-pink-400`
+#### 2. Remover aba Skills
+Na linha 202, remover `<TabsTrigger value="skills">Skills</TabsTrigger>`, mantendo apenas Business e Academy.
 
-#### 4. `src/pages/Financeiro.tsx`
-- `bg-yellow-100 text-yellow-800` → `bg-yellow-500/15 text-yellow-400`
-- `bg-green-100 text-green-800` → `bg-green-500/15 text-green-400`
-
-#### 5. `src/pages/InstagramAutomations.tsx`
-- `bg-pink-100` círculo → `bg-pink-500/15`
-- `bg-blue-100` círculo → `bg-blue-500/15`
-- `bg-purple-100` círculo → `bg-purple-500/15`
-- `bg-green-100 text-green-800` badge → `bg-green-500/15 text-green-400`
-
-#### 6. `src/lib/format.ts`
-- `productColor()`: trocar `bg-blue-100 text-blue-800` → `bg-blue-500/15 text-blue-400`, idem para purple e green
-
-### Padrão
-Todas as cores `*-100 text-*-800` (light-mode) serão substituídas por `*-500/15 text-*-400` (dark-friendly com fundo semi-transparente), consistente com o padrão já usado em `PainelGeral.tsx` e `InsightsTable.tsx`.
+### Arquivo modificado
+| Arquivo | Alteração |
+|---|---|
+| `src/pages/Pipeline.tsx` | Unificar estágios em linha única + remover tab Skills |
 
