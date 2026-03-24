@@ -305,31 +305,47 @@ const SalesPipelineDashboard = () => {
                   <p className="text-xs">Crie deals no Pipeline para visualizar o funil</p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {pipelineStages.map((stage, index) => {
-                    const conversion = firstStageCount > 0 ? Math.round((stage.deal_count / firstStageCount) * 100) : 0;
-                    return (
-                      <div key={stage.stage_name} className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
-                              {index + 1}
-                            </div>
-                            <div>
-                              <p className="font-medium">{stage.stage_name}</p>
-                              <p className="text-sm text-muted-foreground">{stage.deal_count} oportunidades</p>
-                            </div>
+                <ChartContainer config={funnelChartConfig} className="h-[350px] w-full">
+                  <BarChart data={pipelineStages.map((stage) => ({
+                    ...stage,
+                    conversion: firstStageCount > 0 ? Math.round((stage.deal_count / firstStageCount) * 100) : 0,
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis
+                      dataKey="stage_name"
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={{ stroke: 'hsl(var(--border))' }}
+                      tickLine={false}
+                    />
+                    <YAxis
+                      tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }}
+                      axisLine={false}
+                      tickLine={false}
+                    />
+                    <ChartTooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0].payload;
+                        return (
+                          <div className="rounded-lg border border-border/50 bg-background px-3 py-2 text-sm shadow-xl">
+                            <p className="font-medium">{d.stage_name}</p>
+                            <p className="text-muted-foreground">{d.deal_count} oportunidades</p>
+                            <p className="text-muted-foreground">{formatCurrency(d.total_amount)}</p>
+                            <p className="text-primary font-medium">{d.conversion}% conversão</p>
                           </div>
-                          <div className="text-right">
-                            <p className="font-semibold">{formatCurrency(stage.total_amount)}</p>
-                            <Badge variant="secondary" className="mt-1">{conversion}% conversão</Badge>
-                          </div>
-                        </div>
-                        <Progress value={conversion} className="h-2" />
-                      </div>
-                    );
-                  })}
-                </div>
+                        );
+                      }}
+                    />
+                    <Bar dataKey="deal_count" radius={[6, 6, 0, 0]} maxBarSize={60}>
+                      {pipelineStages.map((_, index) => (
+                        <Cell
+                          key={index}
+                          fill={`hsl(var(--primary) / ${1 - index * 0.12})`}
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
               )}
             </CardContent>
           </Card>
