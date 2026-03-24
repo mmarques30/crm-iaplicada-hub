@@ -195,8 +195,8 @@ export default function EmailMarketing() {
           </Card>
           <Card>
             <CardContent className="pt-6 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-sky-100 flex items-center justify-center">
-                <Eye className="h-5 w-5 text-sky-600" />
+               <div className="w-10 h-10 rounded-lg bg-[#040E1A] flex items-center justify-center">
+                 <Eye className="h-5 w-5 text-[#4A9FE0]" />
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Taxa de Abertura</p>
