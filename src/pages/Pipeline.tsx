@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Clock, User, Columns3, Search, Filter, X, Building2, Share2, Globe, ChevronRight } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Deal = Tables<"deals"> & {
@@ -99,6 +99,31 @@ export default function Pipeline() {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<PipelineFilters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Grab-to-scroll
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isDraggingScroll = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+
+  const onScrollMouseDown = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-rfd-draggable-id]')) return;
+    isDraggingScroll.current = true;
+    startX.current = e.pageX;
+    scrollLeftStart.current = scrollRef.current?.scrollLeft || 0;
+  }, []);
+
+  const onScrollMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDraggingScroll.current || !scrollRef.current) return;
+    e.preventDefault();
+    const walk = e.pageX - startX.current;
+    scrollRef.current.scrollLeft = scrollLeftStart.current - walk;
+  }, []);
+
+  const onScrollMouseUp = useCallback(() => {
+    isDraggingScroll.current = false;
+  }, []);
 
   const activeFilterCount = useMemo(
     () => Object.values(filters).filter(Boolean).length,
@@ -354,7 +379,14 @@ export default function Pipeline() {
               <p className="text-sm">Nenhum estágio configurado para este pipeline</p>
             </div>
           ) : (
-            <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
+            <div
+              ref={scrollRef}
+              className={`flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin ${isDraggingScroll.current ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+              onMouseDown={onScrollMouseDown}
+              onMouseMove={onScrollMouseMove}
+              onMouseUp={onScrollMouseUp}
+              onMouseLeave={onScrollMouseUp}
+            >
               {allStages.map((stage) => (
                 <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} isClosed={stage.is_won || stage.is_lost} />
               ))}
