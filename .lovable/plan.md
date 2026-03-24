@@ -1,34 +1,18 @@
 
 
-## Corrigir Badges e Elementos com Cores Light-Mode no Tema Dark
+## Remover "Skills" do Menu Lateral
 
 ### Problema
-As variáveis CSS estão corretas (preto + verde escuro), mas várias páginas usam cores hardcoded de tema claro (`bg-emerald-100 text-emerald-800`, `bg-blue-100 text-blue-800`, etc.) que criam elementos com fundo claro/azulado no tema dark.
+O item "Skills" ainda aparece no submenu Pipeline do sidebar, apesar de ter sido desativado na página Pipeline.
 
-### Arquivos e Correções
+### Correção
+**Arquivo:** `src/components/layout/AppSidebar.tsx`, linha 19-22
 
-#### 1. `src/pages/CrmAnalytics.tsx`
-- `bg-emerald-100 text-emerald-800` → `bg-emerald-500/15 text-emerald-400`
+Remover a entrada `{ title: "Skills", url: "/pipeline/skills", icon: Brain }` do array `pipelineItems`, mantendo apenas Business e Academy.
 
-#### 2. `src/pages/FacebookAdsPage.tsx`
-- `bg-blue-100 text-blue-800` → `bg-blue-500/15 text-blue-400`
+Também remover o import `Brain` do lucide-react (linha 1), já que não será mais usado.
 
-#### 3. `src/pages/InstagramAnalytics.tsx`
-- `bg-pink-100 text-pink-800` → `bg-pink-500/15 text-pink-400`
-
-#### 4. `src/pages/Financeiro.tsx`
-- `bg-yellow-100 text-yellow-800` → `bg-yellow-500/15 text-yellow-400`
-- `bg-green-100 text-green-800` → `bg-green-500/15 text-green-400`
-
-#### 5. `src/pages/InstagramAutomations.tsx`
-- `bg-pink-100` círculo → `bg-pink-500/15`
-- `bg-blue-100` círculo → `bg-blue-500/15`
-- `bg-purple-100` círculo → `bg-purple-500/15`
-- `bg-green-100 text-green-800` badge → `bg-green-500/15 text-green-400`
-
-#### 6. `src/lib/format.ts`
-- `productColor()`: trocar `bg-blue-100 text-blue-800` → `bg-blue-500/15 text-blue-400`, idem para purple e green
-
-### Padrão
-Todas as cores `*-100 text-*-800` (light-mode) serão substituídas por `*-500/15 text-*-400` (dark-friendly com fundo semi-transparente), consistente com o padrão já usado em `PainelGeral.tsx` e `InsightsTable.tsx`.
+| Arquivo | Alteração |
+|---|---|
+| `src/components/layout/AppSidebar.tsx` | Remover item Skills do `pipelineItems` + remover import `Brain` |
 
