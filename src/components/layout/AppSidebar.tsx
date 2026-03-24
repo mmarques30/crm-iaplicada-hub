@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Brain, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -17,7 +17,6 @@ import logoImg from "@/assets/logo.png";
 
 const pipelineItems = [
   { title: "Business", url: "/pipeline/business", icon: Briefcase },
-  { title: "Skills", url: "/pipeline/skills", icon: Brain },
   { title: "Academy", url: "/pipeline/academy", icon: GraduationCap },
 ];
 
