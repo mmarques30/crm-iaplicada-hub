@@ -296,6 +296,10 @@ export default function Contacts() {
           <h1 className="text-2xl font-bold">Contatos</h1>
           <p className="text-sm text-muted-foreground">{displayTotal} contatos</p>
         </div>
+        <Button size="sm" className="gap-1.5" onClick={() => setContactDialogOpen(true)}>
+          <Plus className="h-4 w-4" />
+          Novo Contato
+        </Button>
       </div>
 
       {/* Lead Origin Tabs */}
