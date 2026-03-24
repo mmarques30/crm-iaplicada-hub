@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, User, Columns3, Search, Filter, X, Building2, Share2, Globe } from "lucide-react";
+import { Clock, User, Columns3, Search, Filter, X, Building2, Share2, Globe, ChevronRight } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
 import { useState, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
