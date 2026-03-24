@@ -155,8 +155,8 @@ export default function EmailMarketing() {
                       )}
                     </div>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-green-100 flex items-center justify-center">
-                    <Workflow className="h-5 w-5 text-green-600" />
+                   <div className="w-10 h-10 rounded-lg bg-[#141A04] flex items-center justify-center">
+                     <Workflow className="h-5 w-5 text-[#AFC040]" />
                   </div>
                 </div>
               </CardContent>
