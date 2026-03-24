@@ -100,6 +100,31 @@ export default function Pipeline() {
   const [filters, setFilters] = useState<PipelineFilters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(false);
 
+  // Grab-to-scroll
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const isDraggingScroll = useRef(false);
+  const startX = useRef(0);
+  const scrollLeftStart = useRef(0);
+
+  const onScrollMouseDown = useCallback((e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-rfd-draggable-id]')) return;
+    isDraggingScroll.current = true;
+    startX.current = e.pageX;
+    scrollLeftStart.current = scrollRef.current?.scrollLeft || 0;
+  }, []);
+
+  const onScrollMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isDraggingScroll.current || !scrollRef.current) return;
+    e.preventDefault();
+    const walk = e.pageX - startX.current;
+    scrollRef.current.scrollLeft = scrollLeftStart.current - walk;
+  }, []);
+
+  const onScrollMouseUp = useCallback(() => {
+    isDraggingScroll.current = false;
+  }, []);
+
   const activeFilterCount = useMemo(
     () => Object.values(filters).filter(Boolean).length,
     [filters]
