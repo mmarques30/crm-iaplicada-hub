@@ -1,31 +1,27 @@
 
 
-## Unificar Estágios em Linha Única + Collapse por Coluna
+## Adicionar Scroll por Arrasto (Grab-to-Scroll) no Pipeline
 
 ### Problema
-1. Os estágios finais (Negócio Fechado, Negócio Perdido) ainda estão em uma seção separada abaixo dos estágios ativos.
-2. Não há opção de expandir/retrair (collapse) cada coluna individualmente.
+O container do pipeline só permite scroll horizontal usando a scrollbar ou o trackpad. O usuário quer poder "agarrar" e arrastar o board inteiro horizontalmente, de qualquer ponto.
+
+### Solução
+Implementar um hook `useGrabScroll` que adiciona comportamento de drag-to-scroll no container do kanban. O usuário poderá clicar e arrastar em qualquer área vazia para mover o pipeline horizontalmente.
 
 ### Correções em `src/pages/Pipeline.tsx`
 
-#### 1. Todos os estágios em uma única linha horizontal
-Remover a separação entre `activeStages` e `closedStages` (linhas 358-375). Renderizar todos os stages em um único `div` com scroll horizontal:
-```tsx
-<div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
-  {(stages || []).map((stage) => (
-    <KanbanColumn key={stage.id} stage={stage} ... />
-  ))}
-</div>
-```
-Remover os memos `activeStages` e `closedStages` que já não serão necessários.
+1. Criar um `ref` para o container de scroll do kanban
+2. Adicionar event listeners de `mousedown`, `mousemove`, `mouseup` e `mouseleave` no container
+3. Quando o mouse é pressionado em área vazia (não em um card), o cursor muda para `grabbing` e o scroll acompanha o movimento do mouse
+4. Usar `cursor-grab` no container e `cursor-grabbing` durante o arrasto
+5. Garantir que o drag-to-scroll não interfira com o drag-and-drop dos cards (verificar se o target é o container ou espaço vazio)
 
-#### 2. Adicionar collapse (expandir/retrair) em cada coluna
-- Adicionar state `collapsedStages` (um `Set<string>`) no componente `KanbanColumn` usando `useState(false)`.
-- No header de cada coluna, adicionar um botão com ícone `ChevronDown`/`ChevronRight` que alterna a visibilidade dos deals.
-- Quando colapsado: a coluna mostra apenas o header (nome, badge de contagem, valor total) com largura reduzida (~48px), orientação vertical do texto.
-- Quando expandido: comportamento atual normal (w-72 com todos os cards).
+### Implementação
+- Adicionar `useRef` + `useState` para controlar o estado de arrasto
+- Handlers `onMouseDown`, `onMouseMove`, `onMouseUp`, `onMouseLeave` no `div` que contém as colunas
+- Classes CSS: `cursor-grab` padrão, `cursor-grabbing select-none` durante arrasto
 
-### Resultado
-- Todas as colunas lado a lado em uma linha, sem separação "Estágios Finais"
-- Cada coluna pode ser individualmente colapsada/expandida clicando no header
+| Arquivo | Alteração |
+|---|---|
+| `src/pages/Pipeline.tsx` | Adicionar grab-to-scroll no container horizontal do kanban |
 
