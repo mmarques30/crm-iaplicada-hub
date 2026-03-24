@@ -19,6 +19,12 @@ import Financeiro from "./pages/Financeiro";
 import ReceitaTasks from "./pages/ReceitaTasks";
 import Forms from "./pages/Forms";
 import FormEmbed from "./pages/FormEmbed";
+import EmailMarketing from "./pages/EmailMarketing";
+import EmailTemplates from "./pages/EmailTemplates";
+import EmailTemplateEditor from "./pages/EmailTemplateEditor";
+import EmailCampaigns from "./pages/EmailCampaigns";
+import EmailWorkflows from "./pages/EmailWorkflows";
+import ContactLists from "./pages/ContactLists";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +51,12 @@ const App = () => (
             <Route path="/financeiro" element={<Financeiro />} />
             <Route path="/tarefas" element={<ReceitaTasks />} />
             <Route path="/formularios" element={<Forms />} />
+            <Route path="/email" element={<EmailMarketing />} />
+            <Route path="/email/templates" element={<EmailTemplates />} />
+            <Route path="/email/templates/:id" element={<EmailTemplateEditor />} />
+            <Route path="/email/campaigns" element={<EmailCampaigns />} />
+            <Route path="/email/workflows" element={<EmailWorkflows />} />
+            <Route path="/email/lists" element={<ContactLists />} />
             <Route path="/settings" element={<Settings />} />
           </Route>
           {/* Public form page (outside layout) */}
