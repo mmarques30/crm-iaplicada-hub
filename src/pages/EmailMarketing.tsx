@@ -169,8 +169,8 @@ export default function EmailMarketing() {
                     <p className="text-xs text-muted-foreground">Listas / Segmentos</p>
                     <p className="text-2xl font-bold">{listCount}</p>
                   </div>
-                  <div className="w-10 h-10 rounded-lg bg-orange-100 flex items-center justify-center">
-                    <Users className="h-5 w-5 text-orange-600" />
+                   <div className="w-10 h-10 rounded-lg bg-[#1A1206] flex items-center justify-center">
+                     <Users className="h-5 w-5 text-[#E8A43C]" />
                   </div>
                 </div>
               </CardContent>
