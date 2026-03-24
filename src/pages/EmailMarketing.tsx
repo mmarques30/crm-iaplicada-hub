@@ -84,11 +84,11 @@ export default function EmailMarketing() {
   const isLoading = tLoading || cLoading || wLoading || lLoading;
 
   const statusLabel: Record<string, { label: string; color: string }> = {
-    draft: { label: "Rascunho", color: "bg-yellow-100 text-yellow-700" },
-    scheduled: { label: "Agendada", color: "bg-blue-100 text-blue-700" },
-    sending: { label: "Enviando", color: "bg-orange-100 text-orange-700" },
-    sent: { label: "Enviada", color: "bg-green-100 text-green-700" },
-    cancelled: { label: "Cancelada", color: "bg-red-100 text-red-700" },
+    draft: { label: "Rascunho", color: "bg-[#191D0C] text-[#7A8460]" },
+    scheduled: { label: "Agendada", color: "bg-[#040E1A] text-[#4A9FE0]" },
+    sending: { label: "Enviando", color: "bg-[#1A1206] text-[#E8A43C]" },
+    sent: { label: "Enviada", color: "bg-[#141A04] text-[#AFC040]" },
+    cancelled: { label: "Cancelada", color: "bg-[#1A0804] text-[#E8684A]" },
   };
 
   return (
