@@ -6,9 +6,33 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, CheckCircle } from "lucide-react";
 
 const SUPABASE_URL = (import.meta as any).env?.VITE_SUPABASE_URL || "https://ciwdlceyjsnlnunktqzx.supabase.co";
+
+const COLOR_MAP: Record<string, { gradient: string; button: string }> = {
+  purple: { gradient: "from-purple-600 to-purple-800", button: "bg-purple-600 hover:bg-purple-700" },
+  blue: { gradient: "from-blue-600 to-blue-800", button: "bg-blue-600 hover:bg-blue-700" },
+  emerald: { gradient: "from-emerald-600 to-emerald-800", button: "bg-emerald-600 hover:bg-emerald-700" },
+  orange: { gradient: "from-orange-600 to-orange-800", button: "bg-orange-600 hover:bg-orange-700" },
+  red: { gradient: "from-red-600 to-red-800", button: "bg-red-600 hover:bg-red-700" },
+  pink: { gradient: "from-pink-600 to-pink-800", button: "bg-pink-600 hover:bg-pink-700" },
+  indigo: { gradient: "from-indigo-600 to-indigo-800", button: "bg-indigo-600 hover:bg-indigo-700" },
+  cyan: { gradient: "from-cyan-600 to-cyan-800", button: "bg-cyan-600 hover:bg-cyan-700" },
+};
+
+const BG_STYLES: Record<string, string> = {
+  gradient: "bg-gradient-to-br from-gray-900 to-gray-950",
+  solid: "bg-gray-100",
+  image: "bg-white",
+};
+
+const LAYOUT_CLASSES: Record<string, string> = {
+  centered: "max-w-lg mx-auto",
+  left: "max-w-lg ml-4 md:ml-16",
+  full: "max-w-2xl mx-auto",
+};
 
 export default function FormEmbed() {
   const { slug } = useParams<{ slug: string }>();
@@ -71,6 +95,17 @@ export default function FormEmbed() {
   }, [fields, utms]);
 
   const visibleFields = (fields || []).filter((f: any) => !f.is_hidden);
+
+  // Settings with defaults
+  const settings = form?.settings || {};
+  const themeColor = settings.theme_color || form?.product || "purple";
+  const colors = COLOR_MAP[themeColor] || COLOR_MAP.purple;
+  const bgStyle = settings.bg_style || "gradient";
+  const layout = settings.layout || "centered";
+  const headerTitle = settings.header_title || form?.name || "Formulário";
+  const headerSubtitle = settings.header_subtitle || "Preencha seus dados para continuar";
+  const ctaText = settings.cta_text || "QUERO CONHECER A IAPLICADA";
+  const successMessage = settings.success_message || "Obrigado por se cadastrar. Entraremos em contato em breve.";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,31 +173,25 @@ export default function FormEmbed() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className={`min-h-screen flex items-center justify-center ${BG_STYLES[bgStyle]}`}>
         <div className="text-center space-y-4 max-w-md mx-auto px-6">
           <CheckCircle className="h-16 w-16 text-green-500 mx-auto" />
           <h1 className="text-2xl font-bold">Enviado com sucesso!</h1>
-          <p className="text-muted-foreground">
-            Obrigado por se cadastrar. Entraremos em contato em breve.
-          </p>
+          <p className="text-muted-foreground">{successMessage}</p>
         </div>
       </div>
     );
   }
 
-  const productColors: Record<string, string> = {
-    academy: "from-purple-600 to-purple-800",
-    business: "from-blue-600 to-blue-800",
-    skills: "from-emerald-600 to-emerald-800",
-  };
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-950 flex items-center justify-center p-4">
-      <div className="w-full max-w-lg">
+    <div className={`min-h-screen ${BG_STYLES[bgStyle]} flex items-center justify-center p-4`}>
+      <div className={`w-full ${LAYOUT_CLASSES[layout]}`}>
         {/* Header */}
-        <div className={`bg-gradient-to-r ${productColors[form.product] || "from-gray-600 to-gray-800"} rounded-t-2xl p-8 text-white text-center`}>
-          <h1 className="text-2xl font-bold mb-1">{form.name}</h1>
-          <p className="text-white/80 text-sm">Preencha seus dados para continuar</p>
+        <div className={`bg-gradient-to-r ${colors.gradient} rounded-t-2xl p-8 text-white text-center`}>
+          <h1 className="text-2xl font-bold mb-1">{headerTitle}</h1>
+          {headerSubtitle && (
+            <p className="text-white/80 text-sm">{headerSubtitle}</p>
+          )}
         </div>
 
         {/* Form */}
@@ -204,9 +233,26 @@ export default function FormEmbed() {
                   }
                   required={field.required}
                 />
+              ) : field.field_type === "checkbox" ? (
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    checked={formValues[field.field_name] === "true"}
+                    onCheckedChange={(checked) =>
+                      setFormValues((prev) => ({ ...prev, [field.field_name]: checked ? "true" : "false" }))
+                    }
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {field.placeholder || field.label}
+                  </span>
+                </div>
               ) : (
                 <Input
-                  type={field.field_type === "email" ? "email" : field.field_type === "phone" ? "tel" : "text"}
+                  type={
+                    field.field_type === "email" ? "email"
+                    : field.field_type === "phone" ? "tel"
+                    : field.field_type === "number" ? "number"
+                    : "text"
+                  }
                   placeholder={field.placeholder || ""}
                   value={formValues[field.field_name] || ""}
                   onChange={(e) =>
@@ -238,7 +284,7 @@ export default function FormEmbed() {
 
           <Button
             type="submit"
-            className="w-full h-12 text-base font-semibold"
+            className={`w-full h-12 text-base font-semibold text-white ${colors.button}`}
             disabled={submitting}
           >
             {submitting ? (
@@ -247,7 +293,7 @@ export default function FormEmbed() {
                 Enviando...
               </>
             ) : (
-              form.settings?.cta_text || "QUERO CONHECER A IAPLICADA"
+              ctaText
             )}
           </Button>
 

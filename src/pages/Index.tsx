@@ -96,7 +96,6 @@ export default function Dashboard() {
         <TabsList>
           <TabsTrigger value="all">Todos</TabsTrigger>
           <TabsTrigger value="business">Business</TabsTrigger>
-          <TabsTrigger value="skills">Skills</TabsTrigger>
           <TabsTrigger value="academy">Academy</TabsTrigger>
         </TabsList>
 

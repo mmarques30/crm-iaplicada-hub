@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
     // Buscar token do vault via RPC, com fallback para env var
     let accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN') || null
     try {
-      const { data, error } = await supabase.rpc('get_secret', { secret_name: 'INSTAGRAM_ACCESS_TOKEN' })
+      const { data, error } = await supabase.rpc('get_secret', { secret_name: 'INSTAGRAM_ACCESS_TOKEN_V3' })
       if (!error && data) accessToken = data
     } catch (err) {
       console.warn('Failed to get token from vault, using env var:', err)

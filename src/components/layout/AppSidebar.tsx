@@ -1,7 +1,9 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -15,10 +17,11 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import logoImg from "@/assets/logo.png";
 
-const pipelineItems = [
-  { title: "Business", url: "/pipeline/business", icon: Briefcase },
-  { title: "Academy", url: "/pipeline/academy", icon: GraduationCap },
-];
+const PIPELINE_ICONS: Record<string, typeof Briefcase> = {
+  business: Briefcase,
+  academy: GraduationCap,
+};
+const DEFAULT_PIPELINE_ICON = Layers;
 
 const analyticsItems = [
   { title: "Visão Geral", url: "/painel", icon: BarChart3 },
@@ -36,6 +39,25 @@ export function AppSidebar() {
   const isAnalyticsActive = location.pathname.startsWith("/painel") || location.pathname.startsWith("/analytics") || location.pathname.startsWith("/financeiro");
   const [pipelineOpen, setPipelineOpen] = useState(isPipelineActive);
   const [analyticsOpen, setAnalyticsOpen] = useState(isAnalyticsActive);
+
+  const { data: pipelines } = useQuery({
+    queryKey: ["pipelines-sidebar"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pipelines")
+        .select("id, name, product")
+        .order("created_at");
+      return data || [];
+    },
+  });
+
+  const pipelineItems = (pipelines || [])
+    .filter((p: any) => p.product !== "skills")
+    .map((p: any) => ({
+      title: p.name,
+      url: `/pipeline/${p.product}`,
+      icon: PIPELINE_ICONS[p.product] || DEFAULT_PIPELINE_ICON,
+    }));
 
   return (
     <Sidebar collapsible="icon">

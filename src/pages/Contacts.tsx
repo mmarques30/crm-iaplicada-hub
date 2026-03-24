@@ -62,7 +62,6 @@ const RENDA_OPTIONS = [
 
 const PRODUTO_OPTIONS = [
   { value: "business", label: "Business" },
-  { value: "skills", label: "Skills" },
   { value: "academy", label: "Academy" },
 ];
 

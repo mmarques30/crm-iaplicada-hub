@@ -70,6 +70,29 @@ const emptyFilters: PipelineFilters = {
   leadOrigin: "all",
 };
 
+function PipelineTabs({ product, onSelect }: { product: string; onSelect: (v: string) => void }) {
+  const { data: pipelines } = useQuery({
+    queryKey: ["pipelines-list"],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pipelines")
+        .select("id, name, product")
+        .order("created_at");
+      return (data || []).filter((p: any) => p.product !== "skills");
+    },
+  });
+
+  return (
+    <Tabs value={product} onValueChange={onSelect}>
+      <TabsList>
+        {(pipelines || []).map((p: any) => (
+          <TabsTrigger key={p.id} value={p.product}>{p.name}</TabsTrigger>
+        ))}
+      </TabsList>
+    </Tabs>
+  );
+}
+
 export default function Pipeline() {
   const { product = "business" } = useParams<{ product: string }>();
   const navigate = useNavigate();
@@ -196,12 +219,7 @@ export default function Pipeline() {
             {totalDeals} negócios &middot; {formatCurrency(totalValue)} total
           </p>
         </div>
-        <Tabs value={product} onValueChange={(v) => { navigate(`/pipeline/${v}`); setFilters(emptyFilters); }}>
-          <TabsList>
-            <TabsTrigger value="business">Business</TabsTrigger>
-            <TabsTrigger value="academy">Academy</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <PipelineTabs product={product} onSelect={(v) => { navigate(`/pipeline/${v}`); setFilters(emptyFilters); }} />
       </div>
 
       {/* Lead Origin Tabs */}
@@ -337,11 +355,24 @@ export default function Pipeline() {
               <p className="text-sm">Nenhum estágio configurado para este pipeline</p>
             </div>
           ) : (
-            <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
-              {(stages || []).map((stage) => (
-                <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} isClosed={stage.is_won || stage.is_lost} />
-              ))}
-            </div>
+            <>
+              <div className="flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin">
+                {activeStages.map((stage) => (
+                  <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} />
+                ))}
+              </div>
+
+              {closedStages.length > 0 && (
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Estágios Finais</p>
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-thin">
+                    {closedStages.map((stage) => (
+                      <KanbanColumn key={stage.id} stage={stage} deals={dealsByStage[stage.id] || []} total={stageTotal(stage.id)} daysInStage={daysInStage} navigate={navigate} isClosed />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </DragDropContext>
       )}

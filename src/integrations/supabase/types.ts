@@ -14,6 +14,174 @@ export type Database = {
   }
   public: {
     Tables: {
+      forms: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          product: string
+          redirect_url: string | null
+          notify_emails: string[] | null
+          is_active: boolean
+          settings: Json | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          product: string
+          redirect_url?: string | null
+          notify_emails?: string[] | null
+          is_active?: boolean
+          settings?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          product?: string
+          redirect_url?: string | null
+          notify_emails?: string[] | null
+          is_active?: boolean
+          settings?: Json | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      form_fields: {
+        Row: {
+          id: string
+          form_id: string
+          field_name: string
+          field_type: string
+          label: string
+          placeholder: string | null
+          required: boolean
+          is_hidden: boolean
+          display_order: number
+          options: Json | null
+          maps_to: string | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          form_id: string
+          field_name: string
+          field_type?: string
+          label: string
+          placeholder?: string | null
+          required?: boolean
+          is_hidden?: boolean
+          display_order?: number
+          options?: Json | null
+          maps_to?: string | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          form_id?: string
+          field_name?: string
+          field_type?: string
+          label?: string
+          placeholder?: string | null
+          required?: boolean
+          is_hidden?: boolean
+          display_order?: number
+          options?: Json | null
+          maps_to?: string | null
+          created_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_fields_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      form_submissions: {
+        Row: {
+          id: string
+          form_id: string
+          contact_id: string | null
+          deal_id: string | null
+          utm_source: string | null
+          utm_medium: string | null
+          utm_campaign: string | null
+          utm_term: string | null
+          ip_address: string | null
+          referrer: string | null
+          user_agent: string | null
+          page_url: string | null
+          raw_data: Json
+          qualification_result: string | null
+          submitted_at: string | null
+        }
+        Insert: {
+          id?: string
+          form_id: string
+          contact_id?: string | null
+          deal_id?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          utm_term?: string | null
+          ip_address?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+          page_url?: string | null
+          raw_data?: Json
+          qualification_result?: string | null
+          submitted_at?: string | null
+        }
+        Update: {
+          id?: string
+          form_id?: string
+          contact_id?: string | null
+          deal_id?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          utm_term?: string | null
+          ip_address?: string | null
+          referrer?: string | null
+          user_agent?: string | null
+          page_url?: string | null
+          raw_data?: Json
+          qualification_result?: string | null
+          submitted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "form_submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_contact_id_fkey"
+            columns: ["contact_id"]
+            isOneToOne: false
+            referencedRelation: "contacts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "form_submissions_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       activities: {
         Row: {
           body: string | null
@@ -113,7 +281,9 @@ export type Database = {
           objetivo_com_a_comunidade: string | null
           owner_id: string | null
           phone: string | null
-          produto_interesse: string[] | null
+          produto_interesse:
+            | string[]
+            | null
           renda_mensal: string | null
           state: string | null
           updated_at: string | null
@@ -156,7 +326,9 @@ export type Database = {
           objetivo_com_a_comunidade?: string | null
           owner_id?: string | null
           phone?: string | null
-          produto_interesse?: string[] | null
+          produto_interesse?:
+            | string[]
+            | null
           renda_mensal?: string | null
           state?: string | null
           updated_at?: string | null
@@ -199,7 +371,9 @@ export type Database = {
           objetivo_com_a_comunidade?: string | null
           owner_id?: string | null
           phone?: string | null
-          produto_interesse?: string[] | null
+          produto_interesse?:
+            | string[]
+            | null
           renda_mensal?: string | null
           state?: string | null
           updated_at?: string | null
@@ -272,7 +446,7 @@ export type Database = {
           name: string
           owner_id?: string | null
           pipeline_id: string
-          product?: string
+          product: string
           qualification_status?: string
           stage_entered_at?: string | null
           stage_id: string
@@ -347,7 +521,7 @@ export type Database = {
           delay_days?: number
           id?: string
           is_active?: boolean
-          product?: string
+          product: string
           sequence_order: number
           subject: string
         }
@@ -360,202 +534,6 @@ export type Database = {
           product?: string
           sequence_order?: number
           subject?: string
-        }
-        Relationships: []
-      }
-      form_fields: {
-        Row: {
-          created_at: string | null
-          display_order: number
-          field_name: string
-          field_type: string
-          form_id: string
-          id: string
-          is_hidden: boolean
-          label: string
-          maps_to: string | null
-          options: Json | null
-          placeholder: string | null
-          required: boolean
-        }
-        Insert: {
-          created_at?: string | null
-          display_order?: number
-          field_name: string
-          field_type?: string
-          form_id: string
-          id?: string
-          is_hidden?: boolean
-          label: string
-          maps_to?: string | null
-          options?: Json | null
-          placeholder?: string | null
-          required?: boolean
-        }
-        Update: {
-          created_at?: string | null
-          display_order?: number
-          field_name?: string
-          field_type?: string
-          form_id?: string
-          id?: string
-          is_hidden?: boolean
-          label?: string
-          maps_to?: string | null
-          options?: Json | null
-          placeholder?: string | null
-          required?: boolean
-        }
-        Relationships: [
-          {
-            foreignKeyName: "form_fields_form_id_fkey"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "form_metrics"
-            referencedColumns: ["form_id"]
-          },
-          {
-            foreignKeyName: "form_fields_form_id_fkey"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "forms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      form_submissions: {
-        Row: {
-          contact_id: string | null
-          deal_id: string | null
-          form_id: string
-          id: string
-          ip_address: string | null
-          page_url: string | null
-          qualification_result: string | null
-          raw_data: Json
-          referrer: string | null
-          submitted_at: string | null
-          user_agent: string | null
-          utm_campaign: string | null
-          utm_medium: string | null
-          utm_source: string | null
-          utm_term: string | null
-        }
-        Insert: {
-          contact_id?: string | null
-          deal_id?: string | null
-          form_id: string
-          id?: string
-          ip_address?: string | null
-          page_url?: string | null
-          qualification_result?: string | null
-          raw_data?: Json
-          referrer?: string | null
-          submitted_at?: string | null
-          user_agent?: string | null
-          utm_campaign?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
-          utm_term?: string | null
-        }
-        Update: {
-          contact_id?: string | null
-          deal_id?: string | null
-          form_id?: string
-          id?: string
-          ip_address?: string | null
-          page_url?: string | null
-          qualification_result?: string | null
-          raw_data?: Json
-          referrer?: string | null
-          submitted_at?: string | null
-          user_agent?: string | null
-          utm_campaign?: string | null
-          utm_medium?: string | null
-          utm_source?: string | null
-          utm_term?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "form_submissions_contact_id_fkey"
-            columns: ["contact_id"]
-            isOneToOne: false
-            referencedRelation: "contacts"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "form_submissions_contact_id_fkey"
-            columns: ["contact_id"]
-            isOneToOne: false
-            referencedRelation: "contacts_full"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "form_submissions_deal_id_fkey"
-            columns: ["deal_id"]
-            isOneToOne: false
-            referencedRelation: "deals"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "form_submissions_deal_id_fkey"
-            columns: ["deal_id"]
-            isOneToOne: false
-            referencedRelation: "deals_full"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "form_submissions_form_id_fkey"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "form_metrics"
-            referencedColumns: ["form_id"]
-          },
-          {
-            foreignKeyName: "form_submissions_form_id_fkey"
-            columns: ["form_id"]
-            isOneToOne: false
-            referencedRelation: "forms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      forms: {
-        Row: {
-          created_at: string | null
-          id: string
-          is_active: boolean
-          name: string
-          notify_emails: string[] | null
-          product: string
-          redirect_url: string | null
-          settings: Json | null
-          slug: string
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean
-          name: string
-          notify_emails?: string[] | null
-          product?: string
-          redirect_url?: string | null
-          settings?: Json | null
-          slug: string
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          is_active?: boolean
-          name?: string
-          notify_emails?: string[] | null
-          product?: string
-          redirect_url?: string | null
-          settings?: Json | null
-          slug?: string
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -765,7 +743,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           name: string
-          product?: string
+          product: string
         }
         Update: {
           created_at?: string | null
@@ -990,7 +968,6 @@ export type Database = {
           hubspot_id: number | null
           hubspot_owner: string | null
           id: string | null
-          instagram_opt_in: boolean | null
           last_activity_at: string | null
           last_activity_date: string | null
           last_activity_subject: string | null
@@ -1011,7 +988,9 @@ export type Database = {
           objetivo_com_a_comunidade: string | null
           owner_id: string | null
           phone: string | null
-          produto_interesse: string[] | null
+          produto_interesse:
+            | string[]
+            | null
           renda_mensal: string | null
           state: string | null
           total_deal_value: number | null
@@ -1091,20 +1070,6 @@ export type Database = {
           },
         ]
       }
-      form_metrics: {
-        Row: {
-          form_id: string | null
-          form_name: string | null
-          last_submission_at: string | null
-          product: string | null
-          slug: string | null
-          submissions_last_30d: number | null
-          submissions_last_7d: number | null
-          total_submissions: number | null
-          unique_sources: number | null
-        }
-        Relationships: []
-      }
       mql_volume: {
         Row: {
           mql_count: number | null
@@ -1152,10 +1117,6 @@ export type Database = {
       }
       ig_poll_phase1: { Args: never; Returns: number }
       ig_poll_phase2: { Args: never; Returns: Json }
-      increment_replies_count: {
-        Args: { automation_uuid: string }
-        Returns: undefined
-      }
       poll_ig_comments: { Args: never; Returns: Json }
       process_ig_comment: {
         Args: {
@@ -1170,7 +1131,10 @@ export type Database = {
       qualify_academy: { Args: { p_contact_id: string }; Returns: string }
       qualify_business: { Args: { p_contact_id: string }; Returns: string }
       qualify_contact: {
-        Args: { p_contact_id: string; p_product: string }
+        Args: {
+          p_contact_id: string
+          p_product: string
+        }
         Returns: string
       }
       qualify_skills: { Args: { p_contact_id: string }; Returns: string }

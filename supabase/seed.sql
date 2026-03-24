@@ -20,24 +20,6 @@ INSERT INTO stages (id, pipeline_id, name, display_order, probability, is_won, i
   ('b1000000-0000-0000-0000-000000000010', 'a1000000-0000-0000-0000-000000000001', 'Negócio Perdido', 10, 0, false, true);
 
 -- ==========================================
--- PIPELINE SKILLS (B2B capacitacao de equipes)
--- ==========================================
-INSERT INTO pipelines (id, name, product) VALUES
-  ('a1000000-0000-0000-0000-000000000002', 'Skills', 'skills');
-
-INSERT INTO stages (id, pipeline_id, name, display_order, probability, is_won, is_lost) VALUES
-  ('b2000000-0000-0000-0000-000000000001', 'a1000000-0000-0000-0000-000000000002', 'MQL', 1, 5, false, false),
-  ('b2000000-0000-0000-0000-000000000002', 'a1000000-0000-0000-0000-000000000002', 'Contato Iniciado', 2, 10, false, false),
-  ('b2000000-0000-0000-0000-000000000003', 'a1000000-0000-0000-0000-000000000002', 'Conectado', 3, 20, false, false),
-  ('b2000000-0000-0000-0000-000000000004', 'a1000000-0000-0000-0000-000000000002', 'SQL', 4, 30, false, false),
-  ('b2000000-0000-0000-0000-000000000005', 'a1000000-0000-0000-0000-000000000002', 'Diagnóstico Agendado', 5, 40, false, false),
-  ('b2000000-0000-0000-0000-000000000006', 'a1000000-0000-0000-0000-000000000002', 'Diagnóstico Realizado', 6, 55, false, false),
-  ('b2000000-0000-0000-0000-000000000007', 'a1000000-0000-0000-0000-000000000002', 'Proposta Enviada', 7, 70, false, false),
-  ('b2000000-0000-0000-0000-000000000008', 'a1000000-0000-0000-0000-000000000002', 'Negociação', 8, 80, false, false),
-  ('b2000000-0000-0000-0000-000000000009', 'a1000000-0000-0000-0000-000000000002', 'Negócio Fechado', 9, 100, true, false),
-  ('b2000000-0000-0000-0000-000000000010', 'a1000000-0000-0000-0000-000000000002', 'Negócio Perdido', 10, 0, false, true);
-
--- ==========================================
 -- PIPELINE ACADEMY (B2C formacao individual)
 -- ==========================================
 INSERT INTO pipelines (id, name, product) VALUES
@@ -61,11 +43,6 @@ INSERT INTO stages (id, pipeline_id, name, display_order, probability, is_won, i
 INSERT INTO stale_alert_configs (pipeline_id, stage_id, threshold_days) VALUES
   ('a1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000002', 3),
   ('a1000000-0000-0000-0000-000000000001', 'b1000000-0000-0000-0000-000000000007', 5);
-
--- Skills: 2 dias em Contato Iniciado, 4 dias em Proposta Enviada
-INSERT INTO stale_alert_configs (pipeline_id, stage_id, threshold_days) VALUES
-  ('a1000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000002', 2),
-  ('a1000000-0000-0000-0000-000000000002', 'b2000000-0000-0000-0000-000000000007', 4);
 
 -- Academy: 1 dia em Contato Iniciado
 INSERT INTO stale_alert_configs (pipeline_id, stage_id, threshold_days) VALUES
