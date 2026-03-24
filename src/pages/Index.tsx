@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { useDashboardSnapshot } from "@/hooks/useDashboardData";
 
-/* ─── Metric Card (ref design) ─────────────────────────────── */
+/* ─── Metric Card ─────────────────────────────────────────── */
 
 interface MetricCardProps {
   title: string;
@@ -144,7 +144,6 @@ const SalesPipelineDashboard = () => {
   );
 
   const winRate = totals.won + totals.lost > 0 ? (totals.won / (totals.won + totals.lost)) * 100 : 0;
-  const avgTicket = totals.count > 0 ? totals.avgSize / totals.count : 0;
   const totalLeads = contacts?.length || 0;
 
   /* ── Computed: pipeline stages ───────────────────────────── */
@@ -201,7 +200,6 @@ const SalesPipelineDashboard = () => {
   const totalImpressions = fbAds?.metrics?.totalImpressions || 0;
   const avgCTR = fbAds?.metrics?.avgCTR || 0;
   const totalFbLeads = fbAds?.metrics?.totalLeads || 0;
-  const avgCPL = fbAds?.metrics?.avgCPL || 0;
 
   /* ── Per-product metrics ─────────────────────────────────── */
 
@@ -337,17 +335,20 @@ const SalesPipelineDashboard = () => {
           <div className="grid gap-4 md:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Deals por Estágio</CardTitle>
-                <CardDescription>Quantidade de oportunidades</CardDescription>
+                <CardTitle>Velocidade do Pipeline</CardTitle>
+                <CardDescription>Deals por estágio do funil</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {pipelineStages.map((stage) => (
-                  <div key={stage.stage_name} className="flex justify-between items-center">
-                    <span className="text-sm">{stage.stage_name}</span>
-                    <span className="font-semibold">{stage.deal_count}</span>
-                  </div>
-                ))}
-                {pipelineStages.length === 0 && <p className="text-sm text-muted-foreground">Sem dados</p>}
+                {pipelineStages.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem dados</p>
+                ) : (
+                  pipelineStages.map((stage) => (
+                    <div key={stage.stage_name} className="flex justify-between items-center">
+                      <span className="text-sm">{stage.stage_name}</span>
+                      <span className="font-semibold">{stage.deal_count}</span>
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
 
@@ -357,13 +358,16 @@ const SalesPipelineDashboard = () => {
                 <CardDescription>Valor médio das oportunidades</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {pipelineStages.filter((s) => s.deal_count > 0).map((stage) => (
-                  <div key={stage.stage_name} className="flex justify-between items-center">
-                    <span className="text-sm">{stage.stage_name}</span>
-                    <span className="font-semibold">{formatCurrency(stage.total_amount / stage.deal_count)}</span>
-                  </div>
-                ))}
-                {pipelineStages.length === 0 && <p className="text-sm text-muted-foreground">Sem dados</p>}
+                {pipelineStages.filter((s) => s.deal_count > 0).length === 0 ? (
+                  <p className="text-sm text-muted-foreground">Sem dados</p>
+                ) : (
+                  pipelineStages.filter((s) => s.deal_count > 0).map((stage) => (
+                    <div key={stage.stage_name} className="flex justify-between items-center">
+                      <span className="text-sm">{stage.stage_name}</span>
+                      <span className="font-semibold">{formatCurrency(stage.total_amount / stage.deal_count)}</span>
+                    </div>
+                  ))
+                )}
               </CardContent>
             </Card>
           </div>
@@ -401,8 +405,10 @@ const SalesPipelineDashboard = () => {
                           <p className="font-semibold text-lg">{formatCurrency(source.revenue)}</p>
                         </div>
                         <div>
-                          <p className="text-muted-foreground">Deals</p>
-                          <p className="font-semibold text-lg">{source.leads}</p>
+                          <p className="text-muted-foreground">CPL</p>
+                          <p className="font-semibold text-lg">
+                            {source.leads > 0 ? formatCurrency(source.revenue / source.leads) : "—"}
+                          </p>
                         </div>
                       </div>
                       <Progress value={source.conversion} className="h-2 mt-3" />
@@ -528,6 +534,13 @@ const SalesPipelineDashboard = () => {
                   {fbCampaigns.map((campaign: any) => {
                     const ctr = (campaign.ctr || 0).toFixed(2);
                     const cpl = campaign.costPerLead || (campaign.leads > 0 ? campaign.spend / campaign.leads : 0);
+                    const campaignRevenue = campaign.leads > 0 && totalFbLeads > 0
+                      ? (wonRevenue * (campaign.leads / totalFbLeads))
+                      : 0;
+                    const campaignRoi = campaign.spend > 0
+                      ? Math.round(((campaignRevenue - campaign.spend) / campaign.spend) * 100)
+                      : 0;
+
                     return (
                       <div key={campaign.id} className="border rounded-lg p-4 space-y-3">
                         <div className="flex items-center justify-between">
@@ -554,17 +567,24 @@ const SalesPipelineDashboard = () => {
                             <p className="font-semibold">{campaign.leads || 0}</p>
                           </div>
                           <div>
-                            <p className="text-muted-foreground">Investido</p>
-                            <p className="font-semibold">{formatCurrency(campaign.spend || 0)}</p>
+                            <p className="text-muted-foreground">Receita Est.</p>
+                            <p className="font-semibold text-green-600">{formatCurrency(campaignRevenue)}</p>
                           </div>
                         </div>
                         <div className="flex items-center justify-between pt-2 border-t">
                           <span className="text-sm text-muted-foreground">
                             Investimento: {formatCurrency(campaign.spend || 0)}
                           </span>
-                          <span className="text-sm font-medium">
-                            CPL: {formatCurrency(cpl)}
-                          </span>
+                          <div className="flex items-center gap-3">
+                            <span className="text-sm font-medium">
+                              CPL: {formatCurrency(cpl)}
+                            </span>
+                            {campaignRoi > 0 && (
+                              <Badge variant={campaignRoi > 300 ? "default" : "secondary"}>
+                                ROI: {campaignRoi}%
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -629,10 +649,10 @@ const SalesPipelineDashboard = () => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <span className="text-sm">Ticket Médio</span>
-                    <span className="font-semibold">{formatCurrency(avgTicket)}</span>
+                    <span className="text-sm">ROI de Ads</span>
+                    <span className="font-semibold">{roi === "—" ? "—" : `${roi}x`}</span>
                   </div>
-                  <Progress value={Math.min((avgTicket / Math.max(avgTicket * 1.2, 1)) * 100, 100)} className="h-2" />
+                  <Progress value={roi === "—" ? 0 : Math.min(Number(roi) * 10, 100)} className="h-2" />
                 </div>
               </CardContent>
             </Card>
