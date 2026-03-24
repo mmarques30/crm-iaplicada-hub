@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -21,7 +23,7 @@
     --secondary-foreground: 80 30% 90%;
 
     --muted: 80 20% 8%;
-    --muted-foreground: 78 16% 39%; /* #6B7355 → actually 78 16 39 */
+    --muted-foreground: 78 16% 39%; /* #6B7355 */
 
     --accent: 72 51% 50%;          /* #AFC040 */
     --accent-foreground: 80 18% 4%;
@@ -46,28 +48,49 @@
     --sidebar-ring: 74 55% 34%;
 
     /* ── Semantic data colors ────────────────────────── */
-    --teal: 168 64% 45%;           /* #2CBBA6 volume/counts */
+    --c-volume-main: 170 42% 33%;      /* #1D8A7A */
+    --c-volume-bright: 168 64% 45%;    /* #2CBBA6 */
+    --c-volume-surface: 168 70% 3%;    /* #031411 */
+
+    --c-revenue-main: 33 55% 44%;      /* #B07830 */
+    --c-revenue-bright: 33 78% 57%;    /* #E8A43C */
+    --c-revenue-surface: 33 50% 6%;    /* #1A1206 */
+
+    --c-convert-main: 74 55% 34%;      /* #738925 */
+    --c-convert-bright: 72 51% 50%;    /* #AFC040 */
+    --c-convert-surface: 72 65% 5%;    /* #141A04 */
+
+    --c-activity-main: 207 60% 43%;    /* #2B6CB0 */
+    --c-activity-bright: 207 70% 58%;  /* #4A9FE0 */
+    --c-activity-surface: 207 60% 6%;  /* #040E1A */
+
+    --c-negative-main: 12 63% 49%;     /* #C94A2F */
+    --c-negative-bright: 12 78% 60%;   /* #E8684A */
+    --c-negative-surface: 12 60% 6%;   /* #1A0804 */
+
+    /* ── Legacy semantic aliases (charts) ────────────── */
+    --teal: 168 64% 45%;
     --teal-surface: 168 40% 5%;
-    --amber: 33 78% 57%;           /* #E8A43C revenue/R$ */
+    --amber: 33 78% 57%;
     --amber-surface: 33 30% 6%;
-    --green: 72 51% 50%;           /* #AFC040 conversion/wins */
+    --green: 72 51% 50%;
     --green-surface: 72 60% 5%;
-    --coral: 12 78% 60%;           /* #E8684A loss/decline */
+    --coral: 12 78% 60%;
     --coral-surface: 12 40% 6%;
-    --blue: 207 70% 58%;           /* #4A9FE0 activity */
+    --blue: 207 70% 58%;
     --blue-surface: 207 40% 6%;
-    --purple: 254 70% 70%;         /* #9B7FE8 forecasts */
+    --purple: 254 70% 70%;
     --purple-surface: 254 30% 7%;
 
     /* ── Border hover ────────────────────────────────── */
     --border-hover: 80 35% 16%;    /* #2E3A18 */
 
     /* ── Chart scale ─────────────────────────────────── */
-    --chart-1: 168 64% 45%;       /* teal */
-    --chart-2: 33 78% 57%;        /* amber */
-    --chart-3: 72 51% 50%;        /* green */
-    --chart-4: 12 78% 60%;        /* coral */
-    --chart-5: 207 70% 58%;       /* blue */
+    --chart-1: 168 64% 45%;
+    --chart-2: 33 78% 57%;
+    --chart-3: 72 51% 50%;
+    --chart-4: 12 78% 60%;
+    --chart-5: 207 70% 58%;
   }
 }
 
