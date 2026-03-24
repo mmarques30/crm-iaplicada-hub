@@ -171,8 +171,7 @@ export default function Pipeline() {
     });
   }, [deals, filters]);
 
-  const activeStages = useMemo(() => stages?.filter((s) => !s.is_won && !s.is_lost) || [], [stages]);
-  const closedStages = useMemo(() => stages?.filter((s) => s.is_won || s.is_lost) || [], [stages]);
+  const allStages = useMemo(() => stages || [], [stages]);
 
   const dealsByStage = useMemo(() => {
     const map: Record<string, Deal[]> = {};
