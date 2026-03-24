@@ -129,7 +129,7 @@ const SalesPipelineDashboard = () => {
   const { data: contacts } = useQuery({
     queryKey: ["contacts_dashboard"],
     queryFn: async () => {
-      const { data } = await supabase.from("contacts").select("id, lifecyclestage, created_at");
+      const { data } = await supabase.from("contacts").select("id, lifecycle_stage, created_at");
       return (data || []) as any[];
     },
   });
