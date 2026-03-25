@@ -151,7 +151,7 @@ export default function FacebookAdsPage() {
               <CardContent>
                 {cplByCampaign.length > 0 ? (
                   <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={cplByCampaign.map(c => ({ name: shortName(c.name), fullName: c.name, cpl: c.costPerLead }))} layout="vertical">
+                    <BarChart data={cplByCampaign.map(c => ({ name: shortName(c.name), fullName: c.name, cpl: c.cplCalc }))} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
                       <XAxis type="number" tick={AXIS_TICK} tickFormatter={v => `R$${v}`} axisLine={false} tickLine={false} />
                       <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
@@ -162,7 +162,7 @@ export default function FacebookAdsPage() {
                       }} />
                       <Bar dataKey="cpl" name="CPL" radius={[0, 4, 4, 0]}>
                         {cplByCampaign.map((c, i) => (
-                          <Cell key={i} fill={c.costPerLead <= totals.cpl ? '#AFC040' : '#E8684A'} />
+                          <Cell key={i} fill={c.cplCalc <= totals.cpl ? '#AFC040' : '#E8684A'} />
                         ))}
                       </Bar>
                     </BarChart>
