@@ -76,25 +76,16 @@ export function OrigemTab() {
     return (d: any) => normalizeChannel(d.canal_origem || (d.contact_id ? contactSource[d.contact_id] : '') || '')
   }, [contacts])
 
-  const productData = useMemo(() => {
-    const counts: Record<string, number> = { Academy: 0, Business: 0, Skills: 0, 'Offline/Importados': 0 }
+  const channelData = useMemo(() => {
+    const counts: Record<string, number> = {}
     for (const c of contacts) {
-      const pi = (c.produto_interesse as string[] | null) || []
-      const lower = pi.map(p => (p || '').toLowerCase())
-      if (lower.includes('academy')) counts.Academy++
-      else if (lower.includes('business')) counts.Business++
-      else if (lower.includes('skills')) counts.Skills++
-      else counts['Offline/Importados']++
+      const ch = normalizeChannel(c.utm_source || c.fonte_registro || '')
+      counts[ch] = (counts[ch] || 0) + 1
     }
-    return counts
+    return Object.entries(counts)
+      .map(([name, count]) => ({ name, count }))
+      .sort((a, b) => b.count - a.count)
   }, [contacts])
-
-  const productDescriptions: Record<string, string> = {
-    Academy: 'Contatos interessados em Academy (cursos e comunidade)',
-    Business: 'Contatos interessados em Business (consultoria empresarial)',
-    Skills: 'Contatos interessados em Skills (liderança)',
-    'Offline/Importados': 'Contatos sem produto de interesse definido',
-  }
 
   const formConversion = useMemo(() => {
     const map: Record<string, { total: number; products: Record<string, number> }> = {}
