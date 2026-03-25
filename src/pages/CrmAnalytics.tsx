@@ -151,7 +151,7 @@ export default function CrmAnalytics() {
             { v: 'funnel', l: 'Funil' },
             { v: 'sources', l: 'Fontes' },
             { v: 'products', l: 'Produtos' },
-            { v: 'meta-funnel', l: 'Funil Meta' },
+            
             { v: 'leads-aula', l: 'Leads Aula' },
             { v: 'leads-visitantes', l: 'Leads Visitantes' },
             { v: 'insights', l: 'Insights' },
