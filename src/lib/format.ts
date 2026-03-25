@@ -90,17 +90,17 @@ export const productColor = (product: string) => {
  * em labels consistentes usados em todo o produto.
  */
 export const normalizeChannel = (raw: string | null | undefined): string => {
-  if (!raw) return 'Não rastreado';
+  if (!raw) return 'Offline';
   const v = raw.trim().toLowerCase();
 
   // Instagram
   if (v === 'instagram' || v === 'instagram orgânico' || v === 'social_media' || v === 'ig' || v === 'organic_social') return 'Instagram';
 
-  // Ads (Facebook, Google, paid)
-  if (v === 'paid' || v === 'facebook' || v === 'facebook ads' || v === 'meta' || v === 'paid_social' || v === 'paid_search' || v === 'fb_ads' || v === 'facebook_ads' || v === 'google ads' || v === 'google_ads' || v === 'ads') return 'Ads';
+  // Ads (Facebook, Google, paid, email marketing, activecampaign, etc.)
+  if (['paid', 'facebook', 'facebook ads', 'meta', 'paid_social', 'paid_search', 'fb_ads', 'facebook_ads', 'google ads', 'google_ads', 'ads', 'fb', 'other_campaigns', 'email_marketing', 'activecampaign', 'whatsapp', 'wpp', 'manychat'].includes(v)) return 'Ads';
 
   // Tráfego Direto
-  if (v === 'direct' || v === 'direct_traffic' || v === 'tráfego direto' || v === 'direto') return 'Tráfego Direto';
+  if (['direct', 'direct_traffic', 'tráfego direto', 'direto', 'organic', 'organic_search', 'formulário', 'formulário / orgânico', 'form', 'google', 'seo', 'referral'].includes(v)) return 'Tráfego Direto';
 
   // TikTok
   if (v === 'tiktok' || v === 'tik_tok' || v === 'tt' || v === 'tiktok_ads') return 'TikTok';
@@ -108,19 +108,9 @@ export const normalizeChannel = (raw: string | null | undefined): string => {
   // YouTube
   if (v === 'youtube' || v === 'yt' || v === 'youtube_ads') return 'YouTube';
 
-  // WhatsApp
-  if (v === 'whatsapp' || v === 'wpp' || v === 'manychat') return 'Ads';
-
-  // Formulário / Orgânico → Ads ou Tráfego Direto
-  if (v === 'organic' || v === 'organic_search' || v === 'formulário' || v === 'formulário / orgânico' || v === 'form' || v === 'google' || v === 'seo' || v === 'referral') return 'Tráfego Direto';
-
   // Offline
   if (v === 'offline' || v === 'evento' || v === 'indicação' || v === 'indicacao') return 'Offline';
 
-  // Se não bate com nada mas tem valor, retorna o valor capitalizado
-  if (v.length > 0) {
-    return raw.charAt(0).toUpperCase() + raw.slice(1).trim();
-  }
-
-  return 'Não rastreado';
+  // Qualquer valor não reconhecido → Offline
+  return 'Offline';
 };

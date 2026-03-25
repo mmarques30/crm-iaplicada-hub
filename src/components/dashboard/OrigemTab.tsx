@@ -34,14 +34,18 @@ export function OrigemTab() {
 
   const contacts = contactsRes || []
 
+  const ALLOWED_CHANNELS = ['Offline', 'Instagram', 'Tráfego Direto', 'Ads', 'TikTok', 'YouTube']
+
   const channelData = useMemo(() => {
     const counts: Record<string, number> = {}
+    for (const ch of ALLOWED_CHANNELS) counts[ch] = 0
     for (const c of contacts) {
-      const ch = normalizeChannel(c.utm_source || c.fonte_registro || '')
+      let ch = normalizeChannel(c.utm_source || c.fonte_registro || '')
+      if (!ALLOWED_CHANNELS.includes(ch)) ch = 'Offline'
       counts[ch] = (counts[ch] || 0) + 1
     }
-    return Object.entries(counts)
-      .map(([name, count]) => ({ name, count }))
+    return ALLOWED_CHANNELS
+      .map(name => ({ name, count: counts[name] || 0 }))
       .sort((a, b) => b.count - a.count)
   }, [contacts])
 
