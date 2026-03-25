@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KPICard } from '@/components/dashboard/KPICard'
-import { formatCurrency, formatDate, normalizeChannel } from '@/lib/format'
+import { formatCurrency, formatDate } from '@/lib/format'
 import {
   Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent,
   GraduationCap, Eye, Video, FileDown, UserCheck, UserX, Flame, Loader2, RefreshCw, ChevronDown, ChevronUp,
@@ -14,7 +14,7 @@ import {
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
 import { useLeadsAula, useLeadsVisitantes, PRESENCA_QUERY_KEY, VISITANTES_QUERY_KEY } from '@/hooks/useExternalSupabase'
-import { useDealsByChannel } from '@/hooks/useDealsChannel'
+import { useDealsByChannel, useDealsWithChannel } from '@/hooks/useDealsChannel'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -60,14 +60,24 @@ export default function CrmAnalytics() {
   })
   const { data: dealsByChannel } = useDealsByChannel()
 
-  // Detailed deals_full for correlated analysis
+  // Use deals with derived channel from contact data
+  const { data: allDealsWithChannel } = useDealsWithChannel()
+  // Also fetch stage info for correlated analysis
   const { data: dealsFullDetailed } = useQuery({
     queryKey: ['deals_full_detailed'],
     queryFn: async () => {
-      const { data } = await (supabase as any).from('deals_full').select('canal_origem, product, stage_name, stage_order, is_won, created_at')
-      return (data || []) as { canal_origem: string | null; product: string | null; stage_name: string | null; stage_order: number | null; is_won: boolean | null; created_at: string | null }[]
+      const { data } = await (supabase as any).from('deals_full').select('id, canal_origem, product, stage_name, stage_order, is_won, created_at, contact_id')
+      return (data || []) as any[]
     },
   })
+  // Merge: use derived channel from hook, fall back to normalizeChannel
+  const dealsDetailed = useMemo(() => {
+    const channelMap = new Map((allDealsWithChannel || []).map(d => [d.id, d.canal]))
+    return (dealsFullDetailed || []).map(d => ({
+      ...d,
+      canal: channelMap.get(d.id) || d.canal_origem || 'Não rastreado',
+    }))
+  }, [dealsFullDetailed, allDealsWithChannel])
 
   // External data
   const leadsAula = useLeadsAula()
@@ -178,11 +188,11 @@ export default function CrmAnalytics() {
         {/* ─── Fontes ─── */}
         <TabsContent value="sources" className="mt-4 space-y-4">
           {(() => {
-            const allDeals = dealsFullDetailed || []
+            const allDeals = dealsDetailed
             // Source stats
             const sourceMap: Record<string, { total: number; opportunities: number; customers: number; won: number }> = {}
             for (const d of allDeals) {
-              const ch = normalizeChannel(d.canal_origem)
+              const ch = d.canal || 'Não rastreado'
               if (!sourceMap[ch]) sourceMap[ch] = { total: 0, opportunities: 0, customers: 0, won: 0 }
               sourceMap[ch].total++
               if ((d.stage_order ?? 0) >= 2) sourceMap[ch].opportunities++
@@ -203,7 +213,7 @@ export default function CrmAnalytics() {
             for (const d of allDeals) {
               if (!d.created_at) continue
               const month = d.created_at.substring(0, 7)
-              const ch = normalizeChannel(d.canal_origem)
+              const ch = d.canal || 'Não rastreado'
               const src = topSources.includes(ch) ? ch : 'Outros'
               if (!monthMap[month]) monthMap[month] = {}
               monthMap[month][src] = (monthMap[month][src] || 0) + 1
@@ -305,7 +315,7 @@ export default function CrmAnalytics() {
         {/* ─── Produtos ─── */}
         <TabsContent value="products" className="mt-4 space-y-4">
           {(() => {
-            const allDeals = dealsFullDetailed || []
+            const allDeals = dealsDetailed
             const products = [...new Set(allDeals.map(d => d.product).filter(Boolean))] as string[]
             const stages = [...new Set((stageConversion || []).map((s: any) => s.stage_name))].filter(Boolean) as string[]
 
@@ -325,7 +335,7 @@ export default function CrmAnalytics() {
               const dealsForProduct = allDeals.filter(d => d.product === p)
               const sourceCount: Record<string, number> = {}
               for (const d of dealsForProduct) {
-                const ch = normalizeChannel(d.canal_origem)
+                const ch = d.canal || 'Não rastreado'
                 sourceCount[ch] = (sourceCount[ch] || 0) + 1
               }
               const topSource = Object.entries(sourceCount).sort((a, b) => b[1] - a[1])[0]
