@@ -1008,6 +1008,17 @@ export default function GestaoVendas() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Fiscal Insights */}
+          <InsightsTable
+            insights={fiscalInsights || []}
+            isLoading={fiscalInsightsLoading}
+            error={fiscalInsightsError?.message}
+            onRetry={() => refetchFiscalInsights()}
+            title="Insights Fiscais"
+            subtitle="Análise de compliance, NFs pendentes e regularização"
+            context="fiscal"
+          />
         </TabsContent>
 
         {/* ════════════════ Tab: Regularizacao NF ════════════════ */}
