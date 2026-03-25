@@ -74,11 +74,12 @@ async function collectInstagram(accessToken: string, igAccountId: string) {
 // ============ FACEBOOK ADS COLLECTOR ============
 async function collectFacebookAds(adsToken: string, adAccountId: string) {
   const baseUrl = 'https://graph.facebook.com/v21.0'
-  const [campaignsRes, insightsRes] = await Promise.all([
+  const [campaignsRes, insightsRes, dailyRes] = await Promise.all([
     fetch(`${baseUrl}/${adAccountId}/campaigns?fields=id,name,status,objective&limit=50&access_token=${adsToken}`),
     fetch(`${baseUrl}/${adAccountId}/insights?fields=campaign_name,campaign_id,spend,impressions,reach,clicks,ctr,actions,cost_per_action_type&date_preset=last_30d&level=campaign&limit=50&access_token=${adsToken}`),
+    fetch(`${baseUrl}/${adAccountId}/insights?fields=spend,impressions,clicks,ctr,reach,actions&date_preset=last_90d&time_increment=1&limit=100&access_token=${adsToken}`),
   ])
-  const [campaignsData, insightsData] = await Promise.all([campaignsRes.json(), insightsRes.json()])
+  const [campaignsData, insightsData, dailyData] = await Promise.all([campaignsRes.json(), insightsRes.json(), dailyRes.json()])
   if (campaignsData.error) throw new Error(`FB Ads: ${campaignsData.error.message}`)
 
   const campaigns = campaignsData.data || []
@@ -102,8 +103,22 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
   const totalClicks = campaignsWithInsights.reduce((s: number, c: any) => s + c.clicks, 0)
   const totalLeads = campaignsWithInsights.reduce((s: number, c: any) => s + c.leads, 0)
 
+  // Parse daily insights for evolution tab
+  const dailyInsights = (dailyData.data || []).map((d: any) => {
+    const leads = (d.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
+    return {
+      date: d.date_start,
+      spend: parseFloat(d.spend || '0'),
+      impressions: parseInt(d.impressions || '0'),
+      clicks: parseInt(d.clicks || '0'),
+      ctr: parseFloat(d.ctr || '0'),
+      leads: parseInt(leads),
+    }
+  }).sort((a: any, b: any) => a.date.localeCompare(b.date))
+
   return {
     campaigns: campaignsWithInsights,
+    dailyInsights,
     metrics: {
       totalSpend: Math.round(totalSpend * 100) / 100, totalImpressions, totalReach, totalClicks, totalLeads,
       avgCPL: Math.round((totalLeads > 0 ? totalSpend / totalLeads : 0) * 100) / 100,

@@ -27,6 +27,10 @@ export interface DashboardSnapshot {
         spend: number; impressions: number; reach: number; clicks: number
         ctr: number; leads: number; costPerLead: number
       }>
+      dailyInsights?: Array<{
+        date: string; spend: number; impressions: number
+        clicks: number; ctr: number; leads: number
+      }>
       metrics: {
         totalSpend: number; totalImpressions: number; totalReach: number
         totalClicks: number; totalLeads: number; avgCPL: number; avgCTR: number

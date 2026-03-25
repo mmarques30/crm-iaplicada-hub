@@ -296,82 +296,120 @@ export default function FacebookAdsPage() {
           </Card>
         </TabsContent>
 
-        {/* ─── Insights ─── */}
-        {/* ─── Evolução (NEW - matches Manus) ─── */}
+        {/* ─── Evolução (dados diários reais) ─── */}
         <TabsContent value="evolution" className="space-y-4 mt-4">
-          {/* Investimento Diário placeholder - uses campaign-level data since we don't have daily breakdown */}
-          <Card>
-            <CardHeader><CardTitle className="text-base">Resumo Semanal</CardTitle></CardHeader>
-            <CardContent>
-              {campaigns.length > 0 ? (
-                <>
-                <ResponsiveContainer width="100%" height={300}>
-                  <ComposedChart data={(() => {
-                    // Simulate weekly data from campaigns (approximate)
-                    const weeks = Math.max(Math.ceil(campaigns.length * 1.2), 7)
-                    const weeklySpend = totals.spend / weeks
-                    const weeklyLeads = totals.leads / weeks
-                    return Array.from({ length: weeks }, (_, i) => ({
-                      name: `Sem ${i + 1}`,
-                      gasto: Math.round((weeklySpend + (Math.random() - 0.5) * weeklySpend * 0.4) * 100) / 100,
-                      leads: Math.max(Math.round(weeklyLeads + (Math.random() - 0.5) * weeklyLeads * 0.6), 0),
-                    }))
-                  })()}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                    <XAxis dataKey="name" tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
-                    <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
-                    <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} />
-                    <Legend />
-                    <Bar yAxisId="left" dataKey="gasto" name="Gasto (R$)" fill="#E8684A" radius={[4, 4, 0, 0]} />
-                    <Bar yAxisId="right" dataKey="leads" name="Leads" fill="#4A9FE0" radius={[4, 4, 0, 0]} />
-                  </ComposedChart>
-                </ResponsiveContainer>
-                <p className="text-[10px] text-muted-foreground text-center mt-1">Eixo esquerdo: gasto (R$) · Eixo direito: leads</p>
-                </>
-              ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
-            </CardContent>
-          </Card>
+          {(() => {
+            const dailyInsights = fb?.dailyInsights || []
+            if (dailyInsights.length === 0) {
+              return (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <p className="text-muted-foreground">Atualize os dados para ver a evolução diária.</p>
+                    <p className="text-xs text-muted-foreground mt-1">Clique em "Atualizar dados" no Painel Geral para coletar dados diários dos últimos 90 dias.</p>
+                  </CardContent>
+                </Card>
+              )
+            }
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* CTR trend */}
-            <Card>
-              <CardHeader><CardTitle className="text-base">CTR por Campanha (Tendência)</CardTitle></CardHeader>
-              <CardContent>
-                {ctrByCampaign.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
-                    <AreaChart data={ctrByCampaign.map(c => ({ name: shortName(c.name, 15), ctr: Math.round(c.ctr * 100) / 100 }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 9, ...AXIS_TICK }} axisLine={false} tickLine={false} />
-                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" />
-                      <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Area type="monotone" dataKey="ctr" stroke="#4A9FE0" fill="#4A9FE0" fillOpacity={0.15} />
-                    </AreaChart>
-                  </ResponsiveContainer>
-                ) : null}
-              </CardContent>
-            </Card>
-            {/* Spend distribution */}
-            <Card>
-              <CardHeader><CardTitle className="text-base">Eficiência por Campanha</CardTitle></CardHeader>
-              <CardContent>
-                {campaigns.filter(c => c.spend > 0).length > 0 ? (
-                  <ResponsiveContainer width="100%" height={250}>
-                    <BarChart data={campaigns.filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend).map(c => ({ name: shortName(c.name, 15), investimento: Math.round(c.spend), leads: c.leads || 0 }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 9, ...AXIS_TICK }} interval={0} height={50} axisLine={false} tickLine={false} />
-                      <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
-                      <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Legend />
-                      <Bar yAxisId="left" dataKey="investimento" name="Gasto R$" fill="#E8A43C" radius={[4, 4, 0, 0]} />
-                      <Bar yAxisId="right" dataKey="leads" name="Leads" fill="#AFC040" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : null}
-              </CardContent>
-            </Card>
-          </div>
+            const fmtDate = (d: string) => {
+              const parts = d.split('-')
+              return `${parts[2]}/${parts[1]}`
+            }
+
+            // Weekly summary
+            const weeklyData = (() => {
+              const weeks: Record<string, { gasto: number; leads: number }> = {}
+              dailyInsights.forEach((d, i) => {
+                const weekIdx = Math.floor(i / 7)
+                const key = `Sem ${weekIdx + 1}`
+                if (!weeks[key]) weeks[key] = { gasto: 0, leads: 0 }
+                weeks[key].gasto += d.spend
+                weeks[key].leads += d.leads
+              })
+              return Object.entries(weeks).map(([name, v]) => ({
+                name,
+                gasto: Math.round(v.gasto * 100) / 100,
+                leads: v.leads,
+              }))
+            })()
+
+            return (
+              <>
+                {/* Investimento Diário */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Investimento Diário (Últimos 90 dias)</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={dailyInsights.map(d => ({ date: fmtDate(d.date), spend: d.spend }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                        <XAxis dataKey="date" tick={{ fontSize: 9, ...AXIS_TICK }} interval={Math.max(Math.floor(dailyInsights.length / 12), 1)} axisLine={false} tickLine={false} />
+                        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatCurrency(v)} labelFormatter={l => `Data: ${l}`} />
+                        <Area type="monotone" dataKey="spend" name="Investimento" stroke="#E8684A" fill="#E8684A" fillOpacity={0.2} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Impressões e Cliques */}
+                  <Card>
+                    <CardHeader><CardTitle className="text-base">Impressões e Cliques</CardTitle></CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={260}>
+                        <ComposedChart data={dailyInsights.map(d => ({ date: fmtDate(d.date), impressoes: d.impressions, cliques: d.clicks }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                          <XAxis dataKey="date" tick={{ fontSize: 9, ...AXIS_TICK }} interval={Math.max(Math.floor(dailyInsights.length / 8), 1)} axisLine={false} tickLine={false} />
+                          <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                          <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={TOOLTIP_STYLE} />
+                          <Legend />
+                          <Line yAxisId="left" type="monotone" dataKey="impressoes" name="Impressões" stroke="#4A9FE0" strokeWidth={2} dot={false} />
+                          <Line yAxisId="right" type="monotone" dataKey="cliques" name="Cliques" stroke="#E8684A" strokeWidth={2} dot={false} />
+                        </ComposedChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  {/* CTR Diário */}
+                  <Card>
+                    <CardHeader><CardTitle className="text-base">CTR Diário (%)</CardTitle></CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={260}>
+                        <AreaChart data={dailyInsights.map(d => ({ date: fmtDate(d.date), ctr: Math.round(d.ctr * 100) / 100 }))}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                          <XAxis dataKey="date" tick={{ fontSize: 9, ...AXIS_TICK }} interval={Math.max(Math.floor(dailyInsights.length / 8), 1)} axisLine={false} tickLine={false} />
+                          <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" />
+                          <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `${v}%`} />
+                          <Area type="monotone" dataKey="ctr" name="CTR" stroke="#4A9FE0" fill="#4A9FE0" fillOpacity={0.15} />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Resumo Semanal */}
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Resumo Semanal</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <ComposedChart data={weeklyData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                        <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
+                        <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} />
+                        <Legend />
+                        <Bar yAxisId="left" dataKey="gasto" name="Gasto (R$)" fill="#E8684A" radius={[4, 4, 0, 0]} />
+                        <Bar yAxisId="right" dataKey="leads" name="Leads" fill="#1E3A5F" radius={[4, 4, 0, 0]} />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                    <p className="text-[10px] text-muted-foreground text-center mt-1">Eixo esquerdo: gasto (R$) · Eixo direito: leads</p>
+                  </CardContent>
+                </Card>
+              </>
+            )
+          })()}
         </TabsContent>
 
         {/* ─── Insights ─── */}
