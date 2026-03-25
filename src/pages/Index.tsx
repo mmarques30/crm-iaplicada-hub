@@ -323,17 +323,66 @@ const SalesPipelineDashboard = () => {
           <p className="text-muted-foreground text-sm mt-1">Visão completa do pipeline, leads e performance de marketing</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-muted-foreground">
-            <Calendar className="h-4 w-4 mr-2" />Últimos 30 dias
-          </Button>
-          <Button variant="ghost" size="sm" className="text-muted-foreground">
+          <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as any)}>
+            <SelectTrigger className="h-9 w-auto gap-2 border-border bg-transparent text-muted-foreground text-sm">
+              <Calendar className="h-4 w-4" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              <SelectItem value="all">Todo período</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="ghost" size="sm" className="text-muted-foreground relative" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="h-4 w-4 mr-2" />Filtros
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[#AFC040] text-[#0D0D0D] text-[10px] font-bold flex items-center justify-center">{activeFilterCount}</span>
+            )}
           </Button>
           <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
             <Download className="h-4 w-4 mr-2" />Exportar
           </Button>
         </div>
       </div>
+
+      {/* ── Filter Panel ───────────────────────────────────── */}
+      {showFilters && (
+        <div className="rounded-lg border p-4 flex flex-wrap items-end gap-4" style={{ background: 'var(--c-card)', borderColor: 'var(--c-border)' }}>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium" style={{ color: 'var(--c-text-s)' }}>Produto</label>
+            <Select value={productFilter} onValueChange={setProductFilter}>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="academy">Academy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium" style={{ color: 'var(--c-text-s)' }}>Canal</label>
+            <Select value={channelFilter} onValueChange={setChannelFilter}>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="instagram">Instagram</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                <SelectItem value="site">Site</SelectItem>
+                <SelectItem value="indicação">Indicação</SelectItem>
+                <SelectItem value="evento">Evento</SelectItem>
+                <SelectItem value="Direto">Direto</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={() => { setProductFilter('all'); setQualificationFilter('all'); setChannelFilter('all'); }}>
+              <X className="h-3 w-3 mr-1" />Limpar filtros
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* ── KPI Cards ──────────────────────────────────────── */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
