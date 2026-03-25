@@ -49,8 +49,215 @@ interface StageRow { stage_name: string; deal_count: number; total_amount: numbe
 interface ProductMetric { product: string; active_deals: number; won_deals: number; lost_deals: number; pipeline_value: number; avg_deal_size: number; win_rate: number; }
 
 /* ═══════════════════════════════════════════════════════════════
-   DASHBOARD COMPONENT
+   BOTTOM CARDS — Dynamic based on filtered data
    ═══════════════════════════════════════════════════════════════ */
+function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: StageRow[]; filteredDeals: any[]; C: typeof import("./Index")["default"] extends never ? any : any }) {
+  const maxCount = Math.max(...pipelineStages.map(s => s.deal_count), 1);
+
+  // Group stages into zones
+  const entryStages = pipelineStages.filter(s => ["Lead Capturado", "MQL", "Contato Iniciado", "Conectado"].includes(s.stage_name));
+  const activityStages = pipelineStages.filter(s => ["SQL", "Reunião Agendada", "Reunião Realizada"].includes(s.stage_name));
+  const conversionStages = pipelineStages.filter(s => ["Inscrito", "Negociação", "Contrato Enviado", "Negócio Fechado"].includes(s.stage_name));
+
+  // Find bottleneck
+  const activeStages = pipelineStages.filter(s => !["Negócio Fechado", "Negócio Perdido", "Perdido"].includes(s.stage_name));
+  const totalActive = activeStages.reduce((s, st) => s + st.deal_count, 0);
+  const bottleneck = activeStages.length > 0 ? activeStages.reduce((a, b) => a.deal_count > b.deal_count ? a : b) : null;
+  const bottleneckPct = bottleneck && totalActive > 0 ? Math.round((bottleneck.deal_count / totalActive) * 100) : 0;
+
+  // Revenue card data
+  const activeDeals = filteredDeals.filter(d => d.is_won === null);
+  const totalPotential = activeDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+
+  // Group by rough phases for revenue card
+  const reuniaoDeals = activeDeals.filter(d => {
+    const stage = pipelineStages.find(s => s.stage_name === "Reunião Agendada" || s.stage_name === "Reunião Realizada");
+    // approximate: use stage lookup if available
+    return false; // will use simpler split below
+  });
+  const halfIdx = Math.ceil(activeDeals.length / 2);
+  const phase1Deals = activeDeals.slice(0, halfIdx);
+  const phase2Deals = activeDeals.slice(halfIdx);
+  const phase1Amount = phase1Deals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  const phase2Amount = phase2Deals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  const phase1Pct = totalPotential > 0 ? Math.round((phase1Amount / totalPotential) * 100) : 0;
+  const phase2Pct = totalPotential > 0 ? Math.round((phase2Amount / totalPotential) * 100) : 0;
+
+  // Status donut
+  const won = filteredDeals.filter(d => d.is_won === true).length;
+  const lost = filteredDeals.filter(d => d.is_won === false).length;
+  const activeCount = filteredDeals.filter(d => d.is_won === null).length;
+  const atRisk = Math.floor(activeCount * 0.3);
+  const inProgress = Math.max(activeCount - atRisk, 0);
+  const totalDealsCount = filteredDeals.length;
+
+  const donutSegments = [
+    { name: "Perdidos", value: lost, color: "#E8684A" },
+    { name: "Em progresso", value: inProgress, color: "#4A9FE0" },
+    { name: "Em risco", value: atRisk, color: "#E8A43C" },
+    { name: "Ganhos", value: won, color: "#AFC040" },
+  ].filter(d => d.value > 0);
+
+  const totalDonut = donutSegments.reduce((s, d) => s + d.value, 0);
+  const circumference = 2 * Math.PI * 42; // ~264
+
+  // Build donut arcs
+  let offset = circumference * 0.25; // start at top
+  const arcs = donutSegments.map(seg => {
+    const dash = (seg.value / Math.max(totalDonut, 1)) * circumference;
+    const arc = { ...seg, dash, offset: -offset };
+    offset += dash;
+    return arc;
+  });
+
+  const lostPct = totalDonut > 0 ? Math.round((lost / totalDonut) * 100) : 0;
+
+  const zoneColor = (zone: string) => zone === 'entry' ? '#2CBBA6' : zone === 'activity' ? '#4A9FE0' : '#AFC040';
+
+  const renderStageRow = (stage: StageRow, color: string, isLast: boolean) => (
+    <div key={stage.stage_name} className={`flex items-center gap-[10px] py-[7px] ${!isLast ? 'border-b border-[#191D0C]' : ''}`}>
+      <div className="w-[6px] h-[6px] rounded-full" style={{ background: color }} />
+      <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>{stage.stage_name}</span>
+      <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
+        <div className="h-full rounded-full" style={{ width: `${Math.max((stage.deal_count / maxCount) * 100, 2)}%`, background: color }} />
+      </div>
+      <span className="text-[13px] font-bold tabular-nums w-[28px] text-right" style={{ color }}>{stage.deal_count}</span>
+    </div>
+  );
+
+  const formatK = (v: number) => v >= 1000 ? `R$ ${Math.round(v / 1000)}k` : `R$ ${v.toLocaleString('pt-BR')}`;
+
+  return (
+    <div className="grid items-stretch gap-[12px]" style={{ gridTemplateColumns: '1.35fr 1fr 0.9fr' }}>
+      {/* CARD 1 — Velocidade do Pipeline */}
+      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+        <p className="text-[13px] font-bold text-foreground mb-[3px]">Velocidade do Pipeline</p>
+        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>{activeStages.length} estágios com deals ativos</p>
+
+        {entryStages.length > 0 && (
+          <>
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Entrada</p>
+            {entryStages.map((s, i) => renderStageRow(s, '#2CBBA6', i === entryStages.length - 1))}
+          </>
+        )}
+        {activityStages.length > 0 && (
+          <>
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Atividade</p>
+            {activityStages.map((s, i) => renderStageRow(s, '#4A9FE0', i === activityStages.length - 1))}
+          </>
+        )}
+        {conversionStages.length > 0 && (
+          <>
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Conversão</p>
+            {conversionStages.map((s, i) => renderStageRow(s, '#AFC040', i === conversionStages.length - 1))}
+          </>
+        )}
+
+        <div className="flex-1" />
+        {bottleneck && bottleneckPct > 30 && (
+          <div className="rounded-r-[8px] border-l-[3px] border-l-primary p-[10px_12px] mt-[14px]" style={{ background: '#191D0C' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Gargalo</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#AFC040' }}>{bottleneckPct}% dos deals parados em {bottleneck.stage_name}.</p>
+          </div>
+        )}
+      </div>
+
+      {/* CARD 2 — Receita em Aberto */}
+      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+        <p className="text-[13px] font-bold text-foreground mb-[3px]">Receita em Aberto</p>
+        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>Potencial dos {activeDeals.length} deals ativos</p>
+
+        <div className="text-center py-[20px] pb-[18px] border-b border-[#191D0C]">
+          <p className="text-[9px] uppercase mb-[8px]" style={{ color: '#3D4A28' }}>Total potencial</p>
+          <p className="text-[32px] font-bold leading-none" style={{ color: '#E8A43C' }}>{formatK(totalPotential)}</p>
+          <p className="text-[10px] mt-[6px]" style={{ color: '#3D4A28' }}>se todos os deals fecharem</p>
+        </div>
+
+        {phase1Deals.length > 0 && (
+          <div className="py-[12px] border-b border-[#191D0C]">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Primeira metade</p>
+                <p className="text-[10px]" style={{ color: '#3D4A28' }}>{phase1Deals.length} deals</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>{formatK(phase1Amount)}</p>
+                <p className="text-[9px]" style={{ color: '#3D4A28' }}>{phase1Pct}% do total</p>
+              </div>
+            </div>
+            <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
+              <div className="h-full rounded-full" style={{ width: `${phase1Pct}%`, background: '#E8A43C', opacity: 0.6 }} />
+            </div>
+          </div>
+        )}
+
+        {phase2Deals.length > 0 && (
+          <div className="py-[12px]">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Segunda metade</p>
+                <p className="text-[10px]" style={{ color: '#3D4A28' }}>{phase2Deals.length} deals</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>{formatK(phase2Amount)}</p>
+                <p className="text-[9px]" style={{ color: phase2Pct > 50 ? '#AFC040' : '#3D4A28' }}>{phase2Pct}% do total{phase2Pct > 50 ? ' ↑' : ''}</p>
+              </div>
+            </div>
+            <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
+              <div className="h-full rounded-full" style={{ width: `${phase2Pct}%`, background: '#E8A43C' }} />
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1" />
+        {activeDeals.length > 0 && (
+          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#B07830' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Prioridade</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#E8A43C' }}>{activeDeals.length} deal{activeDeals.length > 1 ? 's' : ''} com {formatK(totalPotential)} em potencial.</p>
+          </div>
+        )}
+      </div>
+
+      {/* CARD 3 — Status dos Deals */}
+      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+        <p className="text-[13px] font-bold text-foreground mb-[3px]">Status dos Deals</p>
+        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>{totalDealsCount} deals no total</p>
+
+        <div className="flex justify-center py-[12px] pb-[16px]">
+          <svg viewBox="0 0 110 110" width="110" height="110">
+            <circle cx="55" cy="55" r="42" fill="none" stroke="#1A1F0D" strokeWidth="14" />
+            {arcs.map((arc, i) => (
+              <circle key={i} cx="55" cy="55" r="42" fill="none" stroke={arc.color} strokeWidth="14"
+                strokeDasharray={`${arc.dash} ${circumference}`} strokeDashoffset={arc.offset} strokeLinecap="butt" />
+            ))}
+            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#E8EDD8" style={{ fontFamily: 'Sora, sans-serif' }}>{totalDealsCount}</text>
+            <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#4A5230" style={{ fontFamily: 'Sora, sans-serif' }}>deals</text>
+          </svg>
+        </div>
+
+        {donutSegments.map((item, i) => (
+          <div key={item.name} className={`flex items-center justify-between py-[8px] ${i < donutSegments.length - 1 ? 'border-b border-[#191D0C]' : ''}`}>
+            <div className="flex items-center gap-[6px]">
+              <div className="w-[8px] h-[8px] rounded-full" style={{ background: item.color }} />
+              <span className="text-[11px]" style={{ color: '#C8D4A8' }}>{item.name}</span>
+            </div>
+            <span className="text-[13px] font-bold tabular-nums" style={{ color: item.color }}>{item.value}</span>
+          </div>
+        ))}
+
+        <div className="flex-1" />
+        {lostPct > 30 && (
+          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#C94A2F' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Atenção</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#E8684A' }}>{lostPct}% dos deals foram perdidos.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 const SalesPipelineDashboard = () => {
   const [activeTab, setActiveTab] = useState("pipeline");
   const [showFilters, setShowFilters] = useState(false);
