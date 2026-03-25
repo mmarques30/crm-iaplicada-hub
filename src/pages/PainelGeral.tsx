@@ -577,37 +577,121 @@ export default function PainelGeral() {
 
         {/* ─── ROI - FIX Bug #5: no duplicate investment ─── */}
         <TabsContent value="roi" className="mt-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card style={{ borderTop: '3px solid #AFC040' }}>
-              <CardContent className="p-5 space-y-2">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Instagram Orgânico</p>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Contatos</span><span className="font-bold font-mono">{roiData.instagram.contatos}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Opportunities</span><span className="font-bold font-mono">{roiData.instagram.opportunities}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Alcance</span><span className="font-bold font-mono">{(ig?.metrics?.totalReach || 0).toLocaleString('pt-BR')}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Custo</span><span className="font-bold font-mono" style={{ color: '#AFC040' }}>R$ 0 (Grátis)</span></div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {/* Left: Custo por Contato por Canal */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Custo por Contato por Canal</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Instagram Orgânico */}
+                <div className="rounded-xl p-4 flex items-center justify-between" style={{ backgroundColor: 'hsl(0 80% 95%)' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: '#E8684A' }}>$0</span>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">Instagram Orgânico</p>
+                      <p className="text-xs text-muted-foreground">{roiData.instagram.contatos} contatos · {roiData.instagram.opportunities} opportunities</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold" style={{ color: '#E8684A' }}>Grátis</p>
+                    <p className="text-xs text-muted-foreground">Invest: R$ 0</p>
+                  </div>
+                </div>
+
+                {/* Facebook Ads */}
+                <div className="rounded-xl p-4 flex items-center justify-between" style={{ backgroundColor: 'hsl(210 80% 95%)' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: '#4A9FE0' }}>
+                      ${roiData.facebookAds.cpl > 0 ? Math.round(roiData.facebookAds.cpl) : '0'}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">Facebook Ads (Paid)</p>
+                      <p className="text-xs text-muted-foreground">{roiData.facebookAds.contatos} contatos · {roiData.facebookAds.opportunities} opportunities</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold" style={{ color: '#4A9FE0' }}>
+                      {roiData.facebookAds.cpl > 0 ? formatCurrency(roiData.facebookAds.cpl) : '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Invest: {formatCurrency(investment)}</p>
+                  </div>
+                </div>
+
+                {/* Campanhas Meta */}
+                <div className="rounded-xl p-4 flex items-center justify-between" style={{ backgroundColor: 'hsl(270 60% 95%)' }}>
+                  <div className="flex items-center gap-3">
+                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: '#8b5cf6' }}>
+                      ${roiData.campanhasMeta.cpl > 0 ? Math.round(roiData.campanhasMeta.cpl) : '0'}
+                    </span>
+                    <div>
+                      <p className="font-semibold text-sm text-foreground">Campanhas Meta (Ads)</p>
+                      <p className="text-xs text-muted-foreground">{roiData.campanhasMeta.contatos} contatos · {roiData.campanhasMeta.opportunities} opportunities</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold" style={{ color: '#8b5cf6' }}>
+                      {roiData.campanhasMeta.cpl > 0 ? formatCurrency(roiData.campanhasMeta.cpl) : '—'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">Invest: {formatCurrency(investment)}</p>
+                  </div>
+                </div>
+
+                {/* CPL médio ponderado */}
+                <div className="rounded-lg bg-muted/50 p-3 text-center text-sm">
+                  CPL médio ponderado: <span className="font-bold font-mono">{roiData.cplPonderado > 0 ? formatCurrency(roiData.cplPonderado) : '—'}</span>
                 </div>
               </CardContent>
             </Card>
-            <Card style={{ borderTop: '3px solid #4A9FE0' }}>
-              <CardContent className="p-5 space-y-2">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Facebook / Meta Ads</p>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Investimento</span><span className="font-bold font-mono">{formatCurrency(investment)}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Contatos (Ads)</span><span className="font-bold font-mono">{roiData.facebookAds.contatos}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">CPL</span><span className="font-bold font-mono">{roiData.facebookAds.cpl > 0 ? formatCurrency(roiData.facebookAds.cpl) : '—'}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Opportunities</span><span className="font-bold font-mono">{roiData.facebookAds.opportunities}</span></div>
+
+            {/* Right: Resumo de ROI */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Resumo de ROI</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-5">
+                {/* Instagram */}
+                <div className="border-b border-border pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-semibold text-sm">Instagram Orgânico</p>
+                    <Badge variant="outline" className="text-xs">Gratuito</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div><p className="text-xs text-muted-foreground">Contatos</p><p className="text-xl font-bold font-mono">{roiData.instagram.contatos}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Custo/Contato</p><p className="text-xl font-bold font-mono">R$ 0</p></div>
+                    <div><p className="text-xs text-muted-foreground">Opportunities</p><p className="text-xl font-bold font-mono">{roiData.instagram.opportunities}</p></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 italic">Custo zero — melhor ROI</p>
                 </div>
-              </CardContent>
-            </Card>
-            <Card style={{ borderTop: '3px solid #2CBBA6' }}>
-              <CardContent className="p-5 space-y-2">
-                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">CRM — Pipeline</p>
-                <div className="space-y-1">
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Pipeline</span><span className="font-bold font-mono">{formatCurrency(crmTotals.pipelineValue)}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Win Rate</span><span className="font-bold font-mono">{crmWinRate.toFixed(1)}%</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Deals Ganhos</span><span className="font-bold font-mono">{crmTotals.wonDeals}</span></div>
-                  <div className="flex justify-between text-sm"><span className="text-muted-foreground">Deals Perdidos</span><span className="font-bold font-mono text-[#E8684A]">{crmTotals.lostDeals}</span></div>
+
+                {/* Facebook Ads */}
+                <div className="border-b border-border pb-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-semibold text-sm">Facebook Ads (Paid)</p>
+                    <Badge variant="outline" className="text-xs">{formatCurrency(investment)}</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div><p className="text-xs text-muted-foreground">Contatos</p><p className="text-xl font-bold font-mono">{roiData.facebookAds.contatos}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Custo/Contato</p><p className="text-xl font-bold font-mono">{roiData.facebookAds.cpl > 0 ? formatCurrency(roiData.facebookAds.cpl) : '—'}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Opportunities</p><p className="text-xl font-bold font-mono">{roiData.facebookAds.opportunities}</p></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 italic">
+                    {roiData.facebookAds.contatos > 0 && roiData.facebookAds.opportunities >= roiData.facebookAds.contatos ? '100% conversão para opportunity' : roiData.facebookAds.opportunities > 0 ? `${((roiData.facebookAds.opportunities / roiData.facebookAds.contatos) * 100).toFixed(0)}% conversão` : 'Sem conversões'}
+                  </p>
+                </div>
+
+                {/* Campanhas Meta */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="font-semibold text-sm">Campanhas Meta (Ads)</p>
+                    <Badge variant="outline" className="text-xs">{formatCurrency(investment)}</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4 text-center">
+                    <div><p className="text-xs text-muted-foreground">Contatos</p><p className="text-xl font-bold font-mono">{roiData.campanhasMeta.contatos}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Custo/Contato</p><p className="text-xl font-bold font-mono">{roiData.campanhasMeta.cpl > 0 ? formatCurrency(roiData.campanhasMeta.cpl) : '—'}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Opportunities</p><p className="text-xl font-bold font-mono">{roiData.campanhasMeta.opportunities}</p></div>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2 italic">Melhor custo por lead pago</p>
                 </div>
               </CardContent>
             </Card>
