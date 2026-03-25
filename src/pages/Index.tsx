@@ -287,7 +287,11 @@ const SalesPipelineDashboard = () => {
 
   const { data: deals } = useQuery({
     queryKey: ["deals_dashboard"],
-    queryFn: async () => { const { data } = await supabase.from("deals").select("id, name, amount, product, is_won, canal_origem, created_at, stage_id, stage_entered_at"); return (data || []) as any[]; },
+    queryFn: async () => {
+      const { data } = await supabase.from("deals").select("id, name, amount, product, is_won, canal_origem, created_at, stage_id, stage_entered_at, contacts(utm_source, fonte_registro, first_conversion, hubspot_id, manychat_id, whatsapp_opt_in, instagram_opt_in)");
+      const { deriveChannel } = await import('@/hooks/useDealsChannel');
+      return (data || []).map((d: any) => ({ ...d, canal_origem: deriveChannel(d.contacts, d.canal_origem) })) as any[];
+    },
   });
 
   const { data: contacts } = useQuery({
