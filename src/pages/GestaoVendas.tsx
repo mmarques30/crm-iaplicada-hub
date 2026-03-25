@@ -870,7 +870,7 @@ export default function GestaoVendas() {
                       <TableHead className="font-medium text-center">Parcelas</TableHead>
                       <TableHead className="font-medium text-right">Valor</TableHead>
                       <TableHead className="font-medium">Status</TableHead>
-                      <TableHead className="font-medium w-[50px]"></TableHead>
+                      <TableHead className="font-medium w-[120px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -890,7 +890,7 @@ export default function GestaoVendas() {
                       </TableRow>
                     ) : (
                       filteredVendas.map((v: any) => (
-                        <TableRow key={v.id} className="hover:bg-[var(--c-raised)] cursor-pointer">
+                        <TableRow key={v.id} className="hover:bg-[var(--c-raised)] cursor-pointer" onClick={() => { setEditVenda(v); setEditVendaOpen(true) }}>
                           <TableCell className="font-medium">{v.nome || '—'}</TableCell>
                           <TableCell className="text-muted-foreground text-xs">{v.email || '—'}</TableCell>
                           <TableCell>
@@ -910,20 +910,28 @@ export default function GestaoVendas() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-red-500"
-                              disabled={deleteVendaMutation.isPending}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (window.confirm(`Excluir venda de "${v.nome || 'sem nome'}"? Esta acao nao pode ser desfeita.`)) {
-                                  deleteVendaMutation.mutate(v.id)
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={(e) => { e.stopPropagation(); setEditVenda(v); setEditVendaOpen(true) }}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" title="Parcelas" onClick={(e) => { e.stopPropagation(); setParcelasVendaId(v.id); setParcelasVendaNome(v.nome || ''); setParcelasOpen(true) }}>
+                                <CreditCard className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-red-500"
+                                disabled={deleteVendaMutation.isPending}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (window.confirm(`Excluir venda de "${v.nome || 'sem nome'}"?`)) {
+                                    deleteVendaMutation.mutate(v.id)
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
