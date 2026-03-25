@@ -403,13 +403,10 @@ export default function GestaoVendas() {
   const nfEmitidas = allNFs.filter((n: any) => n.status_nf === 'emitida').length
   const nfEnviadas = allNFs.filter((n: any) => n.status_nf === 'enviada').length
 
-  /* ─── Regularizacao KPIs ─── */
-  const regRecords = useMemo(() => {
-    return allNFs.filter((n: any) => n.regularizacao !== undefined || n.status_regularizacao !== undefined)
-  }, [allNFs])
+  /* ─── Filtered Regularizacao (from notas_fiscais) ─── */
   const totalReg = allNFs.length
-  const pendentesReg = allNFs.filter((n: any) => (n.status_regularizacao || n.status) === 'pendente').length
-  const jaRegularizados = allNFs.filter((n: any) => (n.status_regularizacao || n.status) === 'regularizado' || (n.status_regularizacao || n.status) === 'emitida' || (n.status_regularizacao || n.status) === 'enviada').length
+  const pendentesReg = allNFs.filter((n: any) => n.status_nf === 'pendente').length
+  const jaRegularizados = allNFs.filter((n: any) => n.status_nf === 'emitida' || n.status_nf === 'enviada').length
 
   /* ─── Filtered Regularizacao ─── */
   const filteredReg = useMemo(() => {
