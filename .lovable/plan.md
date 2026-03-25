@@ -1,46 +1,35 @@
 
 
-## Plano: Upload de HTML + Correção Visual com IA nos Templates de Email
+## Plano: Corrigir cards de Origem para mostrar canal de origem real
 
-### Resumo
-Adicionar um botão "Importar HTML" no editor de templates que aceita upload de arquivos `.html`, renderiza o conteúdo no editor, e permite usar IA (Lovable AI Gateway) para analisar e corrigir problemas visuais do HTML importado.
+### Problema
+Os cards principais da aba "Origem" estão agrupando contatos por `produto_interesse` (Academy/Business/Skills/Offline), não por canal de origem (`utm_source`/`fonte_registro`). Contatos sem `produto_interesse` caem todos em "Offline/Importados", criando a impressão de que tudo é "Offline".
 
-### Alterações
+### Causa raiz
+O `productData` no `OrigemTab.tsx` (linhas 61-72) classifica contatos pelo campo `produto_interesse`, não pelo campo de origem. O nome "Origem" sugere canal de aquisição, mas o código mostra distribuição por produto.
 
-#### 1. Edge Function `supabase/functions/fix-email-html/index.ts` (novo)
-- Recebe o HTML bruto e uma instrução opcional do usuário
-- Envia para Lovable AI Gateway pedindo para corrigir problemas de renderização em clientes de email (inline styles, compatibilidade, responsividade, estrutura com tables)
-- Retorna o HTML corrigido
+### Alteração em `src/components/dashboard/OrigemTab.tsx`
 
-#### 2. `src/pages/EmailTemplateEditor.tsx`
-- Adicionar botão **"Importar HTML"** (ícone Upload) na barra de ações do header, ao lado de "Gerar Email com IA"
-- Input file oculto que aceita `.html,.htm` — ao selecionar, lê o conteúdo via `FileReader` e popula `form.html_body`
-- Adicionar botão **"Corrigir com IA"** (ícone Wand) que aparece quando há HTML no editor
-  - Chama `supabase.functions.invoke('fix-email-html', { body: { html: form.html_body } })`
-  - Substitui o `html_body` com o HTML corrigido retornado pela IA
-  - Toast de sucesso/erro
+**Substituir os 4 cards de produto pelos cards de canal de origem:**
 
-#### 3. `src/pages/EmailTemplates.tsx` — Dialog "Novo Template"
-- Adicionar zona de upload de HTML no dialog de criação (drag & drop ou botão)
-- Ao importar, preenche um campo `html_body` que é salvo junto com o template na criação
+1. Trocar o cálculo `productData` (linhas 61-72) por um que agrupe contatos usando `normalizeChannel(c.utm_source || c.fonte_registro)`, gerando contagens por canal: "Facebook Ads", "Instagram Orgânico", "Tráfego Direto", "WhatsApp", "Formulário / Orgânico", "Não rastreado", etc.
 
-#### 4. `src/pages/EmailCampaigns.tsx` — Sem alterações
-- Campanhas já usam templates existentes; o HTML importado fica no template
+2. Atualizar `PRODUCT_COLORS` para `CHANNEL_COLORS` com cores por canal:
+   - Facebook Ads → `#4A9FE0` (azul)
+   - Instagram Orgânico → `#E8684A` (coral)
+   - Tráfego Direto → `#AFC040` (verde)
+   - WhatsApp → `#2CBBA6` (teal)
+   - Formulário / Orgânico → `#E8A43C` (laranja)
+   - Não rastreado → `#7A8460` (cinza)
 
-### Detalhes técnicos
+3. Atualizar `productDescriptions` para `channelDescriptions` com descrições por canal.
 
-**Edge Function fix-email-html:**
-- Usa `LOVABLE_API_KEY` (já configurado) para chamar `https://ai.gateway.lovable.dev/v1/chat/completions`
-- System prompt instrui a IA a: converter CSS externo para inline, usar tables para layout, garantir responsividade, corrigir problemas de renderização em Gmail/Outlook, manter tokens `{{contact.*}}` intactos
-- Retorna apenas o HTML corrigido (sem markdown, sem explicação)
+4. No header, mudar título de "ORIGEM POR PRODUTO" para "ORIGEM POR CANAL".
 
-**Upload no editor:**
-- `<input type="file" accept=".html,.htm" />` oculto, acionado por botão
-- `FileReader.readAsText()` para ler o conteúdo
-- Limite de 500KB para evitar problemas
+5. O grid de cards passa a ser dinâmico (mostra todos os canais encontrados), mantendo a mesma estrutura visual (ícone + nome + contagem + barra + % + descrição).
 
-### Arquivos afetados
-- `supabase/functions/fix-email-html/index.ts` (novo)
-- `src/pages/EmailTemplateEditor.tsx` (upload + botão "Corrigir com IA")
-- `src/pages/EmailTemplates.tsx` (upload no dialog de criação)
+6. As demais seções (Formulários de Conversão, Fonte × Produto, Deals por Produto × Estágio, Product Summary) permanecem iguais — elas já usam dados de produto corretamente.
+
+### Arquivo afetado
+- `src/components/dashboard/OrigemTab.tsx`
 
