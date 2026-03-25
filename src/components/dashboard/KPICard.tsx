@@ -21,7 +21,7 @@ export function KPICard({ label, value, sub, accentColor, icon: Icon, trend, onC
         <Icon className="h-4 w-4" style={{ color: accentColor }} />
       </div>
       <p className="text-xs font-medium" style={{ color: 'var(--c-text-s)' }}>{label}</p>
-      <p className="text-[28px] font-bold font-mono tabular-nums leading-tight" style={{ color: accentColor }}>
+      <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums leading-tight overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: accentColor }}>
         {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
       </p>
       {sub && <p className="text-[11px]" style={{ color: 'var(--c-text-m)' }}>{sub}</p>}
