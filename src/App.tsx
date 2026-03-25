@@ -16,6 +16,8 @@ import InstagramAnalytics from "./pages/InstagramAnalytics";
 import FacebookAdsPage from "./pages/FacebookAdsPage";
 import CrmAnalytics from "./pages/CrmAnalytics";
 import Financeiro from "./pages/Financeiro";
+import GestaoVendas from "./pages/GestaoVendas";
+import FinanceiroPainel from "./pages/FinanceiroPainel";
 import ReceitaTasks from "./pages/ReceitaTasks";
 import Forms from "./pages/Forms";
 import FormEmbed from "./pages/FormEmbed";
@@ -48,7 +50,10 @@ const App = () => (
             <Route path="/analytics/instagram" element={<InstagramAnalytics />} />
             <Route path="/analytics/facebook-ads" element={<FacebookAdsPage />} />
             <Route path="/analytics/crm" element={<CrmAnalytics />} />
-            <Route path="/financeiro" element={<Financeiro />} />
+            <Route path="/comercial/vendas" element={<GestaoVendas />} />
+            <Route path="/financeiro" element={<FinanceiroPainel />} />
+            <Route path="/financeiro/painel" element={<FinanceiroPainel />} />
+            <Route path="/financeiro/receita" element={<Financeiro />} />
             <Route path="/tarefas" element={<ReceitaTasks />} />
             <Route path="/formularios" element={<Forms />} />
             <Route path="/email" element={<EmailMarketing />} />
