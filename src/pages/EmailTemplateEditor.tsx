@@ -13,6 +13,8 @@ import {
   ArrowLeft,
   Loader2,
   ExternalLink,
+  Upload,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -118,8 +120,11 @@ const EmailTemplateEditor = () => {
   const [aiType, setAiType] = useState("Confirmação");
   const [aiGenerating, setAiGenerating] = useState(false);
 
+  const [aiFixing, setAiFixing] = useState(false);
+
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: template, isLoading } = useQuery({
     queryKey: ["email_template_v2", id],
@@ -238,6 +243,47 @@ const EmailTemplateEditor = () => {
     );
   };
 
+  const handleImportHtml = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      toast.error("Arquivo muito grande (máx. 500KB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string;
+      updateField("html_body", content);
+      toast.success("HTML importado com sucesso!");
+    };
+    reader.onerror = () => toast.error("Erro ao ler o arquivo.");
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const handleAiFix = async () => {
+    if (!form.html_body.trim()) {
+      toast.error("Nenhum HTML para corrigir.");
+      return;
+    }
+    setAiFixing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fix-email-html", {
+        body: { html: form.html_body },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.html) {
+        updateField("html_body", data.html);
+        toast.success("HTML corrigido com IA! Verifique o resultado na aba Visualizar.");
+      }
+    } catch (err: any) {
+      toast.error("Erro ao corrigir com IA: " + (err.message || "Erro desconhecido"));
+    } finally {
+      setAiFixing(false);
+    }
+  };
+
   const copyHtml = async () => {
     try {
       await navigator.clipboard.writeText(form.html_body);
@@ -277,6 +323,37 @@ const EmailTemplateEditor = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".html,.htm"
+            className="hidden"
+            onChange={handleImportHtml}
+          />
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="h-4 w-4" />
+            Importar HTML
+          </Button>
+
+          {form.html_body.trim() && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleAiFix}
+              disabled={aiFixing}
+            >
+              {aiFixing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Wand2 className="h-4 w-4" />
+              )}
+              Corrigir com IA
+            </Button>
+          )}
           <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">

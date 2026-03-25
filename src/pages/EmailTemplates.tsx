@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDate } from "@/lib/format";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Plus, Mail, Trash2, Loader2, Sparkles, ExternalLink, Copy } from "lucide-react";
+import { Plus, Mail, Trash2, Loader2, Sparkles, ExternalLink, Copy, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -69,6 +69,7 @@ const initialForm = {
   type: "automated" as "automated" | "broadcast",
   product: "" as string,
   status: "draft" as "draft" | "published",
+  html_body: "",
 };
 
 export default function EmailTemplates() {
@@ -76,6 +77,7 @@ export default function EmailTemplates() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
+  const createFileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ["email_templates_v2"],
@@ -102,6 +104,9 @@ export default function EmailTemplates() {
       };
       if (payload.product) {
         insertData.product = payload.product;
+      }
+      if (payload.html_body) {
+        insertData.html_body = payload.html_body;
       }
       const { data, error } = await supabase
         .from("email_templates_v2")
@@ -162,6 +167,24 @@ export default function EmailTemplates() {
 
   const handleGenerateAI = () => {
     toast.info("Geração com IA será implementada em breve. Por enquanto, escreva o assunto manualmente.");
+  };
+
+  const handleCreateFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      toast.error("Arquivo muito grande (máx. 500KB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string;
+      setForm({ ...form, html_body: content });
+      toast.success("HTML importado!");
+    };
+    reader.onerror = () => toast.error("Erro ao ler o arquivo.");
+    reader.readAsText(file);
+    e.target.value = "";
   };
 
   return (
@@ -308,7 +331,53 @@ export default function EmailTemplates() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>HTML do Email (opcional)</Label>
+                <input
+                  ref={createFileInputRef}
+                  type="file"
+                  accept=".html,.htm"
+                  className="hidden"
+                  onChange={handleCreateFileImport}
+                />
+                <div
+                  className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 hover:bg-accent/30 transition-colors"
+                  onClick={() => createFileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const file = e.dataTransfer.files[0];
+                    if (file && (file.name.endsWith('.html') || file.name.endsWith('.htm'))) {
+                      if (file.size > 500 * 1024) {
+                        toast.error("Arquivo muito grande (máx. 500KB).");
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        setForm({ ...form, html_body: ev.target?.result as string });
+                        toast.success("HTML importado!");
+                      };
+                      reader.readAsText(file);
+                    } else {
+                      toast.error("Apenas arquivos .html ou .htm são aceitos.");
+                    }
+                  }}
+                >
+                  <Upload className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                  {form.html_body ? (
+                    <p className="text-sm text-green-600 font-medium">
+                      ✓ HTML importado ({Math.round(form.html_body.length / 1024)}KB)
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Arraste um arquivo .html ou clique para importar
+                    </p>
+                  )}
+                </div>
+              </div>
 
             <DialogFooter>
               <Button
