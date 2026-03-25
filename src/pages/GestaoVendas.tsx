@@ -1141,6 +1141,17 @@ export default function GestaoVendas() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Parcelas/Regularização Insights */}
+          <InsightsTable
+            insights={parcelasInsights || []}
+            isLoading={parcelasInsightsLoading}
+            error={parcelasInsightsError?.message}
+            onRetry={() => refetchParcelasInsights()}
+            title="Insights de Parcelas & Recebíveis"
+            subtitle="Análise de inadimplência, aging e fluxo de caixa"
+            context="parcelas"
+          />
         </TabsContent>
 
         {/* ════════════════ Tab: Insights ════════════════ */}
