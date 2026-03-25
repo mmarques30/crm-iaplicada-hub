@@ -502,7 +502,7 @@ const SalesPipelineDashboard = () => {
 
   /* ── MOCK: Forecast (Tab 4) ──────────────────────────────── */
   const forecastData = useMemo(() => {
-    const past = ["Jan", "Fev", "Mar"].map((m, i) => ({ month: m, actual: 15000 + i * 5000 + Math.floor(Math.random() * 3000), forecast: null as number | null, forecastLow: null as number | null, forecastHigh: null as number | null }));
+    const past = ["Jan", "Fev", "Mar"].map((m, i) => ({ month: m, actual: 15000 + i * 5000 + Math.floor(Math.random() * 3000), forecast: null as number | null, forecastLow: null as number | null, forecastHigh: null as number | null, band: null as number | null }));
     const future = ["Abr", "Mai", "Jun"].map((m, i) => {
       const base = 30000 + i * 6000;
       const low = base * 0.8;
