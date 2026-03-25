@@ -124,14 +124,15 @@ export function usePresencaData() {
         totalUnique: data.count || attendees.length,
       }
     },
-    staleTime: 5 * 60_000, // 5 min
+    staleTime: 2 * 60_000,
     refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
   })
 }
 
 export function useVisitantesData() {
   return useQuery<VisitantesData>({
-    queryKey: ['external_visitantes'],
+    queryKey: VISITANTES_QUERY_KEY,
     queryFn: async () => {
       const res = await fetch(VISITANTES_URL, {
         headers: { 'x-api-key': VISITANTES_KEY },
