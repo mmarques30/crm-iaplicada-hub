@@ -408,22 +408,7 @@ const SalesPipelineDashboard = () => {
     }));
   }, [pipelineStages]);
 
-  /* ── Deals em Risco donut ────────────────────────────────── */
-  const riskData = useMemo(() => {
-    const allDeals = filteredDeals;
-    const won = allDeals.filter(d => d.is_won === true).length;
-    const lost = allDeals.filter(d => d.is_won === false).length;
-    const active = allDeals.filter(d => d.is_won === null).length;
-    const atRisk = Math.floor(active * 0.3); // estimate
-    return [
-      { name: "Ganhos", value: won, color: C.green },
-      { name: "Em progresso", value: Math.max(active - atRisk, 0), color: C.blue },
-      { name: "Em risco", value: atRisk, color: C.amber },
-      { name: "Perdidos", value: lost, color: C.coral },
-    ].filter(d => d.value > 0);
-  }, [filteredDeals]);
 
-  const totalDeals = riskData.reduce((s, d) => s + d.value, 0);
 
   /* ── MOCK: Monthly channel performance (Tab 2) ───────────── */
   const monthlyChannels = useMemo(() => {
