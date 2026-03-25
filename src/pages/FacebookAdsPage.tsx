@@ -65,8 +65,8 @@ export default function FacebookAdsPage() {
   const ctrByCampaign = campaigns.filter(c => c.ctr > 0).sort((a, b) => b.ctr - a.ctr).slice(0, 8)
 
   // Best/worst CPL
-  const bestCPL = cplByCampaign[0]
-  const worstCPL = cplByCampaign.length > 0 ? cplByCampaign[cplByCampaign.length - 1] : null
+  const bestCPL = cplByCampaign[0] || null
+  const worstCPL = cplByCampaign.length > 1 ? cplByCampaign[cplByCampaign.length - 1] : null
 
   // Active campaign % of spend
   const activeSpendPct = totals.spend > 0 ? Math.round(activeCampaigns.reduce((s, c) => s + (c.spend || 0), 0) / totals.spend * 100) : 0
