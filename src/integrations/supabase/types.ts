@@ -1546,63 +1546,90 @@ export type Database = {
           contact_id: string | null
           cpf_cnpj: string | null
           created_at: string | null
+          data_envio_nf: string | null
           data_venda: string
+          descricao_servico: string | null
           email: string | null
+          email_fiscal: string | null
           endereco: string | null
           forma_pagamento: string | null
           hubspot_stage: string | null
           id: string
+          inscricao_municipal: string | null
           nome: string
+          numero_nf: number | null
+          observacoes_fiscais: string | null
           parcelas: number | null
           por_indicacao: boolean | null
           produto: string
           razao_social: string | null
           status: string
+          status_nf: string | null
           telefone: string | null
+          telefone_fiscal: string | null
           total_parcelas: number | null
           valor: number
+          valor_nf: number | null
         }
         Insert: {
           cep?: string | null
           contact_id?: string | null
           cpf_cnpj?: string | null
           created_at?: string | null
+          data_envio_nf?: string | null
           data_venda: string
+          descricao_servico?: string | null
           email?: string | null
+          email_fiscal?: string | null
           endereco?: string | null
           forma_pagamento?: string | null
           hubspot_stage?: string | null
           id?: string
+          inscricao_municipal?: string | null
           nome: string
+          numero_nf?: number | null
+          observacoes_fiscais?: string | null
           parcelas?: number | null
           por_indicacao?: boolean | null
           produto: string
           razao_social?: string | null
           status?: string
+          status_nf?: string | null
           telefone?: string | null
+          telefone_fiscal?: string | null
           total_parcelas?: number | null
           valor?: number
+          valor_nf?: number | null
         }
         Update: {
           cep?: string | null
           contact_id?: string | null
           cpf_cnpj?: string | null
           created_at?: string | null
+          data_envio_nf?: string | null
           data_venda?: string
+          descricao_servico?: string | null
           email?: string | null
+          email_fiscal?: string | null
           endereco?: string | null
           forma_pagamento?: string | null
           hubspot_stage?: string | null
           id?: string
+          inscricao_municipal?: string | null
           nome?: string
+          numero_nf?: number | null
+          observacoes_fiscais?: string | null
           parcelas?: number | null
           por_indicacao?: boolean | null
           produto?: string
           razao_social?: string | null
           status?: string
+          status_nf?: string | null
           telefone?: string | null
+          telefone_fiscal?: string | null
           total_parcelas?: number | null
           valor?: number
+          valor_nf?: number | null
         }
         Relationships: [
           {

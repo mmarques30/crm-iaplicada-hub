@@ -67,13 +67,6 @@ function nfStatusLabel(status: string) {
   }
 }
 
-function regStatusBadgeClass(status: string) {
-  switch (status) {
-    case 'regularizado': return 'bg-[#141A04] text-[#AFC040]'
-    case 'pendente': return 'bg-[#1A1206] text-[#E8A43C]'
-    default: return 'bg-muted text-muted-foreground'
-  }
-}
 
 export default function GestaoVendas() {
   const queryClient = useQueryClient()
@@ -86,8 +79,6 @@ export default function GestaoVendas() {
 
   const [fiscalProduto, setFiscalProduto] = useState('todos')
   const [fiscalStatus, setFiscalStatus] = useState('todos')
-  const [fiscalMes, setFiscalMes] = useState('todos')
-  const [fiscalAno, setFiscalAno] = useState('todos')
 
   const [regAno, setRegAno] = useState('todos')
   const [regMes, setRegMes] = useState('todos')
@@ -384,54 +375,56 @@ export default function GestaoVendas() {
     return result
   }, [allVendas, searchVendas, filterStatus, filterProduto, sortVendas])
 
-  /* ─── Fiscal KPIs ─── */
-  const fiscalClientes = useMemo(() => {
-    const unique = new Set(allNFs.map((n: any) => n.cpf_cnpj).filter(Boolean))
-    return unique.size
-  }, [allNFs])
-  const nfPendentes = allNFs.filter((n: any) => n.status === 'pendente').length
-  const nfEmitidas = allNFs.filter((n: any) => n.status === 'emitida').length
-  const nfEnviadas = allNFs.filter((n: any) => n.status === 'enviada').length
+  /* ─── Fiscal KPIs (from vendas table - client fiscal profile) ─── */
+  const fiscalClientes = allVendas.length
+  const nfPendentesVendas = allVendas.filter((v: any) => (v.status_nf || 'pendente') === 'pendente').length
+  const nfEmitidasVendas = allVendas.filter((v: any) => v.status_nf === 'emitida').length
+  const nfEnviadasVendas = allVendas.filter((v: any) => v.status_nf === 'enviada').length
 
-  /* ─── Filtered Fiscal ─── */
-  const filteredNFs = useMemo(() => {
-    let result = [...allNFs]
-    if (fiscalProduto !== 'todos') result = result.filter((n: any) => n.produto === fiscalProduto)
-    if (fiscalStatus !== 'todos') result = result.filter((n: any) => n.status === fiscalStatus)
-    if (fiscalMes !== 'todos') result = result.filter((n: any) => {
-      const m = (n.data_emissao || n.created_at || '').substring(5, 7)
-      return m === fiscalMes
-    })
-    if (fiscalAno !== 'todos') result = result.filter((n: any) => {
-      const y = (n.data_emissao || n.created_at || '').substring(0, 4)
-      return y === fiscalAno
-    })
+  /* ─── Filtered Fiscal (from vendas) ─── */
+  const filteredFiscal = useMemo(() => {
+    let result = [...allVendas]
+    if (fiscalProduto !== 'todos') result = result.filter((v: any) => v.produto === fiscalProduto)
+    if (fiscalStatus !== 'todos') result = result.filter((v: any) => (v.status_nf || 'pendente') === fiscalStatus)
     return result
-  }, [allNFs, fiscalProduto, fiscalStatus, fiscalMes, fiscalAno])
+  }, [allVendas, fiscalProduto, fiscalStatus])
 
-  /* ─── Regularizacao KPIs ─── */
-  const regRecords = useMemo(() => {
-    return allNFs.filter((n: any) => n.regularizacao !== undefined || n.status_regularizacao !== undefined)
-  }, [allNFs])
+  /* ─── Regularização KPIs (from notas_fiscais - monthly NFs) ─── */
+  const nfPendentes = allNFs.filter((n: any) => n.status_nf === 'pendente').length
+  const nfEmitidas = allNFs.filter((n: any) => n.status_nf === 'emitida').length
+  const nfEnviadas = allNFs.filter((n: any) => n.status_nf === 'enviada').length
+
+  /* ─── Filtered Regularizacao (from notas_fiscais) ─── */
   const totalReg = allNFs.length
-  const pendentesReg = allNFs.filter((n: any) => (n.status_regularizacao || n.status) === 'pendente').length
-  const jaRegularizados = allNFs.filter((n: any) => (n.status_regularizacao || n.status) === 'regularizado' || (n.status_regularizacao || n.status) === 'emitida' || (n.status_regularizacao || n.status) === 'enviada').length
+  const pendentesReg = allNFs.filter((n: any) => n.status_nf === 'pendente').length
+  const jaRegularizados = allNFs.filter((n: any) => n.status_nf === 'emitida' || n.status_nf === 'enviada').length
 
   /* ─── Filtered Regularizacao ─── */
+  const MES_NAMES: Record<string, string> = {
+    '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
+    '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
+    '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro',
+  }
   const filteredReg = useMemo(() => {
     let result = [...allNFs]
     if (regAno !== 'todos') result = result.filter((n: any) => {
-      const y = (n.mes_ref || n.data_emissao || n.created_at || '').substring(0, 4)
+      const ref = n.mes_referencia || ''
+      const match = ref.match(/(\d{4})/)
+      if (match) return match[1] === regAno
+      const y = (n.data_emissao || n.created_at || '').substring(0, 4)
       return y === regAno
     })
     if (regMes !== 'todos') result = result.filter((n: any) => {
-      const m = (n.mes_ref || n.data_emissao || n.created_at || '').substring(5, 7)
+      const ref = n.mes_referencia || ''
+      const mesName = MES_NAMES[regMes] || ''
+      if (mesName && ref.toLowerCase().includes(mesName.toLowerCase())) return true
+      const m = (n.data_emissao || n.created_at || '').substring(5, 7)
       return m === regMes
     })
     if (!regMostrarRegularizados) {
       result = result.filter((n: any) => {
-        const st = n.status_regularizacao || n.status
-        return st !== 'regularizado' && st !== 'emitida' && st !== 'enviada'
+        const st = n.status_nf || 'pendente'
+        return st !== 'emitida' && st !== 'enviada'
       })
     }
     return result
@@ -457,23 +450,23 @@ export default function GestaoVendas() {
     enabled: totalVendas > 0,
   })
 
-  /* ─── Fiscal Insights ─── */
-  const fiscalInsightsData = allNFs.length > 0 ? {
-    totalNFs: allNFs.length,
-    nfPendentes,
-    nfEmitidas,
-    nfEnviadas,
-    clientesSemCpfCnpj: allNFs.filter((n: any) => !n.cpf_cnpj).length,
-    clientesSemRazaoSocial: allNFs.filter((n: any) => !n.razao_social).length,
-    nfsSemDescricao: allNFs.filter((n: any) => !n.descricao_servico).length,
-    valorTotalNFs: allNFs.reduce((s: number, n: any) => s + Number(n.valor || 0), 0),
-    totalClientes: fiscalClientes,
+  /* ─── Fiscal Insights (from vendas - client fiscal profile) ─── */
+  const fiscalInsightsData = allVendas.length > 0 ? {
+    totalClientes: allVendas.length,
+    nfPendentes: nfPendentesVendas,
+    nfEmitidas: nfEmitidasVendas,
+    nfEnviadas: nfEnviadasVendas,
+    clientesSemCpfCnpj: allVendas.filter((v: any) => !v.cpf_cnpj).length,
+    clientesSemRazaoSocial: allVendas.filter((v: any) => !v.razao_social).length,
+    clientesSemEmailFiscal: allVendas.filter((v: any) => !v.email_fiscal).length,
+    clientesSemDescricaoServico: allVendas.filter((v: any) => !v.descricao_servico).length,
+    receitaTotal,
   } : null
 
   const { data: fiscalInsights, isLoading: fiscalInsightsLoading, error: fiscalInsightsError, refetch: refetchFiscalInsights } = useInsights({
     context: 'fiscal',
     data: fiscalInsightsData,
-    enabled: allNFs.length > 0,
+    enabled: allVendas.length > 0,
   })
 
   /* ─── Parcelas Insights ─── */
@@ -518,10 +511,13 @@ export default function GestaoVendas() {
     enabled: allParcelas.length > 0,
   })
 
-  /* ─── Available years for filters ─── */
+  /* ─── Available years for reg filters ─── */
   const availableYears = useMemo(() => {
     const years = new Set<string>()
     for (const n of allNFs) {
+      // mes_referencia is like "Março/2026"
+      const match = (n.mes_referencia || '').match(/(\d{4})/)
+      if (match) years.add(match[1])
       const y = (n.data_emissao || n.created_at || '').substring(0, 4)
       if (y && y.length === 4) years.add(y)
     }
@@ -892,18 +888,18 @@ export default function GestaoVendas() {
           </Card>
         </TabsContent>
 
-        {/* ════════════════ Tab: Fiscal ════════════════ */}
+        {/* ════════════════ Tab: Fiscal (from vendas - client profile) ════════════════ */}
         <TabsContent value="fiscal" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <KPICard label="Total Clientes" value={fiscalClientes} icon={Users} accentColor="#2CBBA6" />
-            <KPICard label="NFs Pendentes" value={nfPendentes} icon={AlertCircle} accentColor="#E8A43C" />
-            <KPICard label="NFs Emitidas" value={nfEmitidas} icon={CheckCircle} accentColor="#AFC040" />
-            <KPICard label="NFs Enviadas" value={nfEnviadas} icon={Send} accentColor="#4A9FE0" />
+            <KPICard label="NFs Pendentes" value={nfPendentesVendas} icon={AlertCircle} accentColor="#E8A43C" />
+            <KPICard label="NFs Emitidas" value={nfEmitidasVendas} icon={CheckCircle} accentColor="#AFC040" />
+            <KPICard label="NFs Enviadas" value={nfEnviadasVendas} icon={Send} accentColor="#4A9FE0" />
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Controle Fiscal</CardTitle>
+              <CardTitle className="text-base">Controle Fiscal — Perfil do Cliente</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Filters */}
@@ -922,36 +918,13 @@ export default function GestaoVendas() {
                 </Select>
                 <Select value={fiscalStatus} onValueChange={setFiscalStatus}>
                   <SelectTrigger className="w-[150px] h-9 text-xs">
-                    <SelectValue placeholder="Status" />
+                    <SelectValue placeholder="Status NF" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="pendente">Pendente</SelectItem>
                     <SelectItem value="emitida">Emitida</SelectItem>
                     <SelectItem value="enviada">Enviada</SelectItem>
-                    <SelectItem value="erro">Erro</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={fiscalMes} onValueChange={setFiscalMes}>
-                  <SelectTrigger className="w-[140px] h-9 text-xs">
-                    <SelectValue placeholder="Mes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos os meses</SelectItem>
-                    {MONTHS.map(m => (
-                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={fiscalAno} onValueChange={setFiscalAno}>
-                  <SelectTrigger className="w-[120px] h-9 text-xs">
-                    <SelectValue placeholder="Ano" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    {availableYears.map(y => (
-                      <SelectItem key={y} value={y}>{y}</SelectItem>
-                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -962,44 +935,58 @@ export default function GestaoVendas() {
                   <TableHeader>
                     <TableRow className="bg-[var(--c-raised)]">
                       <TableHead className="font-medium">Cliente</TableHead>
+                      <TableHead className="font-medium">Produto</TableHead>
+                      <TableHead className="font-medium text-right">Valor Contrato</TableHead>
                       <TableHead className="font-medium">CPF/CNPJ</TableHead>
-                      <TableHead className="font-medium">Razao Social</TableHead>
+                      <TableHead className="font-medium">Razão Social</TableHead>
+                      <TableHead className="font-medium">Email Fiscal</TableHead>
                       <TableHead className="font-medium">Status NF</TableHead>
-                      <TableHead className="font-medium">Ultimo Envio</TableHead>
+                      <TableHead className="font-medium">Nº NF</TableHead>
+                      <TableHead className="font-medium">Data Envio</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {nfLoading ? (
+                    {vendasLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          {Array.from({ length: 5 }).map((_, j) => (
+                          {Array.from({ length: 9 }).map((_, j) => (
                             <TableCell key={j}><div className="h-4 w-full bg-muted animate-pulse rounded" /></TableCell>
                           ))}
                         </TableRow>
                       ))
-                    ) : filteredNFs.length === 0 ? (
+                    ) : filteredFiscal.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                          Nenhuma nota fiscal encontrada
+                        <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
+                          Nenhum cliente encontrado
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredNFs.map((n: any) => (
-                        <TableRow key={n.id} className="hover:bg-[var(--c-raised)]">
+                      filteredFiscal.map((v: any) => (
+                        <TableRow key={v.id} className="hover:bg-[var(--c-raised)]">
                           <TableCell>
                             <div>
-                              <span className="font-medium">{n.nome || n.cliente_nome || '—'}</span>
-                              <p className="text-xs text-muted-foreground">{n.email || n.cliente_email || ''}</p>
+                              <span className="font-medium">{v.nome || '—'}</span>
+                              <p className="text-xs text-muted-foreground">{v.email || ''}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-muted-foreground font-mono text-xs">{n.cpf_cnpj || '—'}</TableCell>
-                          <TableCell className="text-muted-foreground">{n.razao_social || '—'}</TableCell>
                           <TableCell>
-                            <Badge className={`text-xs ${nfStatusBadgeClass(n.status)}`}>
-                              {nfStatusLabel(n.status)}
+                            <Badge className={`text-xs ${productBadgeClass(v.produto)}`}>
+                              {PRODUCT_LABELS[v.produto] || v.produto || '—'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{formatDate(n.ultimo_envio || n.data_envio || n.updated_at)}</TableCell>
+                          <TableCell className="text-right font-medium font-mono" style={{ color: '#E8A43C' }}>
+                            {formatCurrency(Number(v.valor || 0))}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground font-mono text-xs">{v.cpf_cnpj || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs max-w-[180px] truncate">{v.razao_social || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs">{v.email_fiscal || '—'}</TableCell>
+                          <TableCell>
+                            <Badge className={`text-xs ${nfStatusBadgeClass(v.status_nf || 'pendente')}`}>
+                              {nfStatusLabel(v.status_nf || 'pendente')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground font-mono text-xs">{v.numero_nf || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground">{formatDate(v.data_envio_nf)}</TableCell>
                         </TableRow>
                       ))
                     )}
@@ -1016,7 +1003,7 @@ export default function GestaoVendas() {
             error={fiscalInsightsError?.message}
             onRetry={() => refetchFiscalInsights()}
             title="Insights Fiscais"
-            subtitle="Análise de compliance, NFs pendentes e regularização"
+            subtitle="Análise de compliance e NFs pendentes"
             context="fiscal"
           />
         </TabsContent>
@@ -1117,21 +1104,21 @@ export default function GestaoVendas() {
                       </TableRow>
                     ) : (
                       filteredReg.map((n: any) => {
-                        const regStatus = n.status_regularizacao || n.status || 'pendente'
+                        const regStatus = n.status_nf || 'pendente'
                         return (
                           <TableRow key={n.id} className="hover:bg-[var(--c-raised)]">
                             <TableCell className="font-mono text-xs">{n.numero_nf || n.id?.substring(0, 8) || '—'}</TableCell>
                             <TableCell className="text-muted-foreground font-mono text-xs">{n.cpf_cnpj || '—'}</TableCell>
                             <TableCell className="text-muted-foreground">{n.razao_social || '—'}</TableCell>
-                            <TableCell className="text-muted-foreground">{n.mes_ref || formatDate(n.data_emissao) || '—'}</TableCell>
+                            <TableCell className="text-muted-foreground">{n.mes_referencia || formatDate(n.data_emissao) || '—'}</TableCell>
                             <TableCell className="text-muted-foreground text-xs max-w-[180px] truncate">{n.endereco || n.cep || '—'}</TableCell>
-                            <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{n.descricao_servico || n.descricao || '—'}</TableCell>
+                            <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{n.descricao_servico || '—'}</TableCell>
                             <TableCell className="text-right font-medium font-mono" style={{ color: '#E8A43C' }}>
                               {formatCurrency(Number(n.valor || 0))}
                             </TableCell>
                             <TableCell>
-                              <Badge className={`text-xs ${regStatusBadgeClass(regStatus)}`}>
-                                {regStatus === 'regularizado' ? 'Regularizado' : regStatus === 'pendente' ? 'Pendente' : nfStatusLabel(regStatus)}
+                              <Badge className={`text-xs ${nfStatusBadgeClass(regStatus)}`}>
+                                {nfStatusLabel(regStatus)}
                               </Badge>
                             </TableCell>
                           </TableRow>
