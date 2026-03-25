@@ -1,85 +1,66 @@
 
 
-## Plano: Adicionar seção "Produtos" à aba Funil de Vendas do Facebook Ads
+## Plano: Corrigir "Deals por Canal" para usar fonte do contato como fallback
 
 ### Problema
-A aba "Funil de Vendas" atual mostra apenas análise por **fonte** (source cards, charts, cross-tab por fonte). O Manus mostra adicionalmente uma seção completa de **produtos** com 5 componentes que estão faltando:
+A maioria dos deals tem `canal_origem` nulo/vazio na tabela `deals`. O `normalizeChannel(null)` retorna "Não rastreado", resultando em quase todos os deals aparecendo como "Não rastreado: 123" no gráfico — tanto no PainelGeral quanto no FunnelTab do Facebook Ads.
 
-1. **"Origem por Produto"** — Banner header com total de contatos + 4 cards de produto (Academy, Business, Skills, Offline/Importados) com contagem, barra de progresso, percentual e descrição
-2. **"Formulários de Conversão"** — Lista com barras horizontais mostrando nome do formulário (`first_conversion`), badge de produto e contagem
-3. **"Fonte de Origem × Produto"** — BarChart horizontal empilhado (Academy roxo, Business laranja) por fonte normalizada, excluindo Offline
-4. **"Deals por Produto × Estágio do Funil"** — Tabela cruzada com estágios nas linhas, produtos nas colunas (badges roxo/laranja), coluna TOTAL
-5. **Cards resumo por produto** — 2 cards (Academy, Business) com Total Deals, Ativos, Win Rate, Perdidos e Principal fonte
+O correto é: quando `canal_origem` do deal for nulo, usar o `utm_source` ou `fonte_registro` do contato associado como fallback.
 
-### Dados disponíveis
-- `contacts.produto_interesse` (string[]) — classifica contato por produto
-- `contacts.first_conversion` (string) — nome do formulário de conversão
-- `deals_full.product` (herdado de pipeline) — produto do deal
-- `deals_full.canal_origem` — fonte do deal
-- `deals_full.stage_name`, `stage_order`, `is_won`, `motivo_perda`
+### Alterações
 
-### Alterações em `src/pages/FacebookAdsPage.tsx`
+#### 1. `src/pages/PainelGeral.tsx` — Query "dealsByChannel"
 
-#### Dentro de FunnelTab, após a seção de charts de fontes e antes da cross-tab de Deals por Fonte:
+Alterar a query para buscar também o `contact_id` dos deals e, em paralelo, buscar os contatos com `utm_source`/`fonte_registro`. Usar o canal do contato como fallback:
 
-**a) Classificação de contatos por produto** (`useMemo`):
-- Iterar contacts, classificar por `produto_interesse`:
-  - Se inclui "academy" → Academy
-  - Se inclui "business" → Business
-  - Se inclui "skills" → Skills
-  - Senão → Offline/Importados
-- Contar cada categoria
-
-**b) Banner "Origem por Produto"** + 4 cards:
-- Header com fundo gradiente amarelo claro, título "Origem por Produto", subtítulo, total de contatos
-- 4 cards em grid: Academy (roxo `#7C5CFC`), Business (laranja `#E8A43C`), Skills (verde `#2CBBA6`), Offline (cinza `#7A8460`)
-- Cada card: ícone letra, contagem grande, barra de progresso colorida, percentual, descrição textual
-
-**c) "Formulários de Conversão"**:
-- Agrupar contacts por `first_conversion`, contar por produto
-- Lista com barra horizontal proporcional, badge de produto, contagem
-- Ordenar desc por total
-
-**d) "Fonte de Origem × Produto"**:
-- Horizontal stacked BarChart (`layout="vertical"`)
-- Agrupar contacts por `normalizeChannel(utm_source)`, split por produto (Academy roxo, Business laranja)
-- Excluir "Offline/Importado"
-- Legend embaixo
-
-**e) "Deals por Produto × Estágio do Funil"**:
-- Tabela cruzada: linhas = estágios (do stages query), colunas = Academy + Business + TOTAL
-- Valores em badges circulares coloridos (roxo Academy, laranja Business)
-- Incluir "Fechado Ganho" e "Fechado Perdido" como linhas
-
-**f) Cards resumo por produto** (grid-cols-2):
-- Para cada produto (Academy, Business): Total Deals, Ativos, Win Rate, Perdidos, Principal fonte (canal_origem mais frequente com %)
-- Borda lateral colorida (roxo/laranja)
-
-### Queries adicionais necessárias
-Expandir a query de contacts para incluir `produto_interesse` e `first_conversion`:
 ```ts
-const { data } = await supabase.from('contacts').select('id, utm_source, utm_medium, utm_campaign, fonte_registro, lifecycle_stage, created_at, produto_interesse, first_conversion')
+const { data: dealsByChannel } = useQuery({
+  queryKey: ['deals_by_channel'],
+  queryFn: async () => {
+    const { data: dealsData } = await supabase.from('deals').select('canal_origem, contact_id')
+    const { data: contactsData } = await supabase.from('contacts').select('id, utm_source, fonte_registro')
+    
+    // Build contact source lookup
+    const contactSource: Record<string, string> = {}
+    for (const c of (contactsData || [])) {
+      contactSource[c.id] = c.utm_source || c.fonte_registro || ''
+    }
+    
+    // Normalize using deal canal_origem OR contact source as fallback
+    const channels: Record<string, number> = {}
+    for (const d of (dealsData || [])) {
+      const raw = d.canal_origem || (d.contact_id ? contactSource[d.contact_id] : '') || ''
+      const ch = normalizeChannel(raw)
+      channels[ch] = (channels[ch] || 0) + 1
+    }
+    return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
+  },
+})
 ```
 
-Expandir a query de deals_full para incluir `product`:
+#### 2. `src/pages/FacebookAdsPage.tsx` — FunnelTab
+
+Mesma lógica: expandir a query de deals para incluir `contact_id`, e construir um mapa de fallback a partir dos contacts já carregados. Atualizar todos os `useMemo` que usam `normalizeChannel(d.canal_origem)` para usar a função com fallback.
+
+Criar helper local:
 ```ts
-const { data } = await supabase.from('deals_full').select('canal_origem, stage_name, stage_order, is_won, qualification_status, created_at, motivo_perda, product')
+const dealChannelMap = useMemo(() => {
+  const contactSource: Record<string, string> = {}
+  for (const c of contacts) {
+    contactSource[c.id] = c.utm_source || c.fonte_registro || ''
+  }
+  return (d: any) => normalizeChannel(d.canal_origem || (d.contact_id ? contactSource[d.contact_id] : '') || '')
+}, [contacts])
 ```
 
-### Layout final da aba Funil
-```text
-[Source Cards (3)]
-[Ecosystem Banner]
-[Charts: Contatos por Fonte | Taxa Conversão]
-[Chart: Evolução Mensal]
-[Banner: Origem por Produto + 4 product cards]
-[Formulários de Conversão]
-[Chart: Fonte × Produto]
-[Table: Deals por Produto × Estágio]
-[Product Summary Cards (2)]
-[Table: Deals por Fonte × Estágio]  (já existente)
+Expandir a query de `deals_full` para incluir `contact_id`:
+```ts
+select('canal_origem, stage_name, stage_order, is_won, qualification_status, created_at, motivo_perda, product, contact_id')
 ```
 
-### Arquivo afetado
-- `src/pages/FacebookAdsPage.tsx` — expandir FunnelTab com seção de produtos
+Substituir todas as ocorrências de `normalizeChannel(d.canal_origem || '')` por `dealChannelMap(d)` nos useMemos: `classifyDeals`, `conversionBySource`, `crossTabSources`, `sourceByProduct`, `productSummary`.
+
+### Arquivos afetados
+- `src/pages/PainelGeral.tsx` — query dealsByChannel com fallback
+- `src/pages/FacebookAdsPage.tsx` — helper dealChannelMap + atualizar useMemos
 
