@@ -87,6 +87,21 @@ export default function GestaoVendas() {
   const [regMes, setRegMes] = useState('todos')
   const [regMostrarRegularizados, setRegMostrarRegularizados] = useState(false)
 
+  /* ─── Edit/Parcelas Dialog State ─── */
+  const [editVenda, setEditVenda] = useState<any>(null)
+  const [editVendaOpen, setEditVendaOpen] = useState(false)
+  const [parcelasVendaId, setParcelasVendaId] = useState<string | null>(null)
+  const [parcelasVendaNome, setParcelasVendaNome] = useState('')
+  const [parcelasOpen, setParcelasOpen] = useState(false)
+
+  /* ─── Inline Fiscal Editing State ─── */
+  const [editingFiscalId, setEditingFiscalId] = useState<string | null>(null)
+  const [fiscalEditForm, setFiscalEditForm] = useState<Record<string, any>>({})
+
+  /* ─── Inline Reg Editing State ─── */
+  const [editingRegId, setEditingRegId] = useState<string | null>(null)
+  const [regEditForm, setRegEditForm] = useState<Record<string, any>>({})
+
   /* ─── Nova Venda Dialog State ─── */
   const [novaVendaOpen, setNovaVendaOpen] = useState(false)
   const [nvForm, setNvForm] = useState({
