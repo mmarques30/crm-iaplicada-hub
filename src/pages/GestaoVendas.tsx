@@ -457,6 +457,67 @@ export default function GestaoVendas() {
     enabled: totalVendas > 0,
   })
 
+  /* ─── Fiscal Insights ─── */
+  const fiscalInsightsData = allNFs.length > 0 ? {
+    totalNFs: allNFs.length,
+    nfPendentes,
+    nfEmitidas,
+    nfEnviadas,
+    clientesSemCpfCnpj: allNFs.filter((n: any) => !n.cpf_cnpj).length,
+    clientesSemRazaoSocial: allNFs.filter((n: any) => !n.razao_social).length,
+    nfsSemDescricao: allNFs.filter((n: any) => !n.descricao_servico).length,
+    valorTotalNFs: allNFs.reduce((s: number, n: any) => s + Number(n.valor || 0), 0),
+    totalClientes: fiscalClientes,
+  } : null
+
+  const { data: fiscalInsights, isLoading: fiscalInsightsLoading, error: fiscalInsightsError, refetch: refetchFiscalInsights } = useInsights({
+    context: 'fiscal',
+    data: fiscalInsightsData,
+    enabled: allNFs.length > 0,
+  })
+
+  /* ─── Parcelas Insights ─── */
+  const today = new Date().toISOString().split('T')[0]
+  const parcelasVencidas = allParcelas.filter((p: any) => p.status === 'pendente' && p.data_vencimento < today)
+  const parcelasPagas = allParcelas.filter((p: any) => p.status === 'pago')
+  const parcelasPendentesAll = allParcelas.filter((p: any) => p.status === 'pendente')
+
+  const parcelasInsightsData = allParcelas.length > 0 ? {
+    totalParcelas: allParcelas.length,
+    parcelasPagas: parcelasPagas.length,
+    parcelasPendentes: parcelasPendentesAll.length,
+    parcelasVencidas: parcelasVencidas.length,
+    valorTotalParcelas: allParcelas.reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    valorPago: parcelasPagas.reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    valorPendente: parcelasPendentesAll.reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    valorVencido: parcelasVencidas.reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    aging: {
+      ate30dias: parcelasVencidas.filter((p: any) => {
+        const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+        return dias <= 30
+      }).length,
+      de31a60dias: parcelasVencidas.filter((p: any) => {
+        const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+        return dias > 30 && dias <= 60
+      }).length,
+      de61a90dias: parcelasVencidas.filter((p: any) => {
+        const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+        return dias > 60 && dias <= 90
+      }).length,
+      acima90dias: parcelasVencidas.filter((p: any) => {
+        const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+        return dias > 90
+      }).length,
+    },
+    taxaInadimplencia: allParcelas.length > 0 ? ((parcelasVencidas.length / allParcelas.length) * 100).toFixed(1) : '0',
+  } : null
+
+  const { data: parcelasInsights, isLoading: parcelasInsightsLoading, error: parcelasInsightsError, refetch: refetchParcelasInsights } = useInsights({
+    context: 'parcelas',
+    data: parcelasInsightsData,
+    enabled: allParcelas.length > 0,
+  })
+
   /* ─── Available years for filters ─── */
   const availableYears = useMemo(() => {
     const years = new Set<string>()
