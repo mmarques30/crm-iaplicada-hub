@@ -36,7 +36,7 @@ export default function Financeiro() {
 
   const byPayment: Record<string, number> = {}
   for (const v of allVendas) { const fp = v.forma_pagamento || 'Não informado'; byPayment[fp] = (byPayment[fp] || 0) + 1 }
-  const paymentData = Object.entries(byPayment).map(([name, value]) => ({ name, value }))
+  const paymentData = Object.entries(byPayment).map(([name, value]) => ({ name: PAY_LABELS[name] || name, value })).sort((a, b) => b.value - a.value)
 
   const monthlyData: Record<string, { receita: number; vendas: number }> = {}
   for (const v of allVendas) { const month = v.data_venda.substring(0, 7); if (!monthlyData[month]) monthlyData[month] = { receita: 0, vendas: 0 }; monthlyData[month].receita += Number(v.valor || 0); monthlyData[month].vendas++ }
