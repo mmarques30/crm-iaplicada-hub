@@ -120,63 +120,8 @@ export function FunnelTab() {
   const ecosystemDeals = deals.filter(d => META_SOURCES.isMetaEcosystem(getDealChannel(d), d.canal_origem || '')).length
   const ecosystemPct = contacts.length > 0 ? ((ecosystemTotal / contacts.length) * 100).toFixed(1) : '0'
 
-    const sourceContacts: Record<string, number> = {}
-    const sourceOpps: Record<string, number> = {}
-    const sourceCust: Record<string, number> = {}
 
-    for (const c of contacts) {
-      const ch = normalizeChannel(c.utm_source || c.fonte_registro || '')
-      sourceContacts[ch] = (sourceContacts[ch] || 0) + 1
-    }
-    for (const d of deals) {
-      const ch = getDealChannel(d)
-      const isOpp = (d.stage_order ?? 0) >= 2
-      const isCust = d.is_won === true
-      if (isOpp) sourceOpps[ch] = (sourceOpps[ch] || 0) + 1
-      if (isCust) sourceCust[ch] = (sourceCust[ch] || 0) + 1
-    }
 
-    return Object.entries(sourceContacts)
-      .filter(([, v]) => v >= 3)
-      .map(([name, total]) => {
-        const opps = sourceOpps[name] || 0
-        const cust = sourceCust[name] || 0
-        return {
-          name,
-          'Lead→Opp': total > 0 ? Math.round((opps / total) * 1000) / 10 : 0,
-          'Opp→Customer': opps > 0 ? Math.round((cust / opps) * 1000) / 10 : 0,
-        }
-      })
-      .sort((a, b) => b['Lead→Opp'] - a['Lead→Opp'])
-  }, [contacts, deals, getDealChannel])
-
-  const monthlyEvolution = useMemo(() => {
-    const map: Record<string, Record<string, number>> = {}
-    const allSources = new Set<string>()
-
-    for (const c of contacts) {
-      const ch = normalizeChannel(c.utm_source || c.fonte_registro || '')
-      if (ch === 'Offline') continue
-      allSources.add(ch)
-      const d = new Date(c.created_at || '')
-      if (isNaN(d.getTime())) continue
-      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-      if (!map[monthKey]) map[monthKey] = {}
-      map[monthKey][ch] = (map[monthKey][ch] || 0) + 1
-    }
-
-    const months = Object.keys(map).sort()
-    const formatMonth = (k: string) => {
-      const [y, m] = k.split('-')
-      const names = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
-      return `${names[parseInt(m) - 1]}/${y}`
-    }
-
-    return {
-      data: months.map(m => ({ month: formatMonth(m), ...map[m] })),
-      sources: Array.from(allSources),
-    }
-  }, [contacts])
 
   const uniqueStages = stages.map(s => s.name)
   const crossTabSources = useMemo(() => {
