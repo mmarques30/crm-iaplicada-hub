@@ -69,6 +69,7 @@ const initialForm = {
   type: "automated" as "automated" | "broadcast",
   product: "" as string,
   status: "draft" as "draft" | "published",
+  html_body: "",
 };
 
 export default function EmailTemplates() {
