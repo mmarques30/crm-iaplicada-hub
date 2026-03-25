@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KPICard } from '@/components/dashboard/KPICard'
-import { formatCurrency, formatDate } from '@/lib/format'
+import { formatCurrency, formatDate, normalizeChannel } from '@/lib/format'
 import {
   Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent,
   GraduationCap, Eye, Video, FileDown, UserCheck, UserX, Flame, Loader2, RefreshCw, ChevronDown, ChevronUp,
