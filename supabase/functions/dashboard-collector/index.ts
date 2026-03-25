@@ -168,13 +168,13 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
   // Sort daily data chronologically
   daily.sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''))
 
-  console.log(`FB Ads: ${campaigns.length} campaigns, ${daily.length} daily points, ${ads.length} ads`)
+  console.log(`FB Ads: ${campaigns.length} campaigns, ${daily.length} daily points, ${parsedAds.length} ads`)
 
   return {
     campaigns: campaignsWithInsights,
-    dailyInsights: daily, // Keep backward compat with Lovable's key name
-    daily,                // Also expose as 'daily'
-    ads,                  // Individual ads within campaigns
+    dailyInsights: daily,
+    daily,
+    ads: parsedAds,
     metrics: {
       totalSpend: Math.round(totalSpend * 100) / 100, totalImpressions, totalReach, totalClicks, totalLeads,
       avgCPL: Math.round((totalLeads > 0 ? totalSpend / totalLeads : 0) * 100) / 100,
