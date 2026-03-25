@@ -515,20 +515,8 @@ const SalesPipelineDashboard = () => {
     </ResponsiveContainer>
   );
 
-  /* ── Velocity sparkline data (mock 7-day trend per stage) ── */
-  const velocityTrends = useMemo(() =>
-    pipelineStages.map(s => ({
-      ...s,
-      trend: Array.from({ length: 7 }, () => Math.max(0, s.deal_count + Math.floor((Math.random() - 0.4) * 3))),
-      isUp: Math.random() > 0.4,
-    })), [pipelineStages]);
 
-  const maxStageCount = Math.max(...pipelineStages.map(s => s.deal_count), 1);
 
-  /* ── Ticket stages ───────────────────────────────────────── */
-  const ticketStages = pipelineStages.filter(s =>
-    ["Contato Iniciado", "Reunião Agendada", "Reunião Realizada", "Negociação"].includes(s.stage_name)
-  );
 
   /* ── Channel donut (Tab 2) ───────────────────────────────── */
   const channelDonut = useMemo(() => {
