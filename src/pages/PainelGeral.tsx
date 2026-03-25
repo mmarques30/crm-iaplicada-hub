@@ -112,8 +112,18 @@ export default function PainelGeral() {
       else if (c.utm_source === 'paid' || c.utm_source === 'facebook' || c.fonte_registro === 'PAID_SOCIAL') ch = 'Facebook Ads'
       else if (c.utm_source === 'direct' || c.fonte_registro === 'DIRECT_TRAFFIC') ch = 'Tráfego Direto'
       else if (c.whatsapp_opt_in || c.manychat_id) ch = 'WhatsApp'
-      else if (c.first_conversion || c.hubspot_id) ch = 'Formulário / Orgânico'
       else if (c.fonte_registro === 'OFFLINE') ch = 'Offline'
+      else if (c.fonte_registro === 'PAID_SEARCH') ch = 'Campanhas Meta (Ads)'
+      else if (c.first_conversion || c.hubspot_id) ch = 'Formulário / Orgânico'
+
+      // Detect Campanhas Meta: contacts with utm_campaign but no explicit paid source
+      if (ch === 'Formulário / Orgânico' || ch === 'Não rastreado') {
+        const utmCamp = (c.utm_campaign || '').toLowerCase()
+        const utmMed = (c.utm_medium || '').toLowerCase()
+        if (utmCamp && (utmMed === 'cpc' || utmMed === 'paid' || utmMed === 'social' || utmCamp.includes('lead') || utmCamp.includes('venda') || utmCamp.includes('conv'))) {
+          ch = 'Campanhas Meta (Ads)'
+        }
+      }
 
       if (!channels[ch]) channels[ch] = { contatos: 0, leads: 0, opportunities: 0, customers: 0 }
       channels[ch].contatos++
