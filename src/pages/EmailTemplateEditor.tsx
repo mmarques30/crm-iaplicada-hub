@@ -243,6 +243,47 @@ const EmailTemplateEditor = () => {
     );
   };
 
+  const handleImportHtml = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      toast.error("Arquivo muito grande (máx. 500KB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string;
+      updateField("html_body", content);
+      toast.success("HTML importado com sucesso!");
+    };
+    reader.onerror = () => toast.error("Erro ao ler o arquivo.");
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  const handleAiFix = async () => {
+    if (!form.html_body.trim()) {
+      toast.error("Nenhum HTML para corrigir.");
+      return;
+    }
+    setAiFixing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fix-email-html", {
+        body: { html: form.html_body },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.html) {
+        updateField("html_body", data.html);
+        toast.success("HTML corrigido com IA! Verifique o resultado na aba Visualizar.");
+      }
+    } catch (err: any) {
+      toast.error("Erro ao corrigir com IA: " + (err.message || "Erro desconhecido"));
+    } finally {
+      setAiFixing(false);
+    }
+  };
+
   const copyHtml = async () => {
     try {
       await navigator.clipboard.writeText(form.html_body);
