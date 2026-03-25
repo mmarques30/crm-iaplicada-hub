@@ -351,7 +351,7 @@ function FunnelTab() {
         total, active, won, lost, winRate, topSrcLabel, topSrcPct,
       }
     })
-  }, [deals])
+  }, [deals, getDealChannel])
 
   return (
     <>
