@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
+import { FiscalAIButton } from '@/components/financeiro/FiscalAIButton'
 import { toast } from 'sonner'
 import { ShoppingCart, Receipt, FileText, Search, DollarSign, Users, AlertCircle, CheckCircle, Send, Plus, Trash2, Upload } from 'lucide-react'
 
@@ -454,6 +455,67 @@ export default function GestaoVendas() {
     context: 'financeiro',
     data: insightsData,
     enabled: totalVendas > 0,
+  })
+
+  /* ─── Fiscal Insights ─── */
+  const fiscalInsightsData = allNFs.length > 0 ? {
+    totalNFs: allNFs.length,
+    nfPendentes,
+    nfEmitidas,
+    nfEnviadas,
+    clientesSemCpfCnpj: allNFs.filter((n: any) => !n.cpf_cnpj).length,
+    clientesSemRazaoSocial: allNFs.filter((n: any) => !n.razao_social).length,
+    nfsSemDescricao: allNFs.filter((n: any) => !n.descricao_servico).length,
+    valorTotalNFs: allNFs.reduce((s: number, n: any) => s + Number(n.valor || 0), 0),
+    totalClientes: fiscalClientes,
+  } : null
+
+  const { data: fiscalInsights, isLoading: fiscalInsightsLoading, error: fiscalInsightsError, refetch: refetchFiscalInsights } = useInsights({
+    context: 'fiscal',
+    data: fiscalInsightsData,
+    enabled: allNFs.length > 0,
+  })
+
+  /* ─── Parcelas Insights ─── */
+  const today = new Date().toISOString().split('T')[0]
+  const parcelasVencidas = allParcelas.filter((p: any) => p.status === 'pendente' && p.data_vencimento < today)
+  const parcelasPagas = allParcelas.filter((p: any) => p.status === 'pago')
+  const parcelasPendentesAll = allParcelas.filter((p: any) => p.status === 'pendente')
+
+  const parcelasInsightsData = allParcelas.length > 0 ? {
+    totalParcelas: allParcelas.length,
+    parcelasPagas: parcelasPagas.length,
+    parcelasPendentes: parcelasPendentesAll.length,
+    parcelasVencidas: parcelasVencidas.length,
+    valorTotalParcelas: allParcelas.reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    valorPago: parcelasPagas.reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    valorPendente: parcelasPendentesAll.reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    valorVencido: parcelasVencidas.reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    aging: {
+      ate30dias: parcelasVencidas.filter((p: any) => {
+        const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+        return dias <= 30
+      }).length,
+      de31a60dias: parcelasVencidas.filter((p: any) => {
+        const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+        return dias > 30 && dias <= 60
+      }).length,
+      de61a90dias: parcelasVencidas.filter((p: any) => {
+        const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+        return dias > 60 && dias <= 90
+      }).length,
+      acima90dias: parcelasVencidas.filter((p: any) => {
+        const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+        return dias > 90
+      }).length,
+    },
+    taxaInadimplencia: allParcelas.length > 0 ? ((parcelasVencidas.length / allParcelas.length) * 100).toFixed(1) : '0',
+  } : null
+
+  const { data: parcelasInsights, isLoading: parcelasInsightsLoading, error: parcelasInsightsError, refetch: refetchParcelasInsights } = useInsights({
+    context: 'parcelas',
+    data: parcelasInsightsData,
+    enabled: allParcelas.length > 0,
   })
 
   /* ─── Available years for filters ─── */
@@ -946,6 +1008,17 @@ export default function GestaoVendas() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Fiscal Insights */}
+          <InsightsTable
+            insights={fiscalInsights || []}
+            isLoading={fiscalInsightsLoading}
+            error={fiscalInsightsError?.message}
+            onRetry={() => refetchFiscalInsights()}
+            title="Insights Fiscais"
+            subtitle="Análise de compliance, NFs pendentes e regularização"
+            context="fiscal"
+          />
         </TabsContent>
 
         {/* ════════════════ Tab: Regularizacao NF ════════════════ */}
@@ -958,7 +1031,23 @@ export default function GestaoVendas() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Regularizacao de Notas Fiscais</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Regularizacao de Notas Fiscais</CardTitle>
+                <FiscalAIButton
+                  action="generate_nf_data"
+                  data={{
+                    nfs_pendentes: filteredReg.filter((n: any) => !n.descricao_servico).slice(0, 10).map((n: any) => ({
+                      id: n.id,
+                      produto: n.produto,
+                      valor: n.valor,
+                      nome: n.nome || n.razao_social,
+                      mes_referencia: n.mes_referencia || n.mes_ref,
+                    })),
+                  }}
+                  label="Gerar Dados Fiscais com IA"
+                  onResult={() => toast.success('Dados fiscais gerados! Revise os resultados.')}
+                />
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Filters */}
@@ -1054,6 +1143,17 @@ export default function GestaoVendas() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Parcelas/Regularização Insights */}
+          <InsightsTable
+            insights={parcelasInsights || []}
+            isLoading={parcelasInsightsLoading}
+            error={parcelasInsightsError?.message}
+            onRetry={() => refetchParcelasInsights()}
+            title="Insights de Parcelas & Recebíveis"
+            subtitle="Análise de inadimplência, aging e fluxo de caixa"
+            context="parcelas"
+          />
         </TabsContent>
 
         {/* ════════════════ Tab: Insights ════════════════ */}

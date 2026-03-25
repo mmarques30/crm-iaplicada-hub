@@ -398,11 +398,41 @@ export default function FinanceiroPainel() {
   }, [allVendasYear, allDespesasYear, metas, bpYear])
 
   /* ─── Insights ─── */
+  const todayStr = new Date().toISOString().split('T')[0]
+  const overdueParcelas = allParcPendentes.filter(p => p.data_vencimento < todayStr)
+  const agingData = {
+    ate30dias: overdueParcelas.filter(p => {
+      const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+      return dias <= 30
+    }).reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    de31a60dias: overdueParcelas.filter(p => {
+      const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+      return dias > 30 && dias <= 60
+    }).reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    de61a90dias: overdueParcelas.filter(p => {
+      const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+      return dias > 60 && dias <= 90
+    }).reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+    acima90dias: overdueParcelas.filter(p => {
+      const dias = Math.floor((new Date().getTime() - new Date(p.data_vencimento).getTime()) / (1000 * 60 * 60 * 24))
+      return dias > 90
+    }).reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+  }
+
   const insightsData = faturamento > 0 || totalDespesas > 0
-    ? { faturamento, fluxoCaixa, totalDespesas, lucroLiquido, contasReceber, metaVendas, evolucao: evolutionData }
+    ? {
+        faturamento, fluxoCaixa, totalDespesas, lucroLiquido, contasReceber, metaVendas,
+        evolucao: evolutionData,
+        parcelasVencidas: overdueParcelas.length,
+        valorVencido: overdueParcelas.reduce((s: number, p: any) => s + Number(p.valor || 0), 0),
+        taxaInadimplencia: allParcPendentes.length > 0
+          ? ((overdueParcelas.length / (allParcPagas.length + allParcPendentes.length)) * 100).toFixed(1)
+          : '0',
+        aging: agingData,
+      }
     : null
   const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({
-    context: 'financeiro',
+    context: 'parcelas',
     data: insightsData,
     enabled: !!insightsData,
   })

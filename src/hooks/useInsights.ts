@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client'
 import type { Insight } from '@/components/dashboard/InsightsTable'
 
 interface UseInsightsOptions {
-  context: 'instagram' | 'facebook_ads' | 'crm' | 'financeiro' | 'painel'
+  context: 'instagram' | 'facebook_ads' | 'crm' | 'financeiro' | 'painel' | 'fiscal' | 'parcelas'
   data: Record<string, unknown> | null
   enabled?: boolean
 }
