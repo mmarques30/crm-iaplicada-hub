@@ -1,42 +1,31 @@
 
 
-## Plano: Melhorar Gráficos e Interface do Analytics
+## Plano: Substituir PieChart "Formas de Pagamento" por BarChart Horizontal
 
-### Problemas identificados
+### Problema
+O gráfico donut com 8 categorias tem labels sobrepostas, cores indistinguíveis e valores pequenos (1, 2) invisíveis.
 
-1. **PieChart "Distribuição de Contatos"** (PainelGeral, aba Canais) — ilegível com muitas categorias, labels sobrepostas. Redundante com a tabela que já existe acima.
-2. **PieChart "Deals por Produto"** (CrmAnalytics, aba Produtos) — com apenas 2 categorias, pie chart desperdiça espaço.
-3. **PieChart "Qualificação dos Leads Quentes"** (CrmAnalytics, aba Leads Aula) — mesma questão, poucas categorias e labels sobrepostas.
-4. **Gráficos de Crescimento** (PainelGeral, aba Crescimento) — apenas 1 gráfico solitário de alcance IG. Poderia incluir mais contexto.
-5. **Funil Integrado** (PainelGeral) — faltam badges de taxa de conversão entre etapas no rodapé, como mostrado na referência.
+### Solução
+Substituir o `PieChart` (linhas 100-108) por um `BarChart` horizontal com layout vertical, mostrando cada forma de pagamento como uma barra com valor numérico visível.
 
-### Mudanças
+### Mudanças em `src/pages/Financeiro.tsx`
 
-#### 1. PainelGeral — Aba Canais
-**Substituir PieChart** por lista de barras de progresso customizadas (como nas imagens de referência):
-- Cada canal: nome com dot colorido, contagem à direita, barra de progresso com % dentro
-- Total de contatos no rodapé
-- Mantém o BarChart "Deals por Canal" ao lado (já funciona bem)
+1. **Adicionar mapeamento de labels amigáveis** (constante no topo):
+   - `pix_avista` → `Pix à Vista`
+   - `entrada_boleto` → `Entrada + Boleto`
+   - `cartao_avista` → `Cartão à Vista`
+   - `parcelado_cartao` → `Parcelado Cartão`
+   - `parcelado_boleto` → `Parcelado Boleto`
+   - `parcelado_pix` → `Parcelado Pix`
+   - `entrada_cartao` → `Entrada + Cartão`
 
-#### 2. PainelGeral — Aba Funil
-**Adicionar badges de conversão** entre etapas no rodapé:
-- "CLIQUE → LANDING: X%", "CONTATO → LEAD: X%", "LEAD → OPPORTUNITY: X%", etc.
-- Cores semânticas: verde (>50%), laranja (10-50%), vermelho (<10%)
+2. **Substituir PieChart por BarChart horizontal** (linhas 100-108):
+   - `BarChart layout="vertical"` com `XAxis type="number"` e `YAxis type="category" width={130}`
+   - Labels formatados via o mapeamento acima no `YAxis`
+   - Cada barra com `<Cell>` colorido usando `PAY_COLORS`
+   - Label numérico na barra via `<Bar label={{ position: 'right', fill: '#E8EDD8', fontSize: 12 }}`
+   - Altura do container: `320px` para acomodar todas as barras
+   - Ordenar `paymentData` por valor descendente para melhor leitura
 
-#### 3. CrmAnalytics — Aba Produtos
-**Substituir PieChart** "Deals por Produto" por barras horizontais com labels inline (nome do produto + count). Manter o BarChart de performance ao lado.
-
-#### 4. CrmAnalytics — Aba Leads Aula
-**Substituir PieChart** "Qualificação dos Leads Quentes" por mini-cards ou barras de progresso empilhadas mostrando cada lifecycle stage com count e percentual.
-
-#### 5. PainelGeral — Aba Crescimento
-**Expandir** de 1 gráfico para um grid 2x2 com:
-- Alcance diário IG (já existe)
-- Seguidores IG ao longo do tempo (dailyFollowers, já disponível no snapshot)
-- Investimento FB Ads por campanha (dados do snapshot)
-- Engajamento IG por dia (likes+comments)
-
-### Arquivos afetados
-- `src/pages/PainelGeral.tsx` — canais (progress bars), funil (badges conversão), crescimento (grid 2x2)
-- `src/pages/CrmAnalytics.tsx` — produtos (horizontal bars), leads aula (cards em vez de pie)
+3. **Remover imports não utilizados**: `PieChart`, `Pie` (se não usados em outro lugar do arquivo)
 
