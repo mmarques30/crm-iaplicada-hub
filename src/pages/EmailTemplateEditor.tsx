@@ -120,8 +120,11 @@ const EmailTemplateEditor = () => {
   const [aiType, setAiType] = useState("Confirmação");
   const [aiGenerating, setAiGenerating] = useState(false);
 
+  const [aiFixing, setAiFixing] = useState(false);
+
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: template, isLoading } = useQuery({
     queryKey: ["email_template_v2", id],
