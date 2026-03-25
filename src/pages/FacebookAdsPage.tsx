@@ -33,6 +33,17 @@ const META_SOURCES = {
     META_SOURCES.isInstagramOrganic(ch) || META_SOURCES.isFacebookAds(ch) || META_SOURCES.isMetaCampaign(raw),
 }
 
+const SOURCE_COLORS: Record<string, string> = {
+  'Instagram Orgânico': '#E8684A',
+  'Facebook Ads': '#4A9FE0',
+  'Tráfego Direto': '#E8A43C',
+  'WhatsApp': '#2CBBA6',
+  'Formulário / Orgânico': '#AFC040',
+  'Offline': '#7A8460',
+  'Não rastreado': '#555',
+}
+const getSourceColor = (s: string) => SOURCE_COLORS[s] || SEMANTIC_COLORS[Object.keys(SOURCE_COLORS).length % SEMANTIC_COLORS.length]
+
 function FunnelTab() {
   const { data: dealsRes } = useQuery({
     queryKey: ['deals_full_fb_funnel'],
@@ -45,7 +56,7 @@ function FunnelTab() {
   const { data: contactsRes } = useQuery({
     queryKey: ['contacts_meta_sources'],
     queryFn: async () => {
-      const { data } = await supabase.from('contacts').select('id, utm_source, utm_medium, utm_campaign, fonte_registro, lifecycle_stage')
+      const { data } = await supabase.from('contacts').select('id, utm_source, utm_medium, utm_campaign, fonte_registro, lifecycle_stage, created_at')
       return data || []
     },
   })
@@ -95,7 +106,6 @@ function FunnelTab() {
     const customers = dealList.filter(d => d.is_won === true).length
     const convRate = total > 0 ? ((opportunities + customers) / total * 100) : 0
 
-    // Sub-source breakdown
     const subSources: Record<string, number> = {}
     for (const c of contactList) {
       const key = c.utm_campaign || c.utm_medium || c.utm_source || 'Direto'
@@ -117,6 +127,79 @@ function FunnelTab() {
   const ecosystemCustomers = sourceCards.reduce((s, c) => s + c.customers, 0)
   const ecosystemDeals = deals.filter(d => META_SOURCES.isMetaEcosystem(normalizeChannel(d.canal_origem || ''), d.canal_origem || '')).length
   const ecosystemPct = contacts.length > 0 ? ((ecosystemTotal / contacts.length) * 100).toFixed(1) : '0'
+
+  // ─── Chart data: Contatos por Fonte ───
+  const contactsBySource = useMemo(() => {
+    const map: Record<string, number> = {}
+    for (const c of contacts) {
+      const ch = normalizeChannel(c.utm_source || c.fonte_registro || '')
+      map[ch] = (map[ch] || 0) + 1
+    }
+    return Object.entries(map)
+      .sort((a, b) => b[1] - a[1])
+      .map(([name, contatos]) => ({ name, contatos, fill: getSourceColor(name) }))
+  }, [contacts])
+
+  // ─── Chart data: Taxa de Conversão por Fonte ───
+  const conversionBySource = useMemo(() => {
+    const sourceContacts: Record<string, number> = {}
+    const sourceOpps: Record<string, number> = {}
+    const sourceCust: Record<string, number> = {}
+
+    for (const c of contacts) {
+      const ch = normalizeChannel(c.utm_source || c.fonte_registro || '')
+      sourceContacts[ch] = (sourceContacts[ch] || 0) + 1
+    }
+    for (const d of deals) {
+      const ch = normalizeChannel(d.canal_origem || '')
+      const isOpp = (d.stage_order ?? 0) >= 2
+      const isCust = d.is_won === true
+      if (isOpp) sourceOpps[ch] = (sourceOpps[ch] || 0) + 1
+      if (isCust) sourceCust[ch] = (sourceCust[ch] || 0) + 1
+    }
+
+    return Object.entries(sourceContacts)
+      .filter(([, v]) => v >= 3)
+      .map(([name, total]) => {
+        const opps = sourceOpps[name] || 0
+        const cust = sourceCust[name] || 0
+        return {
+          name,
+          'Lead→Opp': total > 0 ? Math.round((opps / total) * 1000) / 10 : 0,
+          'Opp→Customer': opps > 0 ? Math.round((cust / opps) * 1000) / 10 : 0,
+        }
+      })
+      .sort((a, b) => b['Lead→Opp'] - a['Lead→Opp'])
+  }, [contacts, deals])
+
+  // ─── Chart data: Evolução Mensal ───
+  const monthlyEvolution = useMemo(() => {
+    const map: Record<string, Record<string, number>> = {}
+    const allSources = new Set<string>()
+
+    for (const c of contacts) {
+      const ch = normalizeChannel(c.utm_source || c.fonte_registro || '')
+      if (ch === 'Offline') continue
+      allSources.add(ch)
+      const d = new Date(c.created_at || '')
+      if (isNaN(d.getTime())) continue
+      const monthKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+      if (!map[monthKey]) map[monthKey] = {}
+      map[monthKey][ch] = (map[monthKey][ch] || 0) + 1
+    }
+
+    const months = Object.keys(map).sort()
+    const formatMonth = (k: string) => {
+      const [y, m] = k.split('-')
+      const names = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
+      return `${names[parseInt(m) - 1]}/${y}`
+    }
+
+    return {
+      data: months.map(m => ({ month: formatMonth(m), ...map[m] })),
+      sources: Array.from(allSources),
+    }
+  }, [contacts])
 
   // Cross-tab: Deals by Source × Stage
   const uniqueStages = stages.map(s => s.name)
@@ -198,6 +281,80 @@ function FunnelTab() {
               <span><strong className="font-mono text-[#E8A43C]">{ecosystemDeals}</strong> <span className="text-muted-foreground">Deals</span></span>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* ─── Charts: Fontes ─── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Contatos por Fonte */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Contatos por Fonte de Aquisição</CardTitle></CardHeader>
+          <CardContent>
+            {contactsBySource.length > 0 ? (
+              <ResponsiveContainer width="100%" height={Math.max(contactsBySource.length * 38, 200)}>
+                <BarChart data={contactsBySource} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                  <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                  <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => [`${v} contatos`, 'Quantidade']} />
+                  <Bar dataKey="contatos" radius={[0, 4, 4, 0]}>
+                    {contactsBySource.map((entry, i) => (
+                      <Cell key={i} fill={entry.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
+          </CardContent>
+        </Card>
+
+        {/* Taxa de Conversão por Fonte */}
+        <Card>
+          <CardHeader><CardTitle className="text-base">Taxa de Conversão por Fonte</CardTitle></CardHeader>
+          <CardContent>
+            {conversionBySource.length > 0 ? (
+              <ResponsiveContainer width="100%" height={Math.max(conversionBySource.length * 38, 200)}>
+                <BarChart data={conversionBySource} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                  <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" domain={[0, 100]} />
+                  <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                  <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `${v}%`} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="Lead→Opp" stackId="a" fill="#4A9FE0" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="Opp→Customer" stackId="a" fill="#2CBBA6" radius={[0, 4, 4, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Evolução Mensal */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Evolução Mensal de Novos Contatos (excl. Offline)</CardTitle></CardHeader>
+        <CardContent>
+          {monthlyEvolution.data.length > 0 ? (
+            <ResponsiveContainer width="100%" height={340}>
+              <AreaChart data={monthlyEvolution.data}>
+                <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                <XAxis dataKey="month" tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                <Tooltip contentStyle={TOOLTIP_STYLE} />
+                <Legend wrapperStyle={{ fontSize: 11 }} />
+                {monthlyEvolution.sources.map((src, i) => (
+                  <Area
+                    key={src}
+                    type="monotone"
+                    dataKey={src}
+                    stackId="1"
+                    stroke={getSourceColor(src)}
+                    fill={getSourceColor(src)}
+                    fillOpacity={0.6}
+                  />
+                ))}
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
         </CardContent>
       </Card>
 
