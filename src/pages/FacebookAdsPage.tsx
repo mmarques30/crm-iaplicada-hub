@@ -146,7 +146,7 @@ export default function FacebookAdsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">CPL por Campanha</CardTitle>
-                {bestCPL && <p className="text-xs text-muted-foreground">Melhor: <strong className="text-[#AFC040]">{formatCurrency(bestCPL.costPerLead)}</strong> · Pior: <strong className="text-[#E8684A]">{formatCurrency(worstCPL?.costPerLead || 0)}</strong></p>}
+                {bestCPL && <p className="text-xs text-muted-foreground">Melhor: <strong className="text-[#AFC040]">{formatCurrency(bestCPL.cplCalc)}</strong> · Pior: <strong className="text-[#E8684A]">{formatCurrency(worstCPL?.cplCalc || 0)}</strong></p>}
               </CardHeader>
               <CardContent>
                 {cplByCampaign.length > 0 ? (
