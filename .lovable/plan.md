@@ -1,37 +1,30 @@
 
 
-## Fix: Dashboard Filters Not Affecting Data
+## Fix: Mostrar todos os leads + atualizar dados externos
 
-### Root Cause
-The dashboard KPI cards and pipeline charts use **pre-aggregated database views** (`product_metrics`, `stage_conversion`) that have no `created_at`, `canal_origem`, or individual deal rows. Filters only affect `filteredDeals` and `filteredContacts`, but the main visualizations ignore those filtered arrays and read from the static views instead.
+### Problemas identificados
 
-Specifically:
-- **"Valor no Pipeline"** and **"Taxa de Conversão"** KPIs come from `totals` (derived from `product_metrics` view) — only `productFilter` works, period/channel are ignored
-- **Funnel chart** and **Velocity card** come from `pipelineStages` (derived from `stage_conversion` view) — completely unfiltered
-- **The 3 bottom cards** (Velocity, Revenue, Donut) are hardcoded with static stage data
+1. **Tabelas limitadas a 50 linhas** — `CrmAnalytics.tsx` usa `.slice(0, 50)` nas linhas 339 e 493, cortando os leads exibidos. Não há paginação.
 
-### Solution
-Compute all dashboard metrics from raw `deals` data (already fetched) when any filter is active. Use the pre-aggregated views only as default/unfiltered state.
+2. **Dados externos não atualizam** — Os hooks `usePresencaData` e `useVisitantesData` têm `staleTime: 5min` + `refetchOnWindowFocus: false`. Não existe botão de refresh manual. Os dados ficam cache'd na sessão.
 
-### Changes — `src/pages/Index.tsx` only
+3. **Query de contatos para cruzamento** (linhas 184-186 do hook) não tem `.limit()`, então o Supabase aplica o default de 1000 linhas — OK se há menos de 1000 contatos.
 
-1. **`totals`** — Rewrite to compute from `filteredDeals` instead of `metrics` view:
-   - `active`: count deals where `is_won === null`
-   - `pipeline`: sum `amount` of active deals
-   - `won` / `lost`: count by `is_won`
-   - `avgSize`: average amount
+### Solução
 
-2. **`pipelineStages`** — When filters are active, compute from `filteredDeals` joined with stages data instead of `stage_conversion` view. Add a query for `stages` table to get stage names/order, then group `filteredDeals` by `stage_id`.
+**Arquivo 1: `src/pages/CrmAnalytics.tsx`**
 
-3. **`winRate`** — Already derived from `totals`, will auto-fix.
+- Adicionar estado de paginação para cada tabela de leads (leadsAula e leadsVisitantes)
+- Remover `.slice(0, 50)` e substituir por paginação real: `leads.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)`
+- Constante `PAGE_SIZE = 50`
+- Adicionar controles de paginação (Anterior/Próximo + "Mostrando X-Y de Z") abaixo de cada tabela
+- Adicionar botão "Atualizar dados" no header de cada tab que chama `queryClient.invalidateQueries` para forçar refresh dos dados externos
 
-4. **Bottom 3 cards** (Velocity, Revenue, Donut) — Currently partially hardcoded. Make them derive from the filtered `pipelineStages` and `filteredDeals` so numbers update with filters.
+**Arquivo 2: `src/hooks/useExternalSupabase.ts`**
 
-5. **Add stages query** — Fetch `stages` table (`id, name, display_order, pipeline_id, is_won, is_lost`) to map `deal.stage_id` → stage name/order for client-side grouping.
+- Reduzir `staleTime` de `5 * 60_000` para `2 * 60_000` (2 min) nos hooks `usePresencaData` e `useVisitantesData`
+- Adicionar `refetchOnMount: 'always'` para garantir que os dados são re-fetched quando o componente monta
+- Exportar as `queryKey`s para que o componente possa invalidar manualmente
 
-### What stays unchanged
-- All existing queries remain (no Supabase changes)
-- Pre-aggregated views still load (used as fallback for "all" state for performance)
-- Visual design, layout, tabs, charts — no changes
-- No other files modified
+### Nenhuma query Supabase é alterada. Nenhuma lógica de cruzamento muda.
 
