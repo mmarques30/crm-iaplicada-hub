@@ -240,6 +240,34 @@ export default function GestaoVendas() {
     },
   })
 
+  /* ─── Inline Fiscal Save Mutation ─── */
+  const saveFiscalMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, any> }) => {
+      const { error } = await (supabase as any).from('vendas').update(data).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gestao-vendas'] })
+      setEditingFiscalId(null)
+      toast.success('Dados fiscais atualizados!')
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
+  })
+
+  /* ─── Inline Reg Save Mutation ─── */
+  const saveRegMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, any> }) => {
+      const { error } = await (supabase as any).from('notas_fiscais').update(data).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gestao-notas-fiscais'] })
+      setEditingRegId(null)
+      toast.success('NF atualizada!')
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
+  })
+
   /* ─── CSV Parsing ─── */
   const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
