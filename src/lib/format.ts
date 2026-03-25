@@ -35,6 +35,29 @@ export const qualificationBadgeVariant = (status: string) => {
   }
 };
 
+export const humanizeCampaignName = (raw: string, maxLen = 25): string => {
+  if (!raw) return '—';
+  let s = raw
+    .replace(/^(LEADS?_|VENDAS?_|PF_|AUT_|CONV_|TRAF_|CAMP_)+/gi, '')
+    .replace(/_/g, ' ')
+    .trim();
+  // Title Case
+  s = s
+    .toLowerCase()
+    .replace(/\b\w/g, c => c.toUpperCase());
+  if (s.length > maxLen) s = s.substring(0, maxLen).trimEnd() + '…';
+  return s || raw.substring(0, maxLen);
+};
+
+export const mapFbObjective = (objective: string | null | undefined, name: string): string => {
+  const v = (objective || name || '').toLowerCase();
+  if (v.includes('outcome_leads') || v.includes('lead_generation') || v.includes('lead')) return 'Leads';
+  if (v.includes('outcome_sales') || v.includes('conversion') || v.includes('venda') || v.includes('sales')) return 'Vendas';
+  if (v.includes('outcome_traffic') || v.includes('link_click') || v.includes('traffic') || v.includes('trafego')) return 'Tráfego';
+  if (v.includes('outcome_awareness') || v.includes('reach') || v.includes('awareness') || v.includes('alcance')) return 'Alcance';
+  return 'Outros';
+};
+
 export const daysAgo = (date: string): number => {
   const now = new Date();
   const then = new Date(date);

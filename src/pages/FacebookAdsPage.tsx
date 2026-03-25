@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { KPICard } from '@/components/dashboard/KPICard'
 import { useDashboardSnapshot } from '@/hooks/useDashboardData'
-import { formatCurrency } from '@/lib/format'
+import { formatCurrency, humanizeCampaignName, mapFbObjective } from '@/lib/format'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { DollarSign, Eye, MousePointer, Target, TrendingUp, BarChart3, Percent, ExternalLink } from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
@@ -49,18 +49,13 @@ export default function FacebookAdsPage() {
 
   // Charts data
   const spendByCampaign = campaigns.filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend).slice(0, 8)
-  const cplByCampaign = campaigns.filter(c => c.costPerLead > 0).sort((a, b) => a.costPerLead - b.costPerLead).slice(0, 8)
+  const cplByCampaign = campaigns.filter(c => c.spend > 0).map(c => ({ ...c, cplCalc: c.leads > 0 ? c.spend / c.leads : c.spend })).sort((a, b) => a.cplCalc - b.cplCalc).slice(0, 8)
 
   // FIX Bug #3: Pie chart by objective - group campaigns properly
   const spendByObjective = useMemo(() => {
     const obj: Record<string, number> = {}
     for (const c of campaigns) {
-      const name = (c.objective || c.name || '').toLowerCase()
-      let label = 'Outros'
-      if (name.includes('lead') || name.includes('conversao')) label = 'Leads'
-      else if (name.includes('venda') || name.includes('sales')) label = 'Vendas'
-      else if (name.includes('traffic') || name.includes('trafego')) label = 'Tráfego'
-      else if (name.includes('awareness') || name.includes('alcance')) label = 'Alcance'
+      const label = mapFbObjective(c.objective, c.name)
       obj[label] = (obj[label] || 0) + (c.spend || 0)
     }
     return Object.entries(obj).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value }))
@@ -70,8 +65,8 @@ export default function FacebookAdsPage() {
   const ctrByCampaign = campaigns.filter(c => c.ctr > 0).sort((a, b) => b.ctr - a.ctr).slice(0, 8)
 
   // Best/worst CPL
-  const bestCPL = cplByCampaign[0]
-  const worstCPL = cplByCampaign.length > 0 ? cplByCampaign[cplByCampaign.length - 1] : null
+  const bestCPL = cplByCampaign[0] || null
+  const worstCPL = cplByCampaign.length > 1 ? cplByCampaign[cplByCampaign.length - 1] : null
 
   // Active campaign % of spend
   const activeSpendPct = totals.spend > 0 ? Math.round(activeCampaigns.reduce((s, c) => s + (c.spend || 0), 0) / totals.spend * 100) : 0
@@ -90,7 +85,7 @@ export default function FacebookAdsPage() {
   const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({ context: 'facebook_ads', data: insightsData, enabled: hasData })
 
   // FIX Bug #7: Campaign name formatter with tooltip
-  const shortName = (name: string, maxLen = 25) => name.length > maxLen ? name.substring(0, maxLen) + '…' : name
+  const shortName = (name: string, maxLen = 25) => humanizeCampaignName(name, maxLen)
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
@@ -151,12 +146,12 @@ export default function FacebookAdsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">CPL por Campanha</CardTitle>
-                {bestCPL && <p className="text-xs text-muted-foreground">Melhor: <strong className="text-[#AFC040]">{formatCurrency(bestCPL.costPerLead)}</strong> · Pior: <strong className="text-[#E8684A]">{formatCurrency(worstCPL?.costPerLead || 0)}</strong></p>}
+                {bestCPL && <p className="text-xs text-muted-foreground">Melhor: <strong className="text-[#AFC040]">{formatCurrency(bestCPL.cplCalc)}</strong> · Pior: <strong className="text-[#E8684A]">{formatCurrency(worstCPL?.cplCalc || 0)}</strong></p>}
               </CardHeader>
               <CardContent>
                 {cplByCampaign.length > 0 ? (
                   <ResponsiveContainer width="100%" height={320}>
-                    <BarChart data={cplByCampaign.map(c => ({ name: shortName(c.name), fullName: c.name, cpl: c.costPerLead }))} layout="vertical">
+                    <BarChart data={cplByCampaign.map(c => ({ name: shortName(c.name), fullName: c.name, cpl: c.cplCalc }))} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
                       <XAxis type="number" tick={AXIS_TICK} tickFormatter={v => `R$${v}`} axisLine={false} tickLine={false} />
                       <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
@@ -167,7 +162,7 @@ export default function FacebookAdsPage() {
                       }} />
                       <Bar dataKey="cpl" name="CPL" radius={[0, 4, 4, 0]}>
                         {cplByCampaign.map((c, i) => (
-                          <Cell key={i} fill={c.costPerLead <= totals.cpl ? '#AFC040' : '#E8684A'} />
+                          <Cell key={i} fill={c.cplCalc <= totals.cpl ? '#AFC040' : '#E8684A'} />
                         ))}
                       </Bar>
                     </BarChart>
@@ -178,12 +173,12 @@ export default function FacebookAdsPage() {
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div className="p-3 rounded-lg bg-[#031411] text-center">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Melhor CPL</p>
-                      <p className="text-xl font-bold font-mono" style={{ color: '#AFC040' }}>{formatCurrency(bestCPL.costPerLead)}</p>
+                      <p className="text-xl font-bold font-mono" style={{ color: '#AFC040' }}>{formatCurrency(bestCPL.cplCalc)}</p>
                       <p className="text-[10px] text-muted-foreground truncate mt-1">{shortName(bestCPL.name, 30)}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-[#1A0604] text-center">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pior CPL</p>
-                      <p className="text-xl font-bold font-mono" style={{ color: '#E8684A' }}>{formatCurrency(worstCPL?.costPerLead || 0)}</p>
+                      <p className="text-xl font-bold font-mono" style={{ color: '#E8684A' }}>{formatCurrency(worstCPL?.cplCalc || 0)}</p>
                       <p className="text-[10px] text-muted-foreground truncate mt-1">{shortName(worstCPL?.name || '', 30)}</p>
                     </div>
                   </div>
@@ -199,7 +194,7 @@ export default function FacebookAdsPage() {
                 {spendByObjective.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
                     <PieChart>
-                      <Pie data={spendByObjective} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                      <Pie data={spendByObjective} cx="50%" cy="50%" innerRadius={45} outerRadius={85} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={true}>
                         {spendByObjective.map((_, i) => <Cell key={i} fill={SEMANTIC_COLORS[i % SEMANTIC_COLORS.length]} />)}
                       </Pie>
                       <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatCurrency(v)} />
