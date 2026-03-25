@@ -27,6 +27,8 @@ const CONTEXT_PROMPTS: Record<string, string> = {
   crm: "Analise os dados do CRM de vendas. Foque em funil de conversão, win rate, pipeline value, performance por produto e gargalos no funil.",
   financeiro: "Analise os dados financeiros de vendas. Foque em receita por produto, ticket médio, formas de pagamento, evolução mensal e oportunidades de upsell.",
   painel: "Analise os dados consolidados de todos os canais (Instagram, Facebook Ads, CRM). Foque em análise cruzada entre canais, ROI comparativo, funil integrado e recomendações estratégicas.",
+  fiscal: "Analise os dados fiscais de notas fiscais. Foque em NFs pendentes vs emitidas vs enviadas, clientes sem CPF/CNPJ preenchido, compliance tributário, riscos de multa por atraso na emissão, regularização de NFs pendentes e otimização do processo de emissão. Identifique padrões de atraso e sugira ações corretivas.",
+  parcelas: "Analise os dados de parcelas e recebíveis. Foque em inadimplência (parcelas vencidas não pagas), aging de recebíveis (agrupados por faixas: >30, >60, >90 dias vencidos), previsão de fluxo de caixa futuro, sazonalidade de pagamentos, taxa de inadimplência por produto e oportunidades de antecipação com desconto.",
 };
 
 serve(async (req) => {
