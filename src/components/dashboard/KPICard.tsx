@@ -13,7 +13,7 @@ interface KPICardProps {
 export function KPICard({ label, value, sub, accentColor, icon: Icon, trend, onClick }: KPICardProps) {
   return (
     <div
-      className={`relative bg-[var(--c-card)] border border-[var(--c-border)] rounded-xl p-[18px_20px] flex flex-col gap-1 transition-colors hover:border-[var(--c-border-h)] ${onClick ? 'cursor-pointer' : ''}`}
+      className={`relative bg-[var(--c-card)] border border-[var(--c-border)] rounded-xl p-3 sm:p-[18px_20px] flex flex-col gap-1 transition-colors hover:border-[var(--c-border-h)] min-w-0 ${onClick ? 'cursor-pointer' : ''}`}
       style={{ borderLeft: `3px solid ${accentColor}` }}
       onClick={onClick}
     >
