@@ -12,6 +12,7 @@ import {
   GraduationCap, Eye, Video, FileDown, UserCheck, UserX, Flame, Loader2, RefreshCw, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
+import { FunnelTab } from '@/components/dashboard/FunnelTab'
 import { useInsights } from '@/hooks/useInsights'
 import { useLeadsAula, useLeadsVisitantes, PRESENCA_QUERY_KEY, VISITANTES_QUERY_KEY } from '@/hooks/useExternalSupabase'
 import { useDealsByChannel, useDealsWithChannel } from '@/hooks/useDealsChannel'
@@ -150,6 +151,7 @@ export default function CrmAnalytics() {
             { v: 'funnel', l: 'Funil' },
             { v: 'sources', l: 'Fontes' },
             { v: 'products', l: 'Produtos' },
+            { v: 'meta-funnel', l: 'Funil Meta' },
             { v: 'leads-aula', l: 'Leads Aula' },
             { v: 'leads-visitantes', l: 'Leads Visitantes' },
             { v: 'insights', l: 'Insights' },
@@ -185,7 +187,12 @@ export default function CrmAnalytics() {
           </Card>
         </TabsContent>
 
-        {/* ─── Fontes ─── */}
+        {/* ─── Funil Meta ─── */}
+        <TabsContent value="meta-funnel" className="space-y-4 mt-4">
+          <FunnelTab />
+        </TabsContent>
+
+
         <TabsContent value="sources" className="mt-4 space-y-4">
           {(() => {
             const allDeals = dealsDetailed
