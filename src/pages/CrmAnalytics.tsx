@@ -347,8 +347,8 @@ export default function CrmAnalytics() {
                               Nenhum lead com 3+ aulas encontrado
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          leadsAula.leadsQuentes.slice(0, 50).map((lead) => (
+                         ) : (
+                          leadsAula.leadsQuentes.slice(aulaPage * PAGE_SIZE, (aulaPage + 1) * PAGE_SIZE).map((lead) => (
                             <TableRow
                               key={lead.email}
                               className={lead.contactId ? 'cursor-pointer hover:bg-[var(--c-raised)]' : ''}
