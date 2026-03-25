@@ -10,9 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Clock, User, Columns3, Search, Filter, X, Building2, Share2, Globe, ChevronRight } from "lucide-react";
+import { Clock, User, Columns3, Search, Filter, X, Building2, Share2, Globe, ChevronRight, RefreshCw, Loader2 } from "lucide-react";
 import { Tables } from "@/integrations/supabase/types";
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Deal = Tables<"deals"> & {
@@ -100,6 +101,35 @@ export default function Pipeline() {
   const [filters, setFilters] = useState<PipelineFilters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(false);
 
+  // HubSpot sync
+  const syncHubspot = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('dashboard-collector', {
+        body: { source: 'hubspot' },
+      })
+      if (error) throw error
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['pipeline-deals'] })
+      queryClient.invalidateQueries({ queryKey: ['contacts'] })
+      toast.success('HubSpot sincronizado com sucesso')
+    },
+    onError: (err: any) => {
+      toast.error('Erro ao sincronizar: ' + (err.message || 'Tente novamente'))
+    },
+  })
+
+  // Auto-sync on first load (every 10 min)
+  useEffect(() => {
+    const lastSync = sessionStorage.getItem('hubspot_last_sync')
+    const now = Date.now()
+    if (!lastSync || now - parseInt(lastSync) > 10 * 60 * 1000) {
+      sessionStorage.setItem('hubspot_last_sync', String(now))
+      syncHubspot.mutate()
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Grab-to-scroll
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDraggingScroll = useRef(false);
@@ -165,6 +195,8 @@ export default function Pipeline() {
         .eq("pipeline_id", pipeline!.id);
       return (data as Deal[]) || [];
     },
+    refetchInterval: 60_000, // Auto-refresh every 60s
+    refetchOnWindowFocus: true,
   });
 
   const updateStage = useMutation({
@@ -243,7 +275,23 @@ export default function Pipeline() {
             {totalDeals} negócios &middot; {formatCurrency(totalValue)} total
           </p>
         </div>
-        <PipelineTabs product={product} onSelect={(v) => { navigate(`/pipeline/${v}`); setFilters(emptyFilters); }} />
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => syncHubspot.mutate()}
+            disabled={syncHubspot.isPending}
+            className="gap-1.5"
+          >
+            {syncHubspot.isPending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <RefreshCw className="h-3.5 w-3.5" />
+            )}
+            {syncHubspot.isPending ? 'Sincronizando...' : 'Sync HubSpot'}
+          </Button>
+          <PipelineTabs product={product} onSelect={(v) => { navigate(`/pipeline/${v}`); setFilters(emptyFilters); }} />
+        </div>
       </div>
 
       {/* Lead Origin Tabs */}
