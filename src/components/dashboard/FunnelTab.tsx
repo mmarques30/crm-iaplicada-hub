@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client'
 import { normalizeChannel, humanizeCampaignName } from '@/lib/format'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Cell, Legend, Area, AreaChart,
+  Cell,
 } from 'recharts'
 
 const SEMANTIC_COLORS = ['#AFC040', '#4A9FE0', '#2CBBA6', '#E8A43C', '#E8684A', '#7A8460']
