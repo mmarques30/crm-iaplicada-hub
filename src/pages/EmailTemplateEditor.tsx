@@ -13,6 +13,8 @@ import {
   ArrowLeft,
   Loader2,
   ExternalLink,
+  Upload,
+  Wand2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
