@@ -58,7 +58,7 @@ export default function PainelGeral() {
   const { data: contactsBySource } = useQuery({
     queryKey: ['contacts_by_source'],
     queryFn: async () => {
-      const { data } = await supabase.from('contacts').select('utm_source, fonte_registro, lifecycle_stage, hubspot_id, first_conversion, instagram_opt_in, whatsapp_opt_in, manychat_id')
+      const { data } = await supabase.from('contacts').select('utm_source, utm_campaign, utm_medium, fonte_registro, lifecycle_stage, hubspot_id, first_conversion, instagram_opt_in, whatsapp_opt_in, manychat_id')
       return (data || []) as any[]
     },
   })
