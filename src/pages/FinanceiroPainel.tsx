@@ -256,6 +256,7 @@ export default function FinanceiroPainel() {
       if (error) throw error
       return (data || []) as any[]
     },
+    retry: 1,
   })
 
   const { data: metas } = useQuery({
