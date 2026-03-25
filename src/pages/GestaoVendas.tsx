@@ -991,59 +991,139 @@ export default function GestaoVendas() {
                     <TableRow className="bg-[var(--c-raised)]">
                       <TableHead className="font-medium">Cliente</TableHead>
                       <TableHead className="font-medium">Produto</TableHead>
-                      <TableHead className="font-medium text-right">Valor Contrato</TableHead>
+                      <TableHead className="font-medium text-right">Valor</TableHead>
                       <TableHead className="font-medium">CPF/CNPJ</TableHead>
                       <TableHead className="font-medium">Razão Social</TableHead>
                       <TableHead className="font-medium">Email Fiscal</TableHead>
                       <TableHead className="font-medium">Status NF</TableHead>
                       <TableHead className="font-medium">Nº NF</TableHead>
                       <TableHead className="font-medium">Data Envio</TableHead>
+                      <TableHead className="font-medium w-[80px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {vendasLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          {Array.from({ length: 9 }).map((_, j) => (
+                          {Array.from({ length: 10 }).map((_, j) => (
                             <TableCell key={j}><div className="h-4 w-full bg-muted animate-pulse rounded" /></TableCell>
                           ))}
                         </TableRow>
                       ))
                     ) : filteredFiscal.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
+                        <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
                           Nenhum cliente encontrado
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredFiscal.map((v: any) => (
-                        <TableRow key={v.id} className="hover:bg-[var(--c-raised)]">
-                          <TableCell>
-                            <div>
-                              <span className="font-medium">{v.nome || '—'}</span>
-                              <p className="text-xs text-muted-foreground">{v.email || ''}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`text-xs ${productBadgeClass(v.produto)}`}>
-                              {PRODUCT_LABELS[v.produto] || v.produto || '—'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium font-mono" style={{ color: '#E8A43C' }}>
-                            {formatCurrency(Number(v.valor || 0))}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground font-mono text-xs">{v.cpf_cnpj || '—'}</TableCell>
-                          <TableCell className="text-muted-foreground text-xs max-w-[180px] truncate">{v.razao_social || '—'}</TableCell>
-                          <TableCell className="text-muted-foreground text-xs">{v.email_fiscal || '—'}</TableCell>
-                          <TableCell>
-                            <Badge className={`text-xs ${nfStatusBadgeClass(v.status_nf || 'pendente')}`}>
-                              {nfStatusLabel(v.status_nf || 'pendente')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground font-mono text-xs">{v.numero_nf || '—'}</TableCell>
-                          <TableCell className="text-muted-foreground">{formatDate(v.data_envio_nf)}</TableCell>
-                        </TableRow>
-                      ))
+                      filteredFiscal.map((v: any) => {
+                        const isEditing = editingFiscalId === v.id
+                        const ef = isEditing ? fiscalEditForm : v
+                        return (
+                          <TableRow key={v.id} className="hover:bg-[var(--c-raised)]">
+                            <TableCell>
+                              <div>
+                                <span className="font-medium">{v.nome || '—'}</span>
+                                <p className="text-xs text-muted-foreground">{v.email || ''}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`text-xs ${productBadgeClass(v.produto)}`}>
+                                {PRODUCT_LABELS[v.produto] || v.produto || '—'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-medium font-mono" style={{ color: '#E8A43C' }}>
+                              {formatCurrency(Number(v.valor || 0))}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[130px]" value={ef.cpf_cnpj || ''} onChange={e => setFiscalEditForm(f => ({ ...f, cpf_cnpj: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground font-mono text-xs">{v.cpf_cnpj || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[150px]" value={ef.razao_social || ''} onChange={e => setFiscalEditForm(f => ({ ...f, razao_social: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground text-xs max-w-[180px] truncate block">{v.razao_social || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[150px]" value={ef.email_fiscal || ''} onChange={e => setFiscalEditForm(f => ({ ...f, email_fiscal: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground text-xs">{v.email_fiscal || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Select value={ef.status_nf || 'pendente'} onValueChange={val => setFiscalEditForm(f => ({ ...f, status_nf: val }))}>
+                                  <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pendente">Pendente</SelectItem>
+                                    <SelectItem value="emitida">Emitida</SelectItem>
+                                    <SelectItem value="enviada">Enviada</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Badge className={`text-xs ${nfStatusBadgeClass(v.status_nf || 'pendente')}`}>
+                                  {nfStatusLabel(v.status_nf || 'pendente')}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input type="number" className="h-7 text-xs w-[80px]" value={ef.numero_nf || ''} onChange={e => setFiscalEditForm(f => ({ ...f, numero_nf: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground font-mono text-xs">{v.numero_nf || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input type="date" className="h-7 text-xs w-[130px]" value={ef.data_envio_nf || ''} onChange={e => setFiscalEditForm(f => ({ ...f, data_envio_nf: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground">{formatDate(v.data_envio_nf)}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <div className="flex gap-1">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-[#AFC040]" disabled={saveFiscalMutation.isPending} onClick={() => saveFiscalMutation.mutate({
+                                    id: v.id,
+                                    data: {
+                                      cpf_cnpj: ef.cpf_cnpj || null,
+                                      razao_social: ef.razao_social || null,
+                                      email_fiscal: ef.email_fiscal || null,
+                                      status_nf: ef.status_nf || 'pendente',
+                                      numero_nf: ef.numero_nf ? Number(ef.numero_nf) : null,
+                                      data_envio_nf: ef.data_envio_nf || null,
+                                    }
+                                  })}>
+                                    <Save className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingFiscalId(null)}>✕</Button>
+                                </div>
+                              ) : (
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                                  setEditingFiscalId(v.id)
+                                  setFiscalEditForm({
+                                    cpf_cnpj: v.cpf_cnpj || '',
+                                    razao_social: v.razao_social || '',
+                                    email_fiscal: v.email_fiscal || '',
+                                    status_nf: v.status_nf || 'pendente',
+                                    numero_nf: v.numero_nf || '',
+                                    data_envio_nf: v.data_envio_nf || '',
+                                  })
+                                }}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
                     )}
                   </TableBody>
                 </Table>
