@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend,
+  PieChart, Pie, Cell, Legend, ComposedChart, Line, Area,
 } from 'recharts'
 import { useNavigate } from 'react-router-dom'
 
@@ -319,6 +319,34 @@ export default function CrmAnalytics() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Weekly Adherence Chart */}
+              {leadsAula.weeklyAdherence.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Aderência por Aula (Semana)</CardTitle>
+                    <p className="text-xs text-muted-foreground">Participantes por semana e taxa de retenção entre aulas</p>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={320}>
+                      <ComposedChart data={leadsAula.weeklyAdherence.map(w => ({
+                        week: w.week.replace(/^\d{4}-/, ''),
+                        participantes: w.participants,
+                        retencao: w.retentionFromPrevious,
+                      }))}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                        <XAxis dataKey="week" tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                        <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                        <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} domain={[0, 100]} unit="%" />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} />
+                        <Legend />
+                        <Bar yAxisId="left" dataKey="participantes" name="Participantes" fill="#4A9FE0" radius={[4, 4, 0, 0]} />
+                        <Line yAxisId="right" type="monotone" dataKey="retencao" name="Retenção %" stroke="#AFC040" strokeWidth={2} dot={{ r: 3, fill: '#AFC040' }} connectNulls />
+                      </ComposedChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              )}
 
               {/* Leads Table */}
               <Card>
