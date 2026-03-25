@@ -415,10 +415,6 @@ export default function FacebookAdsPage() {
           })()}
         </TabsContent>
 
-        {/* ─── Funil de Vendas ─── */}
-        <TabsContent value="funnel" className="space-y-4 mt-4">
-          <FunnelTab />
-        </TabsContent>
 
         {/* ─── Insights ─── */}
         <TabsContent value="insights" className="mt-4">
