@@ -15,8 +15,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
 import { FiscalAIButton } from '@/components/financeiro/FiscalAIButton'
+import { EditVendaDialog } from '@/components/financeiro/EditVendaDialog'
+import { VendaParcelasDialog } from '@/components/financeiro/VendaParcelasDialog'
+import { RepassesTab } from '@/components/financeiro/RepassesTab'
 import { toast } from 'sonner'
-import { ShoppingCart, Receipt, FileText, Search, DollarSign, Users, AlertCircle, CheckCircle, Send, Plus, Trash2, Upload } from 'lucide-react'
+import { ShoppingCart, Receipt, FileText, Search, DollarSign, Users, AlertCircle, CheckCircle, Send, Plus, Trash2, Upload, Pencil, CreditCard, Save } from 'lucide-react'
 
 const PRODUCT_LABELS: Record<string, string> = { academy: 'Academy', business: 'Business', skills: 'Skills', ferramentas: 'Ferramentas' }
 
@@ -83,6 +86,21 @@ export default function GestaoVendas() {
   const [regAno, setRegAno] = useState('todos')
   const [regMes, setRegMes] = useState('todos')
   const [regMostrarRegularizados, setRegMostrarRegularizados] = useState(false)
+
+  /* ─── Edit/Parcelas Dialog State ─── */
+  const [editVenda, setEditVenda] = useState<any>(null)
+  const [editVendaOpen, setEditVendaOpen] = useState(false)
+  const [parcelasVendaId, setParcelasVendaId] = useState<string | null>(null)
+  const [parcelasVendaNome, setParcelasVendaNome] = useState('')
+  const [parcelasOpen, setParcelasOpen] = useState(false)
+
+  /* ─── Inline Fiscal Editing State ─── */
+  const [editingFiscalId, setEditingFiscalId] = useState<string | null>(null)
+  const [fiscalEditForm, setFiscalEditForm] = useState<Record<string, any>>({})
+
+  /* ─── Inline Reg Editing State ─── */
+  const [editingRegId, setEditingRegId] = useState<string | null>(null)
+  const [regEditForm, setRegEditForm] = useState<Record<string, any>>({})
 
   /* ─── Nova Venda Dialog State ─── */
   const [novaVendaOpen, setNovaVendaOpen] = useState(false)
@@ -220,6 +238,34 @@ export default function GestaoVendas() {
     onError: (err: any) => {
       toast.error(`Erro ao excluir venda: ${err.message}`)
     },
+  })
+
+  /* ─── Inline Fiscal Save Mutation ─── */
+  const saveFiscalMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, any> }) => {
+      const { error } = await (supabase as any).from('vendas').update(data).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gestao-vendas'] })
+      setEditingFiscalId(null)
+      toast.success('Dados fiscais atualizados!')
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
+  })
+
+  /* ─── Inline Reg Save Mutation ─── */
+  const saveRegMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Record<string, any> }) => {
+      const { error } = await (supabase as any).from('notas_fiscais').update(data).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gestao-notas-fiscais'] })
+      setEditingRegId(null)
+      toast.success('NF atualizada!')
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
   })
 
   /* ─── CSV Parsing ─── */
@@ -582,6 +628,7 @@ export default function GestaoVendas() {
             { v: 'vendas', l: 'Vendas' },
             { v: 'fiscal', l: 'Fiscal' },
             { v: 'regularizacao', l: 'Regularizacao NF' },
+            { v: 'repasses', l: 'Repasses' },
             { v: 'insights', l: 'Insights' },
           ].map(t => (
             <TabsTrigger key={t.v} value={t.v} className="data-[state=active]:bg-[#AFC040] data-[state=active]:text-[#0D0D0D] data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">{t.l}</TabsTrigger>
@@ -823,7 +870,7 @@ export default function GestaoVendas() {
                       <TableHead className="font-medium text-center">Parcelas</TableHead>
                       <TableHead className="font-medium text-right">Valor</TableHead>
                       <TableHead className="font-medium">Status</TableHead>
-                      <TableHead className="font-medium w-[50px]"></TableHead>
+                      <TableHead className="font-medium w-[120px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -843,7 +890,7 @@ export default function GestaoVendas() {
                       </TableRow>
                     ) : (
                       filteredVendas.map((v: any) => (
-                        <TableRow key={v.id} className="hover:bg-[var(--c-raised)] cursor-pointer">
+                        <TableRow key={v.id} className="hover:bg-[var(--c-raised)] cursor-pointer" onClick={() => { setEditVenda(v); setEditVendaOpen(true) }}>
                           <TableCell className="font-medium">{v.nome || '—'}</TableCell>
                           <TableCell className="text-muted-foreground text-xs">{v.email || '—'}</TableCell>
                           <TableCell>
@@ -863,20 +910,28 @@ export default function GestaoVendas() {
                             </Badge>
                           </TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-red-500"
-                              disabled={deleteVendaMutation.isPending}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                if (window.confirm(`Excluir venda de "${v.nome || 'sem nome'}"? Esta acao nao pode ser desfeita.`)) {
-                                  deleteVendaMutation.mutate(v.id)
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" title="Editar" onClick={(e) => { e.stopPropagation(); setEditVenda(v); setEditVendaOpen(true) }}>
+                                <Pencil className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" title="Parcelas" onClick={(e) => { e.stopPropagation(); setParcelasVendaId(v.id); setParcelasVendaNome(v.nome || ''); setParcelasOpen(true) }}>
+                                <CreditCard className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-red-500"
+                                disabled={deleteVendaMutation.isPending}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  if (window.confirm(`Excluir venda de "${v.nome || 'sem nome'}"?`)) {
+                                    deleteVendaMutation.mutate(v.id)
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -936,59 +991,139 @@ export default function GestaoVendas() {
                     <TableRow className="bg-[var(--c-raised)]">
                       <TableHead className="font-medium">Cliente</TableHead>
                       <TableHead className="font-medium">Produto</TableHead>
-                      <TableHead className="font-medium text-right">Valor Contrato</TableHead>
+                      <TableHead className="font-medium text-right">Valor</TableHead>
                       <TableHead className="font-medium">CPF/CNPJ</TableHead>
                       <TableHead className="font-medium">Razão Social</TableHead>
                       <TableHead className="font-medium">Email Fiscal</TableHead>
                       <TableHead className="font-medium">Status NF</TableHead>
                       <TableHead className="font-medium">Nº NF</TableHead>
                       <TableHead className="font-medium">Data Envio</TableHead>
+                      <TableHead className="font-medium w-[80px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {vendasLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          {Array.from({ length: 9 }).map((_, j) => (
+                          {Array.from({ length: 10 }).map((_, j) => (
                             <TableCell key={j}><div className="h-4 w-full bg-muted animate-pulse rounded" /></TableCell>
                           ))}
                         </TableRow>
                       ))
                     ) : filteredFiscal.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
+                        <TableCell colSpan={10} className="py-8 text-center text-muted-foreground">
                           Nenhum cliente encontrado
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredFiscal.map((v: any) => (
-                        <TableRow key={v.id} className="hover:bg-[var(--c-raised)]">
-                          <TableCell>
-                            <div>
-                              <span className="font-medium">{v.nome || '—'}</span>
-                              <p className="text-xs text-muted-foreground">{v.email || ''}</p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`text-xs ${productBadgeClass(v.produto)}`}>
-                              {PRODUCT_LABELS[v.produto] || v.produto || '—'}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-right font-medium font-mono" style={{ color: '#E8A43C' }}>
-                            {formatCurrency(Number(v.valor || 0))}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground font-mono text-xs">{v.cpf_cnpj || '—'}</TableCell>
-                          <TableCell className="text-muted-foreground text-xs max-w-[180px] truncate">{v.razao_social || '—'}</TableCell>
-                          <TableCell className="text-muted-foreground text-xs">{v.email_fiscal || '—'}</TableCell>
-                          <TableCell>
-                            <Badge className={`text-xs ${nfStatusBadgeClass(v.status_nf || 'pendente')}`}>
-                              {nfStatusLabel(v.status_nf || 'pendente')}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-muted-foreground font-mono text-xs">{v.numero_nf || '—'}</TableCell>
-                          <TableCell className="text-muted-foreground">{formatDate(v.data_envio_nf)}</TableCell>
-                        </TableRow>
-                      ))
+                      filteredFiscal.map((v: any) => {
+                        const isEditing = editingFiscalId === v.id
+                        const ef = isEditing ? fiscalEditForm : v
+                        return (
+                          <TableRow key={v.id} className="hover:bg-[var(--c-raised)]">
+                            <TableCell>
+                              <div>
+                                <span className="font-medium">{v.nome || '—'}</span>
+                                <p className="text-xs text-muted-foreground">{v.email || ''}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`text-xs ${productBadgeClass(v.produto)}`}>
+                                {PRODUCT_LABELS[v.produto] || v.produto || '—'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-right font-medium font-mono" style={{ color: '#E8A43C' }}>
+                              {formatCurrency(Number(v.valor || 0))}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[130px]" value={ef.cpf_cnpj || ''} onChange={e => setFiscalEditForm(f => ({ ...f, cpf_cnpj: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground font-mono text-xs">{v.cpf_cnpj || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[150px]" value={ef.razao_social || ''} onChange={e => setFiscalEditForm(f => ({ ...f, razao_social: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground text-xs max-w-[180px] truncate block">{v.razao_social || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[150px]" value={ef.email_fiscal || ''} onChange={e => setFiscalEditForm(f => ({ ...f, email_fiscal: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground text-xs">{v.email_fiscal || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Select value={ef.status_nf || 'pendente'} onValueChange={val => setFiscalEditForm(f => ({ ...f, status_nf: val }))}>
+                                  <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pendente">Pendente</SelectItem>
+                                    <SelectItem value="emitida">Emitida</SelectItem>
+                                    <SelectItem value="enviada">Enviada</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Badge className={`text-xs ${nfStatusBadgeClass(v.status_nf || 'pendente')}`}>
+                                  {nfStatusLabel(v.status_nf || 'pendente')}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input type="number" className="h-7 text-xs w-[80px]" value={ef.numero_nf || ''} onChange={e => setFiscalEditForm(f => ({ ...f, numero_nf: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground font-mono text-xs">{v.numero_nf || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input type="date" className="h-7 text-xs w-[130px]" value={ef.data_envio_nf || ''} onChange={e => setFiscalEditForm(f => ({ ...f, data_envio_nf: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground">{formatDate(v.data_envio_nf)}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <div className="flex gap-1">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-[#AFC040]" disabled={saveFiscalMutation.isPending} onClick={() => saveFiscalMutation.mutate({
+                                    id: v.id,
+                                    data: {
+                                      cpf_cnpj: ef.cpf_cnpj || null,
+                                      razao_social: ef.razao_social || null,
+                                      email_fiscal: ef.email_fiscal || null,
+                                      status_nf: ef.status_nf || 'pendente',
+                                      numero_nf: ef.numero_nf ? Number(ef.numero_nf) : null,
+                                      data_envio_nf: ef.data_envio_nf || null,
+                                    }
+                                  })}>
+                                    <Save className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingFiscalId(null)}>✕</Button>
+                                </div>
+                              ) : (
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                                  setEditingFiscalId(v.id)
+                                  setFiscalEditForm({
+                                    cpf_cnpj: v.cpf_cnpj || '',
+                                    razao_social: v.razao_social || '',
+                                    email_fiscal: v.email_fiscal || '',
+                                    status_nf: v.status_nf || 'pendente',
+                                    numero_nf: v.numero_nf || '',
+                                    data_envio_nf: v.data_envio_nf || '',
+                                  })
+                                }}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
                     )}
                   </TableBody>
                 </Table>
@@ -1085,41 +1220,119 @@ export default function GestaoVendas() {
                       <TableHead className="font-medium">Descricao Servico</TableHead>
                       <TableHead className="font-medium text-right">Valor</TableHead>
                       <TableHead className="font-medium">Status</TableHead>
+                      <TableHead className="font-medium w-[80px]">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {nfLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          {Array.from({ length: 8 }).map((_, j) => (
+                          {Array.from({ length: 9 }).map((_, j) => (
                             <TableCell key={j}><div className="h-4 w-full bg-muted animate-pulse rounded" /></TableCell>
                           ))}
                         </TableRow>
                       ))
                     ) : filteredReg.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                        <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
                           Nenhum registro encontrado
                         </TableCell>
                       </TableRow>
                     ) : (
                       filteredReg.map((n: any) => {
-                        const regStatus = n.status_nf || 'pendente'
+                        const isEditing = editingRegId === n.id
+                        const er = isEditing ? regEditForm : n
+                        const regStatus = isEditing ? er.status_nf : (n.status_nf || 'pendente')
                         return (
                           <TableRow key={n.id} className="hover:bg-[var(--c-raised)]">
-                            <TableCell className="font-mono text-xs">{n.numero_nf || n.id?.substring(0, 8) || '—'}</TableCell>
-                            <TableCell className="text-muted-foreground font-mono text-xs">{n.cpf_cnpj || '—'}</TableCell>
-                            <TableCell className="text-muted-foreground">{n.razao_social || '—'}</TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input type="number" className="h-7 text-xs w-[80px]" value={er.numero_nf || ''} onChange={e => setRegEditForm(f => ({ ...f, numero_nf: e.target.value }))} />
+                              ) : (
+                                <span className="font-mono text-xs">{n.numero_nf || n.id?.substring(0, 8) || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[130px]" value={er.cpf_cnpj || ''} onChange={e => setRegEditForm(f => ({ ...f, cpf_cnpj: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground font-mono text-xs">{n.cpf_cnpj || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[150px]" value={er.razao_social || ''} onChange={e => setRegEditForm(f => ({ ...f, razao_social: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground">{n.razao_social || '—'}</span>
+                              )}
+                            </TableCell>
                             <TableCell className="text-muted-foreground">{n.mes_referencia || formatDate(n.data_emissao) || '—'}</TableCell>
-                            <TableCell className="text-muted-foreground text-xs max-w-[180px] truncate">{n.endereco || n.cep || '—'}</TableCell>
-                            <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{n.descricao_servico || '—'}</TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[150px]" value={er.endereco || ''} onChange={e => setRegEditForm(f => ({ ...f, endereco: e.target.value }))} placeholder="Endereço/CEP" />
+                              ) : (
+                                <span className="text-muted-foreground text-xs max-w-[180px] truncate block">{n.endereco || n.cep || '—'}</span>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <Input className="h-7 text-xs w-[180px]" value={er.descricao_servico || ''} onChange={e => setRegEditForm(f => ({ ...f, descricao_servico: e.target.value }))} />
+                              ) : (
+                                <span className="text-muted-foreground text-xs max-w-[200px] truncate block">{n.descricao_servico || '—'}</span>
+                              )}
+                            </TableCell>
                             <TableCell className="text-right font-medium font-mono" style={{ color: '#E8A43C' }}>
                               {formatCurrency(Number(n.valor || 0))}
                             </TableCell>
                             <TableCell>
-                              <Badge className={`text-xs ${nfStatusBadgeClass(regStatus)}`}>
-                                {nfStatusLabel(regStatus)}
-                              </Badge>
+                              {isEditing ? (
+                                <Select value={regStatus} onValueChange={val => setRegEditForm(f => ({ ...f, status_nf: val }))}>
+                                  <SelectTrigger className="h-7 text-xs w-[110px]"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="pendente">Pendente</SelectItem>
+                                    <SelectItem value="emitida">Emitida</SelectItem>
+                                    <SelectItem value="enviada">Enviada</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              ) : (
+                                <Badge className={`text-xs ${nfStatusBadgeClass(regStatus)}`}>
+                                  {nfStatusLabel(regStatus)}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {isEditing ? (
+                                <div className="flex gap-1">
+                                  <Button size="icon" variant="ghost" className="h-7 w-7 hover:text-[#AFC040]" disabled={saveRegMutation.isPending} onClick={() => saveRegMutation.mutate({
+                                    id: n.id,
+                                    data: {
+                                      numero_nf: er.numero_nf ? Number(er.numero_nf) : null,
+                                      cpf_cnpj: er.cpf_cnpj || null,
+                                      razao_social: er.razao_social || null,
+                                      endereco: er.endereco || null,
+                                      descricao_servico: er.descricao_servico || null,
+                                      status_nf: er.status_nf || 'pendente',
+                                    }
+                                  })}>
+                                    <Save className="h-3.5 w-3.5" />
+                                  </Button>
+                                  <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditingRegId(null)}>✕</Button>
+                                </div>
+                              ) : (
+                                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => {
+                                  setEditingRegId(n.id)
+                                  setRegEditForm({
+                                    numero_nf: n.numero_nf || '',
+                                    cpf_cnpj: n.cpf_cnpj || '',
+                                    razao_social: n.razao_social || '',
+                                    endereco: n.endereco || '',
+                                    descricao_servico: n.descricao_servico || '',
+                                    status_nf: n.status_nf || 'pendente',
+                                  })
+                                }}>
+                                  <Pencil className="h-3.5 w-3.5" />
+                                </Button>
+                              )}
                             </TableCell>
                           </TableRow>
                         )
@@ -1143,6 +1356,11 @@ export default function GestaoVendas() {
           />
         </TabsContent>
 
+        {/* ════════════════ Tab: Repasses ════════════════ */}
+        <TabsContent value="repasses" className="mt-4">
+          <RepassesTab />
+        </TabsContent>
+
         {/* ════════════════ Tab: Insights ════════════════ */}
         <TabsContent value="insights" className="mt-4">
           <InsightsTable
@@ -1156,6 +1374,10 @@ export default function GestaoVendas() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* ─── Dialogs ─── */}
+      <EditVendaDialog venda={editVenda} open={editVendaOpen} onOpenChange={setEditVendaOpen} />
+      <VendaParcelasDialog vendaId={parcelasVendaId} vendaNome={parcelasVendaNome} open={parcelasOpen} onOpenChange={setParcelasOpen} />
     </div>
   )
 }
