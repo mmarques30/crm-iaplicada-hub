@@ -86,8 +86,6 @@ export default function InstagramAnalytics() {
   const insightsData = hasData ? { followers: ig!.metrics!.followers, totalReach: ig!.metrics!.totalReach, totalViews: ig!.metrics!.totalViews, totalSaved: ig!.metrics!.totalSaved, totalShares: ig!.metrics!.totalShares, avgEngagement: engagementRate, avgLikes, avgComments, avgReach, totalPosts: posts.length, totalReels: reels.length, totalImages: images.length, categories: categoryData.slice(0, 5).map(c => ({ name: c.name, engPercent: c.engPercent, posts: c.posts })), topPosts: topPosts.slice(0, 3).map(p => ({ caption: (p.caption || '').substring(0, 60), reach: p.reach || 0, likes: p.like_count || 0, comments: p.comments_count || 0, type: p.media_type })) } : null
   const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({ context: 'instagram', data: insightsData, enabled: hasData })
 
-  const postEng = (p: any) => { if (!ig?.metrics?.followers) return 0; return Math.round(((p.like_count || 0) + (p.comments_count || 0) + (p.saved || 0) + (p.shares || 0)) / ig.metrics.followers * 1000) / 10 }
-
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       <div>

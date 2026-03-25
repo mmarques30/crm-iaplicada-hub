@@ -364,7 +364,7 @@ export default function FacebookAdsPage() {
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={campaigns.filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend).map(c => ({ name: shortName(c.name, 15), investimento: Math.round(c.spend), leads: c.leads || 0 }))}>
                       <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 9, ...AXIS_TICK, angle: -20, textAnchor: 'end' }} height={50} axisLine={false} tickLine={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 9, ...AXIS_TICK }} interval={0} height={50} axisLine={false} tickLine={false} />
                       <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
                       <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={TOOLTIP_STYLE} />
