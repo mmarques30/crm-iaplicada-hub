@@ -135,7 +135,7 @@ function FunnelTab() {
   const ecosystemTotal = sourceCards.reduce((s, c) => s + c.total, 0)
   const ecosystemOpportunities = sourceCards.reduce((s, c) => s + c.opportunities, 0)
   const ecosystemCustomers = sourceCards.reduce((s, c) => s + c.customers, 0)
-  const ecosystemDeals = deals.filter(d => META_SOURCES.isMetaEcosystem(normalizeChannel(d.canal_origem || ''), d.canal_origem || '')).length
+  const ecosystemDeals = deals.filter(d => META_SOURCES.isMetaEcosystem(getDealChannel(d), d.canal_origem || '')).length
   const ecosystemPct = contacts.length > 0 ? ((ecosystemTotal / contacts.length) * 100).toFixed(1) : '0'
 
   // ─── Chart data: Contatos por Fonte ───
