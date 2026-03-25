@@ -266,7 +266,13 @@ export default function InstagramAnalytics() {
           </div>
 
           {/* Category summary cards */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div className={`grid grid-cols-2 sm:grid-cols-3 gap-3 ${
+            categoryData.length <= 2 ? 'lg:grid-cols-2' :
+            categoryData.length === 3 ? 'lg:grid-cols-3' :
+            categoryData.length === 4 ? 'lg:grid-cols-4' :
+            categoryData.length === 5 ? 'lg:grid-cols-5' :
+            'lg:grid-cols-6'
+          }`}>
             {categoryData.map((c, i) => (
               <Card key={c.name} className="text-center">
                 <CardContent className="p-4">
