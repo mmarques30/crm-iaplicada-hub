@@ -10,6 +10,24 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
 } from 'recharts'
 
+const CHANNEL_COLORS: Record<string, string> = {
+  'Facebook Ads': '#4A9FE0',
+  'Instagram Orgânico': '#E8684A',
+  'Tráfego Direto': '#AFC040',
+  'WhatsApp': '#2CBBA6',
+  'Formulário / Orgânico': '#E8A43C',
+  'Google Ads': '#7C5CFC',
+  'Não rastreado': '#7A8460',
+}
+const CHANNEL_DESCRIPTIONS: Record<string, string> = {
+  'Facebook Ads': 'Contatos vindos de campanhas pagas no Facebook/Meta',
+  'Instagram Orgânico': 'Contatos captados organicamente pelo Instagram',
+  'Tráfego Direto': 'Acessos diretos sem UTM ou referência',
+  'WhatsApp': 'Contatos originados via WhatsApp',
+  'Formulário / Orgânico': 'Contatos via formulários ou busca orgânica',
+  'Google Ads': 'Contatos vindos de campanhas pagas no Google',
+  'Não rastreado': 'Contatos sem fonte de origem identificada',
+}
 const PRODUCT_COLORS: Record<string, string> = {
   'Academy': '#7C5CFC',
   'Business': '#E8A43C',
