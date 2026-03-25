@@ -585,24 +585,24 @@ export default function PainelGeral() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {/* Instagram Orgânico */}
-                <div className="rounded-xl p-4 flex items-center justify-between" style={{ backgroundColor: 'hsl(0 80% 95%)' }}>
+                <div className="rounded-xl p-4 flex items-center justify-between border-l-[3px]" style={{ backgroundColor: 'var(--c-coral-s)', borderLeftColor: 'var(--c-coral)' }}>
                   <div className="flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: '#E8684A' }}>$0</span>
+                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: 'var(--c-coral)' }}>$0</span>
                     <div>
                       <p className="font-semibold text-sm text-foreground">Instagram Orgânico</p>
                       <p className="text-xs text-muted-foreground">{roiData.instagram.contatos} contatos · {roiData.instagram.opportunities} opportunities</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold" style={{ color: '#E8684A' }}>Grátis</p>
+                    <p className="text-lg font-bold" style={{ color: 'var(--c-coral)' }}>Grátis</p>
                     <p className="text-xs text-muted-foreground">Invest: R$ 0</p>
                   </div>
                 </div>
 
                 {/* Facebook Ads */}
-                <div className="rounded-xl p-4 flex items-center justify-between" style={{ backgroundColor: 'hsl(210 80% 95%)' }}>
+                <div className="rounded-xl p-4 flex items-center justify-between border-l-[3px]" style={{ backgroundColor: 'var(--c-blue-s)', borderLeftColor: 'var(--c-blue)' }}>
                   <div className="flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: '#4A9FE0' }}>
+                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: 'var(--c-blue)' }}>
                       ${roiData.facebookAds.cpl > 0 ? Math.round(roiData.facebookAds.cpl) : '0'}
                     </span>
                     <div>
@@ -611,7 +611,7 @@ export default function PainelGeral() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold" style={{ color: '#4A9FE0' }}>
+                    <p className="text-lg font-bold" style={{ color: 'var(--c-blue)' }}>
                       {roiData.facebookAds.cpl > 0 ? formatCurrency(roiData.facebookAds.cpl) : '—'}
                     </p>
                     <p className="text-xs text-muted-foreground">Invest: {formatCurrency(investment)}</p>
@@ -619,9 +619,9 @@ export default function PainelGeral() {
                 </div>
 
                 {/* Campanhas Meta */}
-                <div className="rounded-xl p-4 flex items-center justify-between" style={{ backgroundColor: 'hsl(270 60% 95%)' }}>
+                <div className="rounded-xl p-4 flex items-center justify-between border-l-[3px]" style={{ backgroundColor: 'var(--c-teal-s)', borderLeftColor: 'var(--c-teal)' }}>
                   <div className="flex items-center gap-3">
-                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: '#8b5cf6' }}>
+                    <span className="w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ backgroundColor: 'var(--c-teal)' }}>
                       ${roiData.campanhasMeta.cpl > 0 ? Math.round(roiData.campanhasMeta.cpl) : '0'}
                     </span>
                     <div>
@@ -630,7 +630,7 @@ export default function PainelGeral() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-lg font-bold" style={{ color: '#8b5cf6' }}>
+                    <p className="text-lg font-bold" style={{ color: 'var(--c-teal)' }}>
                       {roiData.campanhasMeta.cpl > 0 ? formatCurrency(roiData.campanhasMeta.cpl) : '—'}
                     </p>
                     <p className="text-xs text-muted-foreground">Invest: {formatCurrency(investment)}</p>
