@@ -628,6 +628,7 @@ export default function GestaoVendas() {
             { v: 'vendas', l: 'Vendas' },
             { v: 'fiscal', l: 'Fiscal' },
             { v: 'regularizacao', l: 'Regularizacao NF' },
+            { v: 'repasses', l: 'Repasses' },
             { v: 'insights', l: 'Insights' },
           ].map(t => (
             <TabsTrigger key={t.v} value={t.v} className="data-[state=active]:bg-[#AFC040] data-[state=active]:text-[#0D0D0D] data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">{t.l}</TabsTrigger>
