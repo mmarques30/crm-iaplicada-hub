@@ -110,28 +110,78 @@ export function usePresencaData() {
   return useQuery<PresencaData>({
     queryKey: PRESENCA_QUERY_KEY,
     queryFn: async () => {
-      const res = await fetch(`${PRESENCA_URL}?week=all`, {
-        headers: { 'x-api-token': PRESENCA_TOKEN },
-      })
-      if (!res.ok) throw new Error(`Presença API error: ${res.status}`)
-      const data = await res.json()
+      const fetchWeek = async (week: string) => {
+        const res = await fetch(`${PRESENCA_URL}?week=${week}`, {
+          headers: { 'x-api-token': PRESENCA_TOKEN },
+        })
+        if (!res.ok) throw new Error(`Presença API error: ${res.status}`)
+        return res.json()
+      }
 
-      const emails = data.emails || (Array.isArray(data) ? data : [])
-      const attendees: PresencaAttendee[] = emails.map((a: any) => ({
-        email: (a.email || '').toLowerCase().trim(),
-        firstAttendance: a.first_attendance || '',
-        weekIdentifier: a.week_identifier || '',
-        totalSubmissions: a.total_presences || a.total_submissions || a.total_presencas || 1,
-      }))
+      // Fetch "all" base data
+      const baseData = await fetchWeek('all')
+
+      // Build week list for recent weeks not covered by "all"
+      const now = new Date()
+      const recentWeeks: string[] = []
+      for (let i = 0; i < 8; i++) {
+        const d = new Date(now.getTime() - i * 7 * 86400000)
+        const jan1 = new Date(d.getFullYear(), 0, 1)
+        const weekNum = Math.ceil(((d.getTime() - jan1.getTime()) / 86400000 + jan1.getDay() + 1) / 7)
+        recentWeeks.push(`${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`)
+      }
+
+      // Determine which weeks are missing from base data
+      const baseEmails = baseData.emails || []
+      const baseWeeks = new Set(baseEmails.map((e: any) => e.week_identifier).filter(Boolean))
+      const missingWeeks = [...new Set(recentWeeks)].filter(w => !baseWeeks.has(w))
+
+      // Fetch missing weeks in parallel
+      const extraResults = await Promise.all(
+        missingWeeks.map(w => fetchWeek(w).catch(() => ({ emails: [] })))
+      )
+
+      // Merge: aggregate by email, sum total_submissions
+      const emailMap = new Map<string, { email: string; firstAttendance: string; weekIdentifier: string; totalSubmissions: number }>()
+
+      const processEntry = (a: any) => {
+        const email = (a.email || '').toLowerCase().trim()
+        if (!email) return
+        const subs = a.total_presences || a.total_submissions || a.total_presencas || 1
+        const existing = emailMap.get(email)
+        if (existing) {
+          existing.totalSubmissions = Math.max(existing.totalSubmissions, subs)
+          // Keep earliest first_attendance
+          if (a.first_attendance && a.first_attendance < existing.firstAttendance) {
+            existing.firstAttendance = a.first_attendance
+            existing.weekIdentifier = a.week_identifier || existing.weekIdentifier
+          }
+        } else {
+          emailMap.set(email, {
+            email,
+            firstAttendance: a.first_attendance || '',
+            weekIdentifier: a.week_identifier || '',
+            totalSubmissions: subs,
+          })
+        }
+      }
+
+      for (const a of baseEmails) processEntry(a)
+      for (const result of extraResults) {
+        for (const a of (result.emails || [])) processEntry(a)
+      }
+
+      const attendees: PresencaAttendee[] = Array.from(emailMap.values())
 
       return {
         attendees,
-        totalUnique: data.count || attendees.length,
+        totalUnique: attendees.length,
       }
     },
     staleTime: 2 * 60_000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     refetchOnMount: 'always',
+    refetchInterval: 5 * 60_000, // Auto-refresh every 5 min
   })
 }
 
@@ -171,8 +221,9 @@ export function useVisitantesData() {
       return { resumo, topConteudos, engajamento }
     },
     staleTime: 2 * 60_000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     refetchOnMount: 'always',
+    refetchInterval: 5 * 60_000, // Auto-refresh every 5 min
   })
 }
 
