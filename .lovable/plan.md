@@ -1,35 +1,36 @@
 
 
-## Plano: Corrigir cards de Origem para mostrar canal de origem real
+## Plano: Limpar aba "Funil" — manter apenas o essencial
 
 ### Problema
-Os cards principais da aba "Origem" estão agrupando contatos por `produto_interesse` (Academy/Business/Skills/Offline), não por canal de origem (`utm_source`/`fonte_registro`). Contatos sem `produto_interesse` caem todos em "Offline/Importados", criando a impressão de que tudo é "Offline".
+A aba "Funil" contém dados duplicados e em excesso. Ela deveria mostrar apenas:
+1. Os 3 cards de fonte Meta (Instagram Orgânico, Facebook/Instagram Ads, Campanhas Meta Ads)
+2. O banner "Total Ecossistema Meta/Instagram"
+3. A tabela "Deals por Fonte × Estágio do Funil"
 
-### Causa raiz
-O `productData` no `OrigemTab.tsx` (linhas 61-72) classifica contatos pelo campo `produto_interesse`, não pelo campo de origem. O nome "Origem" sugere canal de aquisição, mas o código mostra distribuição por produto.
+Atualmente inclui também gráficos de "Contatos por Fonte", "Taxa de Conversão por Fonte" e "Evolução Mensal" que já existem na aba "Fontes".
 
-### Alteração em `src/components/dashboard/OrigemTab.tsx`
+### Alterações
 
-**Substituir os 4 cards de produto pelos cards de canal de origem:**
+#### 1. `src/components/dashboard/FunnelTab.tsx`
+- **Remover** as seções de gráficos duplicados (linhas 284-354):
+  - "Contatos por Fonte de Aquisição" (bar chart)
+  - "Taxa de Conversão por Fonte" (bar chart)
+  - "Evolução Mensal de Novos Contatos" (area chart)
+- **Remover** os `useMemo` associados: `contactsBySource`, `conversionBySource`, `monthlyEvolution`
+- **Manter** apenas: source cards (3 cards Meta), ecosystem banner, e tabela cross-tab "Deals por Fonte × Estágio"
 
-1. Trocar o cálculo `productData` (linhas 61-72) por um que agrupe contatos usando `normalizeChannel(c.utm_source || c.fonte_registro)`, gerando contagens por canal: "Facebook Ads", "Instagram Orgânico", "Tráfego Direto", "WhatsApp", "Formulário / Orgânico", "Não rastreado", etc.
+#### 2. `src/pages/CrmAnalytics.tsx`
+- **Remover** o card "Pipeline por Estágio" (linhas 166-188) da aba Funil — ele é redundante com os dados do FunnelTab
+- Manter apenas `<FunnelTab />` dentro da aba "Funil"
 
-2. Atualizar `PRODUCT_COLORS` para `CHANNEL_COLORS` com cores por canal:
-   - Facebook Ads → `#4A9FE0` (azul)
-   - Instagram Orgânico → `#E8684A` (coral)
-   - Tráfego Direto → `#AFC040` (verde)
-   - WhatsApp → `#2CBBA6` (teal)
-   - Formulário / Orgânico → `#E8A43C` (laranja)
-   - Não rastreado → `#7A8460` (cinza)
+### Resultado
+A aba "Funil" ficará com exatamente 3 seções, como nas imagens de referência:
+- 3 cards lado a lado (Instagram Orgânico, Facebook/Instagram Ads, Campanhas Meta Ads)
+- Banner totalizador do ecossistema Meta
+- Tabela Deals por Fonte × Estágio
 
-3. Atualizar `productDescriptions` para `channelDescriptions` com descrições por canal.
-
-4. No header, mudar título de "ORIGEM POR PRODUTO" para "ORIGEM POR CANAL".
-
-5. O grid de cards passa a ser dinâmico (mostra todos os canais encontrados), mantendo a mesma estrutura visual (ícone + nome + contagem + barra + % + descrição).
-
-6. As demais seções (Formulários de Conversão, Fonte × Produto, Deals por Produto × Estágio, Product Summary) permanecem iguais — elas já usam dados de produto corretamente.
-
-### Arquivo afetado
-- `src/components/dashboard/OrigemTab.tsx`
+### Arquivos afetados
+- `src/components/dashboard/FunnelTab.tsx`
+- `src/pages/CrmAnalytics.tsx`
 
