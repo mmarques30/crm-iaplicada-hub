@@ -414,6 +414,11 @@ export default function FacebookAdsPage() {
           })()}
         </TabsContent>
 
+        {/* ─── Funil de Vendas ─── */}
+        <TabsContent value="funnel" className="space-y-4 mt-4">
+          <FunnelTab />
+        </TabsContent>
+
         {/* ─── Insights ─── */}
         <TabsContent value="insights" className="mt-4">
           <InsightsTable insights={insights || []} isLoading={insightsLoading} error={insightsError?.message} onRetry={() => refetchInsights()} title="Insights do Facebook Ads" subtitle={`${campaigns.length} campanhas · CPL médio ${totals.cpl > 0 ? formatCurrency(totals.cpl) : '—'} · ${activeSpendPct}% do orçamento na campanha ativa`} context="facebook_ads" />
