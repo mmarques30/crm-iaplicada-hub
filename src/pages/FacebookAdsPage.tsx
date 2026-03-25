@@ -85,7 +85,7 @@ export default function FacebookAdsPage() {
   const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({ context: 'facebook_ads', data: insightsData, enabled: hasData })
 
   // FIX Bug #7: Campaign name formatter with tooltip
-  const shortName = (name: string, maxLen = 25) => name.length > maxLen ? name.substring(0, maxLen) + '…' : name
+  const shortName = (name: string, maxLen = 25) => humanizeCampaignName(name, maxLen)
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
