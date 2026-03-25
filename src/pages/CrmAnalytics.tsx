@@ -187,10 +187,6 @@ export default function CrmAnalytics() {
           </Card>
         </TabsContent>
 
-        {/* ─── Funil Meta ─── */}
-        <TabsContent value="meta-funnel" className="space-y-4 mt-4">
-          <FunnelTab />
-        </TabsContent>
 
 
         <TabsContent value="sources" className="mt-4 space-y-4">
