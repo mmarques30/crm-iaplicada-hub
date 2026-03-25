@@ -502,10 +502,12 @@ const SalesPipelineDashboard = () => {
 
   /* ── MOCK: Forecast (Tab 4) ──────────────────────────────── */
   const forecastData = useMemo(() => {
-    const past = ["Jan", "Fev", "Mar"].map((m, i) => ({ month: m, actual: 15000 + i * 5000 + Math.floor(Math.random() * 3000), forecast: null as number | null, forecastLow: null as number | null, forecastHigh: null as number | null }));
+    const past = ["Jan", "Fev", "Mar"].map((m, i) => ({ month: m, actual: 15000 + i * 5000 + Math.floor(Math.random() * 3000), forecast: null as number | null, forecastLow: null as number | null, forecastHigh: null as number | null, band: null as number | null }));
     const future = ["Abr", "Mai", "Jun"].map((m, i) => {
       const base = 30000 + i * 6000;
-      return { month: m, actual: null as number | null, forecast: base, forecastLow: base * 0.8, forecastHigh: base * 1.2 };
+      const low = base * 0.8;
+      const high = base * 1.2;
+      return { month: m, actual: null as number | null, forecast: base, forecastLow: low, forecastHigh: high, band: high - low };
     });
     return [...past, ...future];
   }, []);
@@ -1004,8 +1006,8 @@ const SalesPipelineDashboard = () => {
                   <XAxis dataKey="month" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                   <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v: number | null, name: string) => [v ? formatCurrency(v) : "—", name === "actual" ? "Realizado" : name === "forecast" ? "Projeção" : name]} />
-                  <Area type="monotone" dataKey="forecastHigh" fill={C.purple} fillOpacity={0.08} stroke="none" />
-                  <Area type="monotone" dataKey="forecastLow" fill={C.card} fillOpacity={1} stroke="none" />
+                  <Area type="monotone" dataKey="forecastLow" stackId="confidence" fill="none" stroke="none" />
+                  <Area type="monotone" dataKey="band" stackId="confidence" fill={C.purple} fillOpacity={0.12} stroke="none" />
                   <Area type="monotone" dataKey="actual" fill="url(#actualGrad)" stroke={C.amber} strokeWidth={2} connectNulls={false} />
                   <Line type="monotone" dataKey="forecast" stroke={C.purple} strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: C.purple }} connectNulls={false} />
                   <ReferenceLine x="Mar" stroke={C.textS} strokeDasharray="3 3" label={{ value: "Hoje", fill: C.textS, fontSize: 10, position: "top" }} />
