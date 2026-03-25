@@ -1,44 +1,37 @@
 
 
-## Filtros do Dashboard — Diagnóstico e Correção
+## Fix: Dashboard Filters Not Affecting Data
 
-### Problema
-Os botões "Filtros" e "Últimos 30 dias" no header do Dashboard (`/`) são apenas visuais — não possuem `onClick` nem lógica de filtragem. São botões decorativos sem funcionalidade.
+### Root Cause
+The dashboard KPI cards and pipeline charts use **pre-aggregated database views** (`product_metrics`, `stage_conversion`) that have no `created_at`, `canal_origem`, or individual deal rows. Filters only affect `filteredDeals` and `filteredContacts`, but the main visualizations ignore those filtered arrays and read from the static views instead.
 
-### Solução
-Implementar filtragem funcional no Dashboard sem alterar queries ou lógica de dados existente. Toda filtragem será client-side sobre os dados já carregados.
+Specifically:
+- **"Valor no Pipeline"** and **"Taxa de Conversão"** KPIs come from `totals` (derived from `product_metrics` view) — only `productFilter` works, period/channel are ignored
+- **Funnel chart** and **Velocity card** come from `pipelineStages` (derived from `stage_conversion` view) — completely unfiltered
+- **The 3 bottom cards** (Velocity, Revenue, Donut) are hardcoded with static stage data
 
-### Implementação
+### Solution
+Compute all dashboard metrics from raw `deals` data (already fetched) when any filter is active. Use the pre-aggregated views only as default/unfiltered state.
 
-**Arquivo: `src/pages/Index.tsx`**
+### Changes — `src/pages/Index.tsx` only
 
-1. **State de filtros** — Adicionar estados:
-   - `showFilters: boolean` — toggle do painel
-   - `periodFilter: '7d' | '30d' | '90d' | 'all'` — filtro de período
-   - `productFilter: string` — filtro por produto (business/academy/all)
-   - `qualificationFilter: string` — filtro por qualificação (lead/mql/sql/all)
-   - `channelFilter: string` — filtro por canal de origem
+1. **`totals`** — Rewrite to compute from `filteredDeals` instead of `metrics` view:
+   - `active`: count deals where `is_won === null`
+   - `pipeline`: sum `amount` of active deals
+   - `won` / `lost`: count by `is_won`
+   - `avgSize`: average amount
 
-2. **Botão "Últimos 30 dias"** — Dropdown com opções: 7 dias, 30 dias, 90 dias, Todo período. Filtra deals e contatos por `created_at`.
+2. **`pipelineStages`** — When filters are active, compute from `filteredDeals` joined with stages data instead of `stage_conversion` view. Add a query for `stages` table to get stage names/order, then group `filteredDeals` by `stage_id`.
 
-3. **Botão "Filtros"** — Toggle de um painel colapsável abaixo do header com:
-   - Select "Produto": All / Business / Academy
-   - Select "Qualificação": All / Lead / MQL / SQL
-   - Select "Canal": All / instagram / whatsapp / site / indicação / evento
-   - Botão "Limpar filtros"
+3. **`winRate`** — Already derived from `totals`, will auto-fix.
 
-4. **Lógica de filtragem** — `useMemo` que filtra `deals` e `contacts` baseado nos filtros ativos. Os dados filtrados alimentam os cálculos de `totals`, `pipelineStages`, `leadSources`, etc. Nenhuma query Supabase é alterada.
+4. **Bottom 3 cards** (Velocity, Revenue, Donut) — Currently partially hardcoded. Make them derive from the filtered `pipelineStages` and `filteredDeals` so numbers update with filters.
 
-5. **Visual do painel** — Mesmo estilo do filtro do Pipeline:
-   - `bg-[var(--c-card)]`, border `var(--c-border)`, rounded-lg
-   - Selects com `h-8 text-xs`
-   - Badge no botão "Filtros" mostrando contagem de filtros ativos
+5. **Add stages query** — Fetch `stages` table (`id, name, display_order, pipeline_id, is_won, is_lost`) to map `deal.stage_id` → stage name/order for client-side grouping.
 
-### Arquivos alterados
-
-| Arquivo | Alteração |
-|---|---|
-| `src/pages/Index.tsx` | Adicionar states, onClick handlers, painel de filtros, lógica de filtragem client-side |
-
-Nenhum outro arquivo é modificado. Nenhuma query alterada.
+### What stays unchanged
+- All existing queries remain (no Supabase changes)
+- Pre-aggregated views still load (used as fallback for "all" state for performance)
+- Visual design, layout, tabs, charts — no changes
+- No other files modified
 
