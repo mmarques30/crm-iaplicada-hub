@@ -57,7 +57,7 @@ function FunnelTab() {
   const { data: contactsRes } = useQuery({
     queryKey: ['contacts_meta_sources'],
     queryFn: async () => {
-      const { data } = await supabase.from('contacts').select('id, utm_source, utm_medium, utm_campaign, fonte_registro, lifecycle_stage, created_at')
+      const { data } = await supabase.from('contacts').select('id, utm_source, utm_medium, utm_campaign, fonte_registro, lifecycle_stage, created_at, produto_interesse, first_conversion')
       return data || []
     },
   })
