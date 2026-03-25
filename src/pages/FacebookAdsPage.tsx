@@ -49,7 +49,7 @@ export default function FacebookAdsPage() {
 
   // Charts data
   const spendByCampaign = campaigns.filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend).slice(0, 8)
-  const cplByCampaign = campaigns.filter(c => c.costPerLead > 0).sort((a, b) => a.costPerLead - b.costPerLead).slice(0, 8)
+  const cplByCampaign = campaigns.filter(c => c.spend > 0).map(c => ({ ...c, cplCalc: c.leads > 0 ? c.spend / c.leads : c.spend })).sort((a, b) => a.cplCalc - b.cplCalc).slice(0, 8)
 
   // FIX Bug #3: Pie chart by objective - group campaigns properly
   const spendByObjective = useMemo(() => {
