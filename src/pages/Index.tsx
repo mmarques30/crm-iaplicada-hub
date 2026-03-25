@@ -52,8 +52,15 @@ interface ProductMetric { product: string; active_deals: number; won_deals: numb
    DASHBOARD COMPONENT
    ═══════════════════════════════════════════════════════════════ */
 const SalesPipelineDashboard = () => {
-  const [selectedPeriod] = useState("30d");
   const [activeTab, setActiveTab] = useState("pipeline");
+  const [showFilters, setShowFilters] = useState(false);
+  const [periodFilter, setPeriodFilter] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+  const [productFilter, setProductFilter] = useState('all');
+  const [qualificationFilter, setQualificationFilter] = useState('all');
+  const [channelFilter, setChannelFilter] = useState('all');
+
+  const activeFilterCount = [productFilter, qualificationFilter, channelFilter].filter(f => f !== 'all').length;
+  const periodLabel = { '7d': 'Últimos 7 dias', '30d': 'Últimos 30 dias', '90d': 'Últimos 90 dias', 'all': 'Todo período' }[periodFilter];
 
   /* ── Queries ─────────────────────────────────────────────── */
   const { data: metrics, isLoading: metricsLoading } = useQuery({
