@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useRef } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -7,12 +7,15 @@ import { Badge } from '@/components/ui/badge'
 import { KPICard } from '@/components/dashboard/KPICard'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
-import { ShoppingCart, Receipt, FileText, Search, DollarSign, Users, AlertCircle, CheckCircle, Send, Plus } from 'lucide-react'
+import { toast } from 'sonner'
+import { ShoppingCart, Receipt, FileText, Search, DollarSign, Users, AlertCircle, CheckCircle, Send, Plus, Trash2, Upload } from 'lucide-react'
 
 const PRODUCT_LABELS: Record<string, string> = { academy: 'Academy', business: 'Business', skills: 'Skills', ferramentas: 'Ferramentas' }
 
@@ -72,6 +75,8 @@ function regStatusBadgeClass(status: string) {
 }
 
 export default function GestaoVendas() {
+  const queryClient = useQueryClient()
+
   /* ─── State ─── */
   const [searchVendas, setSearchVendas] = useState('')
   const [filterStatus, setFilterStatus] = useState('todos')
@@ -86,6 +91,225 @@ export default function GestaoVendas() {
   const [regAno, setRegAno] = useState('todos')
   const [regMes, setRegMes] = useState('todos')
   const [regMostrarRegularizados, setRegMostrarRegularizados] = useState(false)
+
+  /* ─── Nova Venda Dialog State ─── */
+  const [novaVendaOpen, setNovaVendaOpen] = useState(false)
+  const [nvForm, setNvForm] = useState({
+    nome_cliente: '',
+    email: '',
+    telefone: '',
+    produto: 'academy',
+    valor_contrato: '',
+    data_venda: new Date().toISOString().split('T')[0],
+    forma_pagamento: 'pix_a_vista',
+    parcelas: '1',
+    por_indicacao: false,
+    cpf_cnpj: '',
+    razao_social: '',
+  })
+
+  const resetNvForm = () => setNvForm({
+    nome_cliente: '', email: '', telefone: '', produto: 'academy',
+    valor_contrato: '', data_venda: new Date().toISOString().split('T')[0],
+    forma_pagamento: 'pix_a_vista', parcelas: '1', por_indicacao: false,
+    cpf_cnpj: '', razao_social: '',
+  })
+
+  /* ─── CSV Import Dialog State ─── */
+  const [csvOpen, setCsvOpen] = useState(false)
+  const [csvRows, setCsvRows] = useState<Record<string, string>[]>([])
+  const [csvImporting, setCsvImporting] = useState(false)
+  const [csvProgress, setCsvProgress] = useState(0)
+  const csvFileRef = useRef<HTMLInputElement>(null)
+
+  /* ─── Mutations ─── */
+  const createVendaMutation = useMutation({
+    mutationFn: async (form: typeof nvForm) => {
+      const valor = Number(form.valor_contrato)
+      const numParcelas = Number(form.parcelas) || 1
+
+      // 1. Insert venda
+      const { data: venda, error: vendaErr } = await (supabase as any)
+        .from('vendas')
+        .insert({
+          nome: form.nome_cliente,
+          email: form.email || null,
+          telefone: form.telefone || null,
+          produto: form.produto,
+          valor: valor,
+          data_venda: form.data_venda,
+          forma_pagamento: form.forma_pagamento,
+          parcelas: numParcelas,
+          por_indicacao: form.por_indicacao,
+          cpf_cnpj: form.cpf_cnpj || null,
+          razao_social: form.razao_social || null,
+          status: 'em_andamento',
+        })
+        .select()
+        .single()
+      if (vendaErr) throw vendaErr
+
+      // 2. Auto-generate parcelas
+      const valorParcela = Math.round((valor / numParcelas) * 100) / 100
+      const parcelasArr = Array.from({ length: numParcelas }, (_, i) => {
+        const dueDate = new Date(form.data_venda)
+        dueDate.setMonth(dueDate.getMonth() + i)
+        return {
+          venda_id: venda.id,
+          numero: i + 1,
+          valor: i === numParcelas - 1 ? Math.round((valor - valorParcela * (numParcelas - 1)) * 100) / 100 : valorParcela,
+          data_vencimento: dueDate.toISOString().split('T')[0],
+          status: 'pendente',
+        }
+      })
+      const { error: parcelasErr } = await (supabase as any).from('parcelas').insert(parcelasArr)
+      if (parcelasErr) throw parcelasErr
+
+      // 3. If business, auto-generate notas_fiscais
+      if (form.produto === 'business') {
+        const nfArr = Array.from({ length: numParcelas }, (_, i) => {
+          const mesRef = new Date(form.data_venda)
+          mesRef.setMonth(mesRef.getMonth() + i)
+          return {
+            venda_id: venda.id,
+            nome: form.nome_cliente,
+            email: form.email || null,
+            cpf_cnpj: form.cpf_cnpj || null,
+            razao_social: form.razao_social || null,
+            produto: form.produto,
+            valor: valorParcela,
+            mes_ref: mesRef.toISOString().split('T')[0].substring(0, 7),
+            status: 'pendente',
+          }
+        })
+        const { error: nfErr } = await (supabase as any).from('notas_fiscais').insert(nfArr)
+        if (nfErr) throw nfErr
+      }
+
+      // 4. If por_indicacao, create repasse (10%)
+      if (form.por_indicacao) {
+        await (supabase as any).from('repasses').insert({
+          venda_id: venda.id,
+          valor: Math.round(valor * 0.1 * 100) / 100,
+          status: 'pendente',
+        })
+      }
+
+      return venda
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gestao-vendas'] })
+      queryClient.invalidateQueries({ queryKey: ['gestao-parcelas'] })
+      queryClient.invalidateQueries({ queryKey: ['gestao-notas-fiscais'] })
+      setNovaVendaOpen(false)
+      resetNvForm()
+      toast.success('Venda criada com sucesso!')
+    },
+    onError: (err: any) => {
+      toast.error(`Erro ao criar venda: ${err.message}`)
+    },
+  })
+
+  const deleteVendaMutation = useMutation({
+    mutationFn: async (vendaId: string) => {
+      // Delete parcelas and notas_fiscais first (or rely on FK cascade)
+      await (supabase as any).from('parcelas').delete().eq('venda_id', vendaId)
+      await (supabase as any).from('notas_fiscais').delete().eq('venda_id', vendaId)
+      await (supabase as any).from('repasses').delete().eq('venda_id', vendaId)
+      const { error } = await (supabase as any).from('vendas').delete().eq('id', vendaId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gestao-vendas'] })
+      queryClient.invalidateQueries({ queryKey: ['gestao-parcelas'] })
+      queryClient.invalidateQueries({ queryKey: ['gestao-notas-fiscais'] })
+      toast.success('Venda excluida com sucesso!')
+    },
+    onError: (err: any) => {
+      toast.error(`Erro ao excluir venda: ${err.message}`)
+    },
+  })
+
+  /* ─── CSV Parsing ─── */
+  const handleCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (evt) => {
+      const text = evt.target?.result as string
+      const lines = text.trim().split('\n')
+      if (lines.length < 2) { toast.error('CSV vazio ou sem dados'); return }
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+      const rows = lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim())
+        const row: Record<string, string> = {}
+        headers.forEach((h, i) => { row[h] = values[i] || '' })
+        return row
+      }).filter(r => r.nome || r.email)
+      setCsvRows(rows)
+    }
+    reader.readAsText(file)
+  }
+
+  const handleCsvImport = async () => {
+    if (csvRows.length === 0) return
+    setCsvImporting(true)
+    setCsvProgress(0)
+    let success = 0
+    for (let i = 0; i < csvRows.length; i++) {
+      const r = csvRows[i]
+      try {
+        const valor = Number(r.valor) || 0
+        const numParcelas = Number(r.parcelas) || 1
+        const dataVenda = r.data_venda || new Date().toISOString().split('T')[0]
+
+        const { data: venda, error: vendaErr } = await (supabase as any)
+          .from('vendas')
+          .insert({
+            nome: r.nome || '',
+            email: r.email || null,
+            telefone: r.telefone || null,
+            produto: r.produto || 'academy',
+            valor: valor,
+            data_venda: dataVenda,
+            forma_pagamento: r.forma_pagamento || 'pix_a_vista',
+            parcelas: numParcelas,
+            status: r.status || 'em_andamento',
+            cpf_cnpj: r.cpf_cnpj || null,
+            razao_social: r.razao_social || null,
+          })
+          .select()
+          .single()
+        if (vendaErr) throw vendaErr
+
+        // Auto-generate parcelas
+        const valorParcela = Math.round((valor / numParcelas) * 100) / 100
+        const parcelasArr = Array.from({ length: numParcelas }, (_, idx) => {
+          const dueDate = new Date(dataVenda)
+          dueDate.setMonth(dueDate.getMonth() + idx)
+          return {
+            venda_id: venda.id,
+            numero: idx + 1,
+            valor: idx === numParcelas - 1 ? Math.round((valor - valorParcela * (numParcelas - 1)) * 100) / 100 : valorParcela,
+            data_vencimento: dueDate.toISOString().split('T')[0],
+            status: 'pendente',
+          }
+        })
+        await (supabase as any).from('parcelas').insert(parcelasArr)
+        success++
+      } catch (err) {
+        console.error(`Erro ao importar linha ${i + 1}:`, err)
+      }
+      setCsvProgress(Math.round(((i + 1) / csvRows.length) * 100))
+    }
+    setCsvImporting(false)
+    queryClient.invalidateQueries({ queryKey: ['gestao-vendas'] })
+    queryClient.invalidateQueries({ queryKey: ['gestao-parcelas'] })
+    toast.success(`${success} de ${csvRows.length} vendas importadas com sucesso!`)
+    setCsvRows([])
+    setCsvOpen(false)
+    if (csvFileRef.current) csvFileRef.current.value = ''
+  }
 
   /* ─── Queries ─── */
   const { data: vendas, isLoading: vendasLoading } = useQuery({
@@ -312,11 +536,174 @@ export default function GestaoVendas() {
             <CardHeader>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <CardTitle className="text-base">Todas as Vendas</CardTitle>
-                <Button size="sm" className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Nova Venda
-                  {/* TODO: Dialog para criacao de nova venda */}
-                </Button>
+                <div className="flex gap-2">
+                  {/* ─── CSV Import Dialog ─── */}
+                  <Dialog open={csvOpen} onOpenChange={(open) => { setCsvOpen(open); if (!open) { setCsvRows([]); if (csvFileRef.current) csvFileRef.current.value = '' } }}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" variant="outline" className="font-semibold">
+                        <Upload className="h-4 w-4 mr-1" />
+                        Importar CSV
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Importar Vendas via CSV</DialogTitle>
+                        <DialogDescription>
+                          Colunas esperadas: nome, email, telefone, produto, valor, data_venda, forma_pagamento, parcelas, status, cpf_cnpj, razao_social
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4 py-4">
+                        <Input ref={csvFileRef} type="file" accept=".csv" onChange={handleCsvFile} />
+                        {csvRows.length > 0 && (
+                          <>
+                            <p className="text-sm text-muted-foreground">Preview ({Math.min(5, csvRows.length)} de {csvRows.length} linhas):</p>
+                            <div className="overflow-x-auto border rounded max-h-[200px]">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow>
+                                    <TableHead className="text-xs">Nome</TableHead>
+                                    <TableHead className="text-xs">Email</TableHead>
+                                    <TableHead className="text-xs">Produto</TableHead>
+                                    <TableHead className="text-xs">Valor</TableHead>
+                                    <TableHead className="text-xs">Parcelas</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {csvRows.slice(0, 5).map((r, i) => (
+                                    <TableRow key={i}>
+                                      <TableCell className="text-xs">{r.nome || '—'}</TableCell>
+                                      <TableCell className="text-xs">{r.email || '—'}</TableCell>
+                                      <TableCell className="text-xs">{r.produto || '—'}</TableCell>
+                                      <TableCell className="text-xs">{r.valor || '—'}</TableCell>
+                                      <TableCell className="text-xs">{r.parcelas || '—'}</TableCell>
+                                    </TableRow>
+                                  ))}
+                                </TableBody>
+                              </Table>
+                            </div>
+                          </>
+                        )}
+                        {csvImporting && (
+                          <div className="space-y-2">
+                            <div className="w-full bg-muted rounded-full h-2">
+                              <div className="bg-[#AFC040] h-2 rounded-full transition-all" style={{ width: `${csvProgress}%` }} />
+                            </div>
+                            <p className="text-xs text-muted-foreground text-center">{csvProgress}% concluido</p>
+                          </div>
+                        )}
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setCsvOpen(false)} disabled={csvImporting}>Cancelar</Button>
+                        <Button
+                          className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
+                          onClick={handleCsvImport}
+                          disabled={csvRows.length === 0 || csvImporting}
+                        >
+                          {csvImporting ? 'Importando...' : `Importar ${csvRows.length} vendas`}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* ─── Nova Venda Dialog ─── */}
+                  <Dialog open={novaVendaOpen} onOpenChange={(open) => { setNovaVendaOpen(open); if (!open) resetNvForm() }}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold">
+                        <Plus className="h-4 w-4 mr-1" />
+                        Nova Venda
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Nova Venda</DialogTitle>
+                        <DialogDescription>Preencha os dados para registrar uma nova venda.</DialogDescription>
+                      </DialogHeader>
+                      <div className="grid gap-4 py-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="nv-nome">Nome do Cliente *</Label>
+                          <Input id="nv-nome" value={nvForm.nome_cliente} onChange={e => setNvForm(f => ({ ...f, nome_cliente: e.target.value }))} placeholder="Nome completo" required />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="grid gap-2">
+                            <Label htmlFor="nv-email">Email</Label>
+                            <Input id="nv-email" type="email" value={nvForm.email} onChange={e => setNvForm(f => ({ ...f, email: e.target.value }))} placeholder="email@exemplo.com" />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="nv-telefone">Telefone</Label>
+                            <Input id="nv-telefone" value={nvForm.telefone} onChange={e => setNvForm(f => ({ ...f, telefone: e.target.value }))} placeholder="(11) 99999-9999" />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="grid gap-2">
+                            <Label>Produto</Label>
+                            <Select value={nvForm.produto} onValueChange={v => setNvForm(f => ({ ...f, produto: v }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="academy">Academy</SelectItem>
+                                <SelectItem value="business">Business</SelectItem>
+                                <SelectItem value="skills">Skills</SelectItem>
+                                <SelectItem value="ferramentas">Ferramentas</SelectItem>
+                                <SelectItem value="hora_trabalho">Hora Trabalho</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="nv-valor">Valor do Contrato *</Label>
+                            <Input id="nv-valor" type="number" min="0" step="0.01" value={nvForm.valor_contrato} onChange={e => setNvForm(f => ({ ...f, valor_contrato: e.target.value }))} placeholder="0.00" required />
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="grid gap-2">
+                            <Label htmlFor="nv-data">Data da Venda</Label>
+                            <Input id="nv-data" type="date" value={nvForm.data_venda} onChange={e => setNvForm(f => ({ ...f, data_venda: e.target.value }))} />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Forma de Pagamento</Label>
+                            <Select value={nvForm.forma_pagamento} onValueChange={v => setNvForm(f => ({ ...f, forma_pagamento: v }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="pix_a_vista">PIX a Vista</SelectItem>
+                                <SelectItem value="boleto">Boleto</SelectItem>
+                                <SelectItem value="entrada_boleto">Entrada + Boleto</SelectItem>
+                                <SelectItem value="cartao">Cartao</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="grid gap-2">
+                            <Label htmlFor="nv-parcelas">Parcelas</Label>
+                            <Input id="nv-parcelas" type="number" min="1" max="12" value={nvForm.parcelas} onChange={e => setNvForm(f => ({ ...f, parcelas: e.target.value }))} />
+                          </div>
+                          <div className="flex items-end gap-2 pb-1">
+                            <input id="nv-indicacao" type="checkbox" checked={nvForm.por_indicacao} onChange={e => setNvForm(f => ({ ...f, por_indicacao: e.target.checked }))} className="rounded border-[var(--c-border)] accent-[#AFC040]" />
+                            <Label htmlFor="nv-indicacao" className="cursor-pointer">Por indicacao (repasse 10%)</Label>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="grid gap-2">
+                            <Label htmlFor="nv-cpf">CPF/CNPJ</Label>
+                            <Input id="nv-cpf" value={nvForm.cpf_cnpj} onChange={e => setNvForm(f => ({ ...f, cpf_cnpj: e.target.value }))} placeholder="000.000.000-00" />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="nv-razao">Razao Social</Label>
+                            <Input id="nv-razao" value={nvForm.razao_social} onChange={e => setNvForm(f => ({ ...f, razao_social: e.target.value }))} placeholder="Razao social" />
+                          </div>
+                        </div>
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setNovaVendaOpen(false)}>Cancelar</Button>
+                        <Button
+                          className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
+                          disabled={!nvForm.nome_cliente || !nvForm.valor_contrato || createVendaMutation.isPending}
+                          onClick={() => createVendaMutation.mutate(nvForm)}
+                        >
+                          {createVendaMutation.isPending ? 'Criando...' : 'Criar Venda'}
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -378,20 +765,21 @@ export default function GestaoVendas() {
                       <TableHead className="font-medium text-center">Parcelas</TableHead>
                       <TableHead className="font-medium text-right">Valor</TableHead>
                       <TableHead className="font-medium">Status</TableHead>
+                      <TableHead className="font-medium w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {vendasLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          {Array.from({ length: 8 }).map((_, j) => (
+                          {Array.from({ length: 9 }).map((_, j) => (
                             <TableCell key={j}><div className="h-4 w-full bg-muted animate-pulse rounded" /></TableCell>
                           ))}
                         </TableRow>
                       ))
                     ) : filteredVendas.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                        <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
                           Nenhuma venda encontrada
                         </TableCell>
                       </TableRow>
@@ -415,6 +803,22 @@ export default function GestaoVendas() {
                             <Badge className={`text-xs ${statusBadgeClass(v.status)}`}>
                               {statusLabel(v.status)}
                             </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                              disabled={deleteVendaMutation.isPending}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                if (window.confirm(`Excluir venda de "${v.nome || 'sem nome'}"? Esta acao nao pode ser desfeita.`)) {
+                                  deleteVendaMutation.mutate(v.id)
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </TableCell>
                         </TableRow>
                       ))
