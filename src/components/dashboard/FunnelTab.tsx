@@ -120,18 +120,6 @@ export function FunnelTab() {
   const ecosystemDeals = deals.filter(d => META_SOURCES.isMetaEcosystem(getDealChannel(d), d.canal_origem || '')).length
   const ecosystemPct = contacts.length > 0 ? ((ecosystemTotal / contacts.length) * 100).toFixed(1) : '0'
 
-  const contactsBySource = useMemo(() => {
-    const map: Record<string, number> = {}
-    for (const c of contacts) {
-      const ch = normalizeChannel(c.utm_source || c.fonte_registro || '')
-      map[ch] = (map[ch] || 0) + 1
-    }
-    return Object.entries(map)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, contatos]) => ({ name, contatos, fill: getSourceColor(name) }))
-  }, [contacts])
-
-  const conversionBySource = useMemo(() => {
     const sourceContacts: Record<string, number> = {}
     const sourceOpps: Record<string, number> = {}
     const sourceCust: Record<string, number> = {}
