@@ -1078,7 +1078,7 @@ export default function FacebookAdsPage() {
                         <AreaChart data={dailyInsights.map(d => ({ date: fmtDate(d.date), ctr: Math.round(d.ctr * 100) / 100 }))}>
                           <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
                           <XAxis dataKey="date" tick={{ fontSize: 9, ...AXIS_TICK }} interval={Math.max(Math.floor(dailyInsights.length / 8), 1)} axisLine={false} tickLine={false} />
-                          <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" />
+                          <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v}%`} />
                           <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `${v}%`} />
                           <Area type="monotone" dataKey="ctr" name="CTR" stroke="#4A9FE0" fill="#4A9FE0" fillOpacity={0.15} />
                         </AreaChart>
