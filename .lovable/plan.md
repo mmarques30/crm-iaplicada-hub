@@ -1,36 +1,25 @@
 
 
-## Plano: Limpar aba "Funil" — manter apenas o essencial
-
-### Problema
-A aba "Funil" contém dados duplicados e em excesso. Ela deveria mostrar apenas:
-1. Os 3 cards de fonte Meta (Instagram Orgânico, Facebook/Instagram Ads, Campanhas Meta Ads)
-2. O banner "Total Ecossistema Meta/Instagram"
-3. A tabela "Deals por Fonte × Estágio do Funil"
-
-Atualmente inclui também gráficos de "Contatos por Fonte", "Taxa de Conversão por Fonte" e "Evolução Mensal" que já existem na aba "Fontes".
+## Plano: Simplificar aba Origem — apenas cards de canal
 
 ### Alterações
 
-#### 1. `src/components/dashboard/FunnelTab.tsx`
-- **Remover** as seções de gráficos duplicados (linhas 284-354):
-  - "Contatos por Fonte de Aquisição" (bar chart)
-  - "Taxa de Conversão por Fonte" (bar chart)
-  - "Evolução Mensal de Novos Contatos" (area chart)
-- **Remover** os `useMemo` associados: `contactsBySource`, `conversionBySource`, `monthlyEvolution`
-- **Manter** apenas: source cards (3 cards Meta), ecosystem banner, e tabela cross-tab "Deals por Fonte × Estágio"
+#### 1. `src/lib/format.ts` — `normalizeChannel`
+- Adicionar mapeamento para **TikTok** (`tiktok`, `tik_tok`, `tt`) e **YouTube** (`youtube`, `yt`, `youtube_ads`)
+- Renomear "Facebook Ads" para **"Ads"** (englobando Facebook Ads, Google Ads, paid, paid_social, paid_search)
+- Manter: Offline, Instagram Orgânico → "Instagram", Tráfego Direto, Ads, TikTok, YouTube, Não rastreado
 
-#### 2. `src/pages/CrmAnalytics.tsx`
-- **Remover** o card "Pipeline por Estágio" (linhas 166-188) da aba Funil — ele é redundante com os dados do FunnelTab
-- Manter apenas `<FunnelTab />` dentro da aba "Funil"
-
-### Resultado
-A aba "Funil" ficará com exatamente 3 seções, como nas imagens de referência:
-- 3 cards lado a lado (Instagram Orgânico, Facebook/Instagram Ads, Campanhas Meta Ads)
-- Banner totalizador do ecossistema Meta
-- Tabela Deals por Fonte × Estágio
+#### 2. `src/components/dashboard/OrigemTab.tsx`
+- **Remover** todas as seções abaixo dos cards de canal:
+  - Formulários de Conversão
+  - Fonte de Origem × Produto (gráfico)
+  - Deals por Produto × Estágio (tabela)
+  - Product Summary Cards
+- **Remover** imports e useMemos não usados: `formConversion`, `sourceByProduct`, `dealsByProductStage`, `productSummary`, `getDealChannel`, queries de `deals_full` e `stages`, imports de Recharts, Badge, Table, etc.
+- **Atualizar** `CHANNEL_COLORS` e `CHANNEL_DESCRIPTIONS` para os 6 canais desejados: Offline, Instagram, Tráfego Direto, Ads, TikTok, YouTube (+ Não rastreado)
+- Manter apenas o header card com os cards de canal
 
 ### Arquivos afetados
-- `src/components/dashboard/FunnelTab.tsx`
-- `src/pages/CrmAnalytics.tsx`
+- `src/lib/format.ts`
+- `src/components/dashboard/OrigemTab.tsx`
 
