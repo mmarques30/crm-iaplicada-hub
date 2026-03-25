@@ -52,6 +52,8 @@ export default function InstagramAnalytics() {
     { name: 'Posts', alcance: images.length > 0 ? Math.round(images.reduce((s, p) => s + (p.reach || 0), 0) / images.length) : 0, curtidas: images.length > 0 ? Math.round(images.reduce((s, p) => s + (p.like_count || 0), 0) / images.length) : 0, engPercent: images.length > 0 && ig?.metrics?.followers ? Math.round(images.reduce((s, p) => s + (p.like_count || 0) + (p.comments_count || 0), 0) / images.length / ig.metrics.followers * 1000) / 10 : 0, count: images.length },
   ]
 
+  const postEng = (p: any) => { if (!ig?.metrics?.followers) return 0; return Math.round(((p.like_count || 0) + (p.comments_count || 0) + (p.saved || 0) + (p.shares || 0)) / ig.metrics.followers * 1000) / 10 }
+
   const scatterData = posts.map(p => ({
     x: new Date(p.timestamp || '').getTime(),
     xLabel: p.timestamp ? new Date(p.timestamp).toLocaleDateString('pt-BR', { year: 'numeric', month: '2-digit', day: '2-digit' }) : '',
