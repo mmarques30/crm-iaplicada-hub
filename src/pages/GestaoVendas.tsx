@@ -67,13 +67,6 @@ function nfStatusLabel(status: string) {
   }
 }
 
-function regStatusBadgeClass(status: string) {
-  switch (status) {
-    case 'regularizado': return 'bg-[#141A04] text-[#AFC040]'
-    case 'pendente': return 'bg-[#1A1206] text-[#E8A43C]'
-    default: return 'bg-muted text-muted-foreground'
-  }
-}
 
 export default function GestaoVendas() {
   const queryClient = useQueryClient()
