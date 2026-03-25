@@ -1,29 +1,32 @@
 
 
-## Ajuste: Tabelas com 10 linhas iniciais + botão expandir
+## Fix: Spinner infinito no Painel Financeiro
 
-### O que muda
+### Causa raiz
 
-Substituir a paginação atual (50 por página com Anterior/Próximo) por um modelo "mostrar 10 iniciais + expandir":
+As tabelas `parcelas`, `despesas`, `metas`, `notas_fiscais` e `repasses` nunca foram criadas no Supabase. O SQL existe no arquivo `supabase-migration-financeiro.sql` mas não foi executado. Queries retornam 404 e o React Query entra em retry infinito.
 
-- Mostrar apenas as **10 primeiras linhas** por padrão
-- Botão **"Ver todos (X leads)"** abaixo da tabela para expandir e mostrar todos os registros
-- Quando expandido, botão muda para **"Mostrar menos"** para recolher de volta a 10
+### Solução
 
-### Implementação — `src/pages/CrmAnalytics.tsx`
+**Passo 1: Migração SQL** -- Criar todas as tabelas faltantes
 
-1. **Trocar estados** — Substituir `aulaPage` e `visitantePage` por `aulaExpanded: boolean` e `visitanteExpanded: boolean` (ambos `false` por padrão)
+Executar o conteudo do `supabase-migration-financeiro.sql`:
+- Adicionar campos na tabela `vendas` (telefone, total_parcelas, por_indicacao, cpf_cnpj, razao_social, endereco, cep)
+- Criar tabela `parcelas` (venda_id, tipo, numero, valor, data_vencimento, status, data_pagamento)
+- Criar tabela `notas_fiscais` (venda_id, numero_nf, cpf_cnpj, razao_social, valor, status_nf, etc.)
+- Criar tabela `despesas` (data, descricao, categoria, tipo, status, pagamento, forma_pgto, valor)
+- Criar tabela `metas` (ano, mes, categoria, valor_projetado) com UNIQUE(ano, mes, categoria)
+- Criar tabela `repasses` (venda_id, indicador_nome, valor, status, data_pagamento)
+- RLS com policy "allow all" em cada tabela (consistente com padrão atual)
+- Views `fluxo_caixa_mensal` e `despesas_mensal`
 
-2. **Lógica de slice** — Em ambas as tabelas:
-   - Se `expanded === false`: `.slice(0, 10)`
-   - Se `expanded === true`: sem slice (mostra todos)
+**Passo 2: Tornar `FinanceiroPainel.tsx` resiliente**
 
-3. **Substituir controles de paginação** — Trocar os botões Anterior/Próximo por:
-   - Quando recolhido: `"Ver todos (115 leads)"` com ícone ChevronDown
-   - Quando expandido: `"Mostrar menos"` com ícone ChevronUp
-   - Só aparece se total > 10
+- Adicionar `retry: 1` em todas as queries de parcelas, despesas e metas para evitar retry infinito
+- Tratar estado de erro: quando as queries falham, exibir mensagem de erro em vez de spinner eterno
+- Garantir que `isLoading` considera `isError` para sair do estado de loading
 
-4. **Remover** `PAGE_SIZE`, imports de `ChevronLeft`/`ChevronRight` (se não usados em outro lugar), e a lógica de página
-
-5. **Adicionar import** `ChevronDown`, `ChevronUp` do lucide-react
+### Arquivos afetados
+- Nova migração SQL via ferramenta de migração
+- `src/pages/FinanceiroPainel.tsx` -- adicionar tratamento de erro e limitar retries
 
