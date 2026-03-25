@@ -112,26 +112,56 @@ const SalesPipelineDashboard = () => {
   }, [contacts, cutoffDate]);
 
   /* ── Computed ────────────────────────────────────────────── */
+  const hasActiveFilters = periodFilter !== 'all' || productFilter !== 'all' || channelFilter !== 'all';
+
   const totals = useMemo(() => {
-    let metricsArr = metrics || [];
-    if (productFilter !== 'all') metricsArr = metricsArr.filter(m => m.product === productFilter);
-    return metricsArr.reduce(
-      (acc, m) => ({ active: acc.active + (m.active_deals || 0), pipeline: acc.pipeline + (m.pipeline_value || 0), won: acc.won + (m.won_deals || 0), lost: acc.lost + (m.lost_deals || 0), avgSize: acc.avgSize + (m.avg_deal_size || 0), count: acc.count + 1 }),
-      { active: 0, pipeline: 0, won: 0, lost: 0, avgSize: 0, count: 0 },
-    );
-  }, [metrics, productFilter]);
+    if (!hasActiveFilters && metrics && metrics.length > 0) {
+      // Use pre-aggregated view when no filters
+      let metricsArr = metrics;
+      return metricsArr.reduce(
+        (acc, m) => ({ active: acc.active + (m.active_deals || 0), pipeline: acc.pipeline + (m.pipeline_value || 0), won: acc.won + (m.won_deals || 0), lost: acc.lost + (m.lost_deals || 0), avgSize: acc.avgSize + (m.avg_deal_size || 0), count: acc.count + 1 }),
+        { active: 0, pipeline: 0, won: 0, lost: 0, avgSize: 0, count: 0 },
+      );
+    }
+    // Compute from filteredDeals
+    const active = filteredDeals.filter(d => d.is_won === null).length;
+    const won = filteredDeals.filter(d => d.is_won === true).length;
+    const lost = filteredDeals.filter(d => d.is_won === false).length;
+    const pipeline = filteredDeals.filter(d => d.is_won === null).reduce((s, d) => s + (Number(d.amount) || 0), 0);
+    const totalAmount = filteredDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+    const avgSize = filteredDeals.length > 0 ? totalAmount / filteredDeals.length : 0;
+    return { active, pipeline, won, lost, avgSize, count: 1 };
+  }, [metrics, filteredDeals, hasActiveFilters]);
   const winRate = totals.won + totals.lost > 0 ? (totals.won / (totals.won + totals.lost)) * 100 : 0;
   const totalLeads = filteredContacts.length;
 
-  const pipelineStages = useMemo(() => Object.values(
-    (stageConversion || []).reduce((acc: Record<string, StageRow>, item) => {
-      const key = item.stage_name || "";
-      if (!acc[key]) acc[key] = { stage_name: key, deal_count: 0, total_amount: 0, display_order: item.display_order || 0 };
-      acc[key].deal_count += item.deal_count || 0;
-      acc[key].total_amount += Number(item.total_amount) || 0;
-      return acc;
-    }, {}),
-  ).sort((a, b) => a.display_order - b.display_order), [stageConversion]);
+  const pipelineStages = useMemo(() => {
+    if (!hasActiveFilters && stageConversion && stageConversion.length > 0) {
+      // Use pre-aggregated view when no filters
+      return Object.values(
+        stageConversion.reduce((acc: Record<string, StageRow>, item) => {
+          const key = item.stage_name || "";
+          if (!acc[key]) acc[key] = { stage_name: key, deal_count: 0, total_amount: 0, display_order: item.display_order || 0 };
+          acc[key].deal_count += item.deal_count || 0;
+          acc[key].total_amount += Number(item.total_amount) || 0;
+          return acc;
+        }, {}),
+      ).sort((a, b) => a.display_order - b.display_order);
+    }
+    // Compute from filteredDeals + allStages
+    if (!allStages || allStages.length === 0) return [];
+    const stageMap = new Map(allStages.map((s: any) => [s.id, s]));
+    const grouped: Record<string, StageRow> = {};
+    for (const deal of filteredDeals) {
+      const stage = stageMap.get(deal.stage_id);
+      if (!stage) continue;
+      const key = stage.name;
+      if (!grouped[key]) grouped[key] = { stage_name: key, deal_count: 0, total_amount: 0, display_order: stage.display_order };
+      grouped[key].deal_count += 1;
+      grouped[key].total_amount += Number(deal.amount) || 0;
+    }
+    return Object.values(grouped).sort((a, b) => a.display_order - b.display_order);
+  }, [stageConversion, filteredDeals, allStages, hasActiveFilters]);
 
   const leadSources = useMemo(() => Object.entries(
     filteredDeals.reduce((acc: Record<string, { leads: number; won: number; revenue: number }>, d) => {
