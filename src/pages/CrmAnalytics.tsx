@@ -151,7 +151,7 @@ export default function CrmAnalytics() {
             { v: 'funnel', l: 'Funil' },
             { v: 'sources', l: 'Fontes' },
             { v: 'products', l: 'Produtos' },
-            { v: 'meta-funnel', l: 'Funil Meta' },
+            
             { v: 'leads-aula', l: 'Leads Aula' },
             { v: 'leads-visitantes', l: 'Leads Visitantes' },
             { v: 'insights', l: 'Insights' },
@@ -185,12 +185,11 @@ export default function CrmAnalytics() {
               ) : <p className="text-center text-muted-foreground py-8">Sem dados de pipeline</p>}
             </CardContent>
           </Card>
+          <div className="mt-4">
+            <FunnelTab />
+          </div>
         </TabsContent>
 
-        {/* ─── Funil Meta ─── */}
-        <TabsContent value="meta-funnel" className="space-y-4 mt-4">
-          <FunnelTab />
-        </TabsContent>
 
 
         <TabsContent value="sources" className="mt-4 space-y-4">
