@@ -1,20 +1,22 @@
 
 
-## Ajuste: Cards de categoria preencherem o espaço disponível
+## Ajuste: reduzir tamanho das bolinhas no scatter "Engajamento por Post"
 
 ### Problema
-Os cards de categoria (linha 269) usam `grid-cols-6` fixo no breakpoint `lg`, mas quando há apenas 4 categorias, sobram 2 colunas vazias.
+A linha 155 define `ZAxis range={[20, 400]}`, ou seja, os pontos variam de 20px a 400px de área. Num gráfico de apenas 280px de altura, bolinhas de até 400px de área ficam enormes e se sobrepõem.
 
 ### Solução
-Mudar o grid de `lg:grid-cols-6` para usar colunas dinâmicas baseadas na quantidade de categorias, com um máximo de 6. Quando há 4 categorias, cada card ocupa 1/4 do espaço.
+Reduzir o range do ZAxis de `[20, 400]` para `[10, 120]`. Isso mantém a proporção visual entre posts com alcance alto e baixo, mas com bolinhas muito menores e proporcionais ao tamanho do gráfico.
 
 ### Arquivo
-`src/pages/InstagramAnalytics.tsx` — linha 269
+`src/pages/InstagramAnalytics.tsx` — linha 155
 
 ### Alteração
-Trocar:
 ```
-<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+// De:
+<ZAxis dataKey="z" range={[20, 400]} name="Alcance" />
+
+// Para:
+<ZAxis dataKey="z" range={[10, 120]} name="Alcance" />
 ```
-Por lógica que calcula `lg:grid-cols-{n}` baseado em `Math.min(categoryData.length, 6)`, garantindo que os cards sempre preencham a linha inteira. Usarei classes Tailwind dinâmicas mapeadas para evitar problemas de purge.
 
