@@ -202,15 +202,29 @@ export default function CrmAnalytics() {
               <CardHeader><CardTitle className="text-base">Deals por Produto</CardTitle></CardHeader>
               <CardContent>
                 {productPie.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie data={productPie} cx="50%" cy="50%" innerRadius={60} outerRadius={100} dataKey="value" label>
-                        {productPie.map((entry, i) => (<Cell key={i} fill={entry.fill} />))}
-                      </Pie>
-                      <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="space-y-4">
+                    {productPie.map((p) => {
+                      const total = productPie.reduce((s, x) => s + x.value, 0)
+                      const pct = total > 0 ? (p.value / total) * 100 : 0
+                      return (
+                        <div key={p.name} className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: p.fill }} />
+                              <span className="font-medium text-sm">{p.name}</span>
+                            </div>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-muted-foreground font-mono">{pct.toFixed(0)}%</span>
+                              <span className="font-bold font-mono tabular-nums">{p.value}</span>
+                            </div>
+                          </div>
+                          <div className="h-7 bg-[var(--c-raised)] rounded-md overflow-hidden">
+                            <div className="h-full rounded-md transition-all duration-500" style={{ width: `${Math.max(pct, 3)}%`, backgroundColor: p.fill, opacity: 0.85 }} />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
               </CardContent>
             </Card>
