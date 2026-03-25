@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/table'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Cell, ComposedChart, Line, Area,
+  Cell, Legend, ComposedChart, Line, Area,
 } from 'recharts'
 import { useNavigate } from 'react-router-dom'
 
