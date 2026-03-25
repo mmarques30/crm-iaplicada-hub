@@ -71,59 +71,134 @@ async function collectInstagram(accessToken: string, igAccountId: string) {
   }
 }
 
-// ============ FACEBOOK ADS COLLECTOR ============
+// ============ FACEBOOK ADS COLLECTOR (COMPLETO) ============
 async function collectFacebookAds(adsToken: string, adAccountId: string) {
   const baseUrl = 'https://graph.facebook.com/v21.0'
-  const [campaignsRes, insightsRes, dailyRes] = await Promise.all([
-    fetch(`${baseUrl}/${adAccountId}/campaigns?fields=id,name,status,objective&limit=50&access_token=${adsToken}`),
-    fetch(`${baseUrl}/${adAccountId}/insights?fields=campaign_name,campaign_id,spend,impressions,reach,clicks,ctr,actions,cost_per_action_type&date_preset=last_30d&level=campaign&limit=50&access_token=${adsToken}`),
-    fetch(`${baseUrl}/${adAccountId}/insights?fields=spend,impressions,clicks,ctr,reach,actions&date_preset=last_90d&time_increment=1&limit=100&access_token=${adsToken}`),
+
+  // Use time_range for full historical data (last 90 days)
+  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  const until = new Date().toISOString().split('T')[0]
+  const timeRange = JSON.stringify({ since, until })
+
+  // Fetch campaigns, campaign insights (all-time), daily insights, and ads-level data in PARALLEL
+  const [campaignsRes, insightsRes, dailyRes, adsRes] = await Promise.all([
+    fetch(`${baseUrl}/${adAccountId}/campaigns?fields=id,name,status,objective,daily_budget,lifetime_budget,start_time,stop_time&limit=50&access_token=${adsToken}`),
+    fetch(`${baseUrl}/${adAccountId}/insights?fields=campaign_name,campaign_id,spend,impressions,reach,clicks,ctr,actions,cost_per_action_type&time_range=${encodeURIComponent(timeRange)}&level=campaign&limit=50&access_token=${adsToken}`),
+    fetch(`${baseUrl}/${adAccountId}/insights?fields=spend,impressions,reach,clicks,ctr,actions&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=100&access_token=${adsToken}`),
+    fetch(`${baseUrl}/${adAccountId}/ads?fields=id,name,status,campaign_id,adset_id,creative{id,name,thumbnail_url,effective_object_story_id},insights.fields(spend,impressions,reach,clicks,ctr,actions,cost_per_action_type).date_preset(maximum)&limit=100&access_token=${adsToken}`),
   ])
-  const [campaignsData, insightsData, dailyData] = await Promise.all([campaignsRes.json(), insightsRes.json(), dailyRes.json()])
-  if (campaignsData.error) throw new Error(`FB Ads: ${campaignsData.error.message}`)
+
+  const [campaignsData, insightsData, dailyData, adsData] = await Promise.all([
+    campaignsRes.json(), insightsRes.json(), dailyRes.json(), adsRes.json(),
+  ])
+  if (campaignsData.error) throw new Error(`FB Ads campaigns: ${campaignsData.error.message}`)
 
   const campaigns = campaignsData.data || []
   const insights = insightsData.data || []
+  const dailyInsights = dailyData.data || []
 
+  // Parse campaign-level data
   const campaignsWithInsights = campaigns.map((c: any) => {
     const insight = insights.find((i: any) => i.campaign_id === c.id) || {}
     const leads = (insight.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
     const costPerLead = (insight.cost_per_action_type || []).find((a: any) => a.action_type === 'lead')?.value || 0
     return {
       id: c.id, name: c.name, status: c.status, objective: c.objective,
+      start_time: c.start_time || null, stop_time: c.stop_time || null,
+      daily_budget: c.daily_budget ? parseFloat(c.daily_budget) / 100 : null,
       spend: parseFloat(insight.spend || '0'), impressions: parseInt(insight.impressions || '0'),
       reach: parseInt(insight.reach || '0'), clicks: parseInt(insight.clicks || '0'),
       ctr: parseFloat(insight.ctr || '0'), leads: parseInt(leads), costPerLead: parseFloat(costPerLead),
     }
   })
 
+  // Parse daily data for evolution charts
+  const daily = dailyInsights.map((d: any) => {
+    const leads = (d.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
+    return {
+      date: d.date_start,
+      spend: parseFloat(d.spend || '0'),
+      impressions: parseInt(d.impressions || '0'),
+      reach: parseInt(d.reach || '0'),
+      clicks: parseInt(d.clicks || '0'),
+      ctr: parseFloat(d.ctr || '0'),
+      leads: parseInt(leads),
+    }
+  })
+
+  // Parse ads-level data (individual ads within campaigns)
+  const ads = (adsData.data || []).map((ad: any) => {
+    const adInsight = ad.insights?.data?.[0] || {}
+    const leads = (adInsight.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
+    return {
+      id: ad.id,
+      name: ad.name,
+      status: ad.status,
+      campaign_id: ad.campaign_id,
+      adset_id: ad.adset_id,
+      creative_name: ad.creative?.name || null,
+      thumbnail_url: ad.creative?.thumbnail_url || null,
+      spend: parseFloat(adInsight.spend || '0'),
+      impressions: parseInt(adInsight.impressions || '0'),
+      reach: parseInt(adInsight.reach || '0'),
+      clicks: parseInt(adInsight.clicks || '0'),
+      ctr: parseFloat(adInsight.ctr || '0'),
+      leads: parseInt(leads),
+    }
+  }).filter((ad: any) => ad.spend > 0 || ad.impressions > 0)
+
+  // Calculate totals
   const totalSpend = campaignsWithInsights.reduce((s: number, c: any) => s + c.spend, 0)
   const totalImpressions = campaignsWithInsights.reduce((s: number, c: any) => s + c.impressions, 0)
   const totalReach = campaignsWithInsights.reduce((s: number, c: any) => s + c.reach, 0)
   const totalClicks = campaignsWithInsights.reduce((s: number, c: any) => s + c.clicks, 0)
   const totalLeads = campaignsWithInsights.reduce((s: number, c: any) => s + c.leads, 0)
 
-  // Parse daily insights for evolution tab
-  const dailyInsights = (dailyData.data || []).map((d: any) => {
+  // Parse daily insights for evolution charts
+  const daily = dailyInsights.map((d: any) => {
     const leads = (d.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
     return {
       date: d.date_start,
       spend: parseFloat(d.spend || '0'),
       impressions: parseInt(d.impressions || '0'),
+      reach: parseInt(d.reach || '0'),
       clicks: parseInt(d.clicks || '0'),
       ctr: parseFloat(d.ctr || '0'),
       leads: parseInt(leads),
     }
   }).sort((a: any, b: any) => a.date.localeCompare(b.date))
 
+  // Parse ads-level data (individual ads within campaigns)
+  const ads = (adsData.data || []).map((ad: any) => {
+    const adInsight = ad.insights?.data?.[0] || {}
+    const leads = (adInsight.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
+    return {
+      id: ad.id, name: ad.name, status: ad.status,
+      campaign_id: ad.campaign_id, adset_id: ad.adset_id,
+      creative_name: ad.creative?.name || null,
+      thumbnail_url: ad.creative?.thumbnail_url || null,
+      spend: parseFloat(adInsight.spend || '0'),
+      impressions: parseInt(adInsight.impressions || '0'),
+      reach: parseInt(adInsight.reach || '0'),
+      clicks: parseInt(adInsight.clicks || '0'),
+      ctr: parseFloat(adInsight.ctr || '0'),
+      leads: parseInt(leads),
+    }
+  }).filter((ad: any) => ad.spend > 0 || ad.impressions > 0)
+
+  console.log(`FB Ads: ${campaigns.length} campaigns, ${daily.length} daily points, ${ads.length} ads`)
+
   return {
     campaigns: campaignsWithInsights,
-    dailyInsights,
+    dailyInsights: daily, // Keep backward compat with Lovable's key name
+    daily,                // Also expose as 'daily'
+    ads,                  // Individual ads within campaigns
     metrics: {
       totalSpend: Math.round(totalSpend * 100) / 100, totalImpressions, totalReach, totalClicks, totalLeads,
       avgCPL: Math.round((totalLeads > 0 ? totalSpend / totalLeads : 0) * 100) / 100,
       avgCTR: Math.round((totalImpressions > 0 ? totalClicks / totalImpressions * 100 : 0) * 100) / 100,
     },
+    period: { since, until },
   }
 }
 
