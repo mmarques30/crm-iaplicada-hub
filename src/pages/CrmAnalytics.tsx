@@ -189,7 +189,7 @@ export default function CrmAnalytics() {
             // Source stats
             const sourceMap: Record<string, { total: number; opportunities: number; customers: number; won: number }> = {}
             for (const d of allDeals) {
-              const ch = d.canal_origem || 'Não informado'
+              const ch = normalizeChannel(d.canal_origem)
               if (!sourceMap[ch]) sourceMap[ch] = { total: 0, opportunities: 0, customers: 0, won: 0 }
               sourceMap[ch].total++
               if ((d.stage_order ?? 0) >= 2) sourceMap[ch].opportunities++
