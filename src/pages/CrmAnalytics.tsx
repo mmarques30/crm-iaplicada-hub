@@ -67,6 +67,15 @@ export default function CrmAnalytics() {
     },
   })
 
+  // Detailed deals_full for correlated analysis
+  const { data: dealsFullDetailed } = useQuery({
+    queryKey: ['deals_full_detailed'],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from('deals_full').select('canal_origem, product, stage_name, stage_order, is_won, created_at')
+      return (data || []) as { canal_origem: string | null; product: string | null; stage_name: string | null; stage_order: number | null; is_won: boolean | null; created_at: string | null }[]
+    },
+  })
+
   // External data
   const leadsAula = useLeadsAula()
   const leadsVisitantes = useLeadsVisitantes()
