@@ -49,7 +49,7 @@ function FunnelTab() {
   const { data: dealsRes } = useQuery({
     queryKey: ['deals_full_fb_funnel'],
     queryFn: async () => {
-      const { data } = await supabase.from('deals_full').select('canal_origem, stage_name, stage_order, is_won, qualification_status, created_at, motivo_perda, product')
+      const { data } = await supabase.from('deals_full').select('canal_origem, stage_name, stage_order, is_won, qualification_status, created_at, motivo_perda, product, contact_id')
       return data || []
     },
   })
@@ -74,6 +74,15 @@ function FunnelTab() {
   const contacts = contactsRes || []
   const stages = stagesRes || []
 
+  // Helper: resolve deal channel using contact source as fallback
+  const getDealChannel = useMemo(() => {
+    const contactSource: Record<string, string> = {}
+    for (const c of contacts) {
+      contactSource[c.id] = c.utm_source || c.fonte_registro || ''
+    }
+    return (d: any) => normalizeChannel(d.canal_origem || (d.contact_id ? contactSource[d.contact_id] : '') || '')
+  }, [contacts])
+
   // Classify contacts into meta categories
   const classified = useMemo(() => {
     const igOrganic: typeof contacts = []
@@ -93,11 +102,11 @@ function FunnelTab() {
 
   // Deal classification helper
   const classifyDeals = useMemo(() => {
-    const igOrganic = deals.filter(d => META_SOURCES.isInstagramOrganic(normalizeChannel(d.canal_origem || '')))
-    const fbAds = deals.filter(d => META_SOURCES.isFacebookAds(normalizeChannel(d.canal_origem || '')))
-    const metaCampaign = deals.filter(d => META_SOURCES.isMetaCampaign(d.canal_origem || '') && !META_SOURCES.isInstagramOrganic(normalizeChannel(d.canal_origem || '')) && !META_SOURCES.isFacebookAds(normalizeChannel(d.canal_origem || '')))
+    const igOrganic = deals.filter(d => META_SOURCES.isInstagramOrganic(getDealChannel(d)))
+    const fbAds = deals.filter(d => META_SOURCES.isFacebookAds(getDealChannel(d)))
+    const metaCampaign = deals.filter(d => META_SOURCES.isMetaCampaign(d.canal_origem || '') && !META_SOURCES.isInstagramOrganic(getDealChannel(d)) && !META_SOURCES.isFacebookAds(getDealChannel(d)))
     return { igOrganic, fbAds, metaCampaign }
-  }, [deals])
+  }, [deals, getDealChannel])
 
   // Source card builder
   const buildSourceCard = (label: string, contactList: typeof contacts, dealList: typeof deals) => {
@@ -126,7 +135,7 @@ function FunnelTab() {
   const ecosystemTotal = sourceCards.reduce((s, c) => s + c.total, 0)
   const ecosystemOpportunities = sourceCards.reduce((s, c) => s + c.opportunities, 0)
   const ecosystemCustomers = sourceCards.reduce((s, c) => s + c.customers, 0)
-  const ecosystemDeals = deals.filter(d => META_SOURCES.isMetaEcosystem(normalizeChannel(d.canal_origem || ''), d.canal_origem || '')).length
+  const ecosystemDeals = deals.filter(d => META_SOURCES.isMetaEcosystem(getDealChannel(d), d.canal_origem || '')).length
   const ecosystemPct = contacts.length > 0 ? ((ecosystemTotal / contacts.length) * 100).toFixed(1) : '0'
 
   // ─── Chart data: Contatos por Fonte ───
@@ -152,7 +161,7 @@ function FunnelTab() {
       sourceContacts[ch] = (sourceContacts[ch] || 0) + 1
     }
     for (const d of deals) {
-      const ch = normalizeChannel(d.canal_origem || '')
+      const ch = getDealChannel(d)
       const isOpp = (d.stage_order ?? 0) >= 2
       const isCust = d.is_won === true
       if (isOpp) sourceOpps[ch] = (sourceOpps[ch] || 0) + 1
@@ -171,7 +180,7 @@ function FunnelTab() {
         }
       })
       .sort((a, b) => b['Lead→Opp'] - a['Lead→Opp'])
-  }, [contacts, deals])
+  }, [contacts, deals, getDealChannel])
 
   // ─── Chart data: Evolução Mensal ───
   const monthlyEvolution = useMemo(() => {
@@ -207,7 +216,7 @@ function FunnelTab() {
   const crossTabSources = useMemo(() => {
     const sourceMap: Record<string, Record<string, number>> = {}
     for (const d of deals) {
-      const source = normalizeChannel(d.canal_origem || '')
+      const source = getDealChannel(d)
       if (!sourceMap[source]) sourceMap[source] = {}
       const col = d.motivo_perda ? 'NEGÓCIO PERDIDO' : (d.stage_name || 'Desconhecido')
       sourceMap[source][col] = (sourceMap[source][col] || 0) + 1
@@ -218,7 +227,7 @@ function FunnelTab() {
         return { source, stages, total }
       })
       .sort((a, b) => b.total - a.total)
-  }, [deals])
+  }, [deals, getDealChannel])
 
   const allColumns = [...uniqueStages, 'NEGÓCIO PERDIDO']
 
@@ -329,7 +338,7 @@ function FunnelTab() {
       // Most common source
       const srcMap: Record<string, number> = {}
       for (const d of pDeals) {
-        const ch = normalizeChannel(d.canal_origem || '')
+        const ch = getDealChannel(d)
         srcMap[ch] = (srcMap[ch] || 0) + 1
       }
       const topSrc = Object.entries(srcMap).sort((a, b) => b[1] - a[1])[0]
@@ -342,7 +351,7 @@ function FunnelTab() {
         total, active, won, lost, winRate, topSrcLabel, topSrcPct,
       }
     })
-  }, [deals])
+  }, [deals, getDealChannel])
 
   return (
     <>
