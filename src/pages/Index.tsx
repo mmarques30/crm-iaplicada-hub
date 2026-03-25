@@ -129,7 +129,7 @@ const SalesPipelineDashboard = () => {
   ).sort((a, b) => a.display_order - b.display_order), [stageConversion]);
 
   const leadSources = useMemo(() => Object.entries(
-    (deals || []).reduce((acc: Record<string, { leads: number; won: number; revenue: number }>, d) => {
+    filteredDeals.reduce((acc: Record<string, { leads: number; won: number; revenue: number }>, d) => {
       const source = d.canal_origem || "Direto";
       if (!acc[source]) acc[source] = { leads: 0, won: 0, revenue: 0 };
       acc[source].leads += 1;
@@ -138,7 +138,7 @@ const SalesPipelineDashboard = () => {
     }, {}),
   ).map(([name, data]: [string, { leads: number; won: number; revenue: number }]) => ({
     name, leads: data.leads, conversion: data.leads > 0 ? Math.round((data.won / data.leads) * 100) : 0, revenue: data.revenue,
-  })).sort((a, b) => b.leads - a.leads), [deals]);
+  })).sort((a, b) => b.leads - a.leads), [filteredDeals]);
 
   const fbAds = snapshot?.data?.facebook_ads;
   const fbCampaigns = fbAds?.campaigns || [];
