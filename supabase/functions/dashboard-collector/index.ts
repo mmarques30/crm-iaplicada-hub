@@ -81,25 +81,31 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
   const until = new Date().toISOString().split('T')[0]
   const timeRange = JSON.stringify({ since, until })
 
-  // Fetch campaigns, campaign insights (ALL TIME), daily insights (90d), and ads-level data in PARALLEL
-  const [campaignsRes, insightsAllTimeRes, dailyRes, adsRes] = await Promise.all([
-    // 1. Campaign list with details
-    fetch(`${baseUrl}/${adAccountId}/campaigns?fields=id,name,status,objective,daily_budget,lifetime_budget,start_time,stop_time&limit=50&access_token=${adsToken}`),
-    // 2. Campaign-level insights — ALL TIME (date_preset=maximum) so paused campaigns show data
-    fetch(`${baseUrl}/${adAccountId}/insights?fields=campaign_name,campaign_id,spend,impressions,reach,clicks,ctr,actions,cost_per_action_type&date_preset=maximum&level=campaign&limit=50&access_token=${adsToken}`),
-    // 3. Daily insights for evolution charts (last 90 days is enough for charts)
+  // Helper: paginate through all pages of a FB API endpoint
+  async function fetchAllPages(url: string): Promise<any[]> {
+    const all: any[] = []
+    let nextUrl: string | null = url
+    while (nextUrl) {
+      const res = await fetch(nextUrl)
+      const data = await res.json()
+      if (data.error) throw new Error(`FB Ads: ${data.error.message}`)
+      all.push(...(data.data || []))
+      nextUrl = data.paging?.next || null
+    }
+    return all
+  }
+
+  // Fetch all data with pagination (campaigns, insights, ads) + daily in parallel
+  const [campaigns, insights, dailyRes, ads] = await Promise.all([
+    fetchAllPages(`${baseUrl}/${adAccountId}/campaigns?fields=id,name,status,objective,daily_budget,lifetime_budget,start_time,stop_time&limit=100&access_token=${adsToken}`),
+    fetchAllPages(`${baseUrl}/${adAccountId}/insights?fields=campaign_name,campaign_id,spend,impressions,reach,clicks,ctr,actions,cost_per_action_type&date_preset=maximum&level=campaign&limit=100&access_token=${adsToken}`),
     fetch(`${baseUrl}/${adAccountId}/insights?fields=spend,impressions,reach,clicks,ctr,actions&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=500&access_token=${adsToken}`),
-    // 4. Ad-level data (individual creatives/posts within campaigns) — ALL TIME
-    fetch(`${baseUrl}/${adAccountId}/ads?fields=id,name,status,campaign_id,adset_id,creative{id,name,thumbnail_url,effective_object_story_id},insights.fields(spend,impressions,reach,clicks,ctr,actions,cost_per_action_type).date_preset(maximum)&limit=100&access_token=${adsToken}`),
+    fetchAllPages(`${baseUrl}/${adAccountId}/ads?fields=id,name,status,campaign_id,adset_id,creative{id,name,thumbnail_url,effective_object_story_id},insights.fields(spend,impressions,reach,clicks,ctr,actions,cost_per_action_type).date_preset(maximum)&limit=100&access_token=${adsToken}`),
   ])
 
-  const [campaignsData, insightsData, dailyData, adsData] = await Promise.all([
-    campaignsRes.json(), insightsAllTimeRes.json(), dailyRes.json(), adsRes.json(),
-  ])
-  if (campaignsData.error) throw new Error(`FB Ads campaigns: ${campaignsData.error.message}`)
+  const dailyData = await dailyRes.json()
+  if (dailyData.error) throw new Error(`FB Ads daily: ${dailyData.error.message}`)
 
-  const campaigns = campaignsData.data || []
-  const insights = insightsData.data || []
   const dailyInsights = dailyData.data || []
 
   // Parse campaign-level data
@@ -132,7 +138,7 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
   })
 
   // Parse ads-level data (individual ads within campaigns)
-  const ads = (adsData.data || []).map((ad: any) => {
+  const parsedAds = ads.map((ad: any) => {
     const adInsight = ad.insights?.data?.[0] || {}
     const leads = (adInsight.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
     return {
@@ -162,13 +168,13 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
   // Sort daily data chronologically
   daily.sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''))
 
-  console.log(`FB Ads: ${campaigns.length} campaigns, ${daily.length} daily points, ${ads.length} ads`)
+  console.log(`FB Ads: ${campaigns.length} campaigns, ${daily.length} daily points, ${parsedAds.length} ads`)
 
   return {
     campaigns: campaignsWithInsights,
-    dailyInsights: daily, // Keep backward compat with Lovable's key name
-    daily,                // Also expose as 'daily'
-    ads,                  // Individual ads within campaigns
+    dailyInsights: daily,
+    daily,
+    ads: parsedAds,
     metrics: {
       totalSpend: Math.round(totalSpend * 100) / 100, totalImpressions, totalReach, totalClicks, totalLeads,
       avgCPL: Math.round((totalLeads > 0 ? totalSpend / totalLeads : 0) * 100) / 100,
