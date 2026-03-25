@@ -85,13 +85,38 @@ const SalesPipelineDashboard = () => {
 
   const { data: snapshot } = useDashboardSnapshot();
 
+  /* ── Filtered data ────────────────────────────────────────── */
+  const cutoffDate = useMemo(() => {
+    if (periodFilter === 'all') return null;
+    const days = { '7d': 7, '30d': 30, '90d': 90 }[periodFilter];
+    return subDays(new Date(), days).toISOString();
+  }, [periodFilter]);
+
+  const filteredDeals = useMemo(() => {
+    let result = deals || [];
+    if (cutoffDate) result = result.filter(d => d.created_at && d.created_at >= cutoffDate);
+    if (productFilter !== 'all') result = result.filter(d => d.product === productFilter);
+    if (channelFilter !== 'all') result = result.filter(d => (d.canal_origem || 'direto') === channelFilter);
+    return result;
+  }, [deals, cutoffDate, productFilter, channelFilter]);
+
+  const filteredContacts = useMemo(() => {
+    let result = contacts || [];
+    if (cutoffDate) result = result.filter(c => c.created_at && c.created_at >= cutoffDate);
+    return result;
+  }, [contacts, cutoffDate]);
+
   /* ── Computed ────────────────────────────────────────────── */
-  const totals = (metrics || []).reduce(
-    (acc, m) => ({ active: acc.active + (m.active_deals || 0), pipeline: acc.pipeline + (m.pipeline_value || 0), won: acc.won + (m.won_deals || 0), lost: acc.lost + (m.lost_deals || 0), avgSize: acc.avgSize + (m.avg_deal_size || 0), count: acc.count + 1 }),
-    { active: 0, pipeline: 0, won: 0, lost: 0, avgSize: 0, count: 0 },
-  );
+  const totals = useMemo(() => {
+    let metricsArr = metrics || [];
+    if (productFilter !== 'all') metricsArr = metricsArr.filter(m => m.product === productFilter);
+    return metricsArr.reduce(
+      (acc, m) => ({ active: acc.active + (m.active_deals || 0), pipeline: acc.pipeline + (m.pipeline_value || 0), won: acc.won + (m.won_deals || 0), lost: acc.lost + (m.lost_deals || 0), avgSize: acc.avgSize + (m.avg_deal_size || 0), count: acc.count + 1 }),
+      { active: 0, pipeline: 0, won: 0, lost: 0, avgSize: 0, count: 0 },
+    );
+  }, [metrics, productFilter]);
   const winRate = totals.won + totals.lost > 0 ? (totals.won / (totals.won + totals.lost)) * 100 : 0;
-  const totalLeads = contacts?.length || 0;
+  const totalLeads = filteredContacts.length;
 
   const pipelineStages = useMemo(() => Object.values(
     (stageConversion || []).reduce((acc: Record<string, StageRow>, item) => {
