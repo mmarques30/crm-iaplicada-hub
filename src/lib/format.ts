@@ -93,20 +93,26 @@ export const normalizeChannel = (raw: string | null | undefined): string => {
   if (!raw) return 'Não rastreado';
   const v = raw.trim().toLowerCase();
 
-  // Instagram Orgânico
-  if (v === 'instagram' || v === 'instagram orgânico' || v === 'social_media' || v === 'ig' || v === 'organic_social') return 'Instagram Orgânico';
+  // Instagram
+  if (v === 'instagram' || v === 'instagram orgânico' || v === 'social_media' || v === 'ig' || v === 'organic_social') return 'Instagram';
 
-  // Facebook Ads
-  if (v === 'paid' || v === 'facebook' || v === 'facebook ads' || v === 'meta' || v === 'paid_social' || v === 'paid_search' || v === 'fb_ads' || v === 'facebook_ads') return 'Facebook Ads';
+  // Ads (Facebook, Google, paid)
+  if (v === 'paid' || v === 'facebook' || v === 'facebook ads' || v === 'meta' || v === 'paid_social' || v === 'paid_search' || v === 'fb_ads' || v === 'facebook_ads' || v === 'google ads' || v === 'google_ads' || v === 'ads') return 'Ads';
 
   // Tráfego Direto
   if (v === 'direct' || v === 'direct_traffic' || v === 'tráfego direto' || v === 'direto') return 'Tráfego Direto';
 
-  // WhatsApp
-  if (v === 'whatsapp' || v === 'wpp' || v === 'manychat') return 'WhatsApp';
+  // TikTok
+  if (v === 'tiktok' || v === 'tik_tok' || v === 'tt' || v === 'tiktok_ads') return 'TikTok';
 
-  // Formulário / Orgânico
-  if (v === 'organic' || v === 'organic_search' || v === 'formulário' || v === 'formulário / orgânico' || v === 'form' || v === 'google' || v === 'seo' || v === 'referral') return 'Formulário / Orgânico';
+  // YouTube
+  if (v === 'youtube' || v === 'yt' || v === 'youtube_ads') return 'YouTube';
+
+  // WhatsApp
+  if (v === 'whatsapp' || v === 'wpp' || v === 'manychat') return 'Ads';
+
+  // Formulário / Orgânico → Ads ou Tráfego Direto
+  if (v === 'organic' || v === 'organic_search' || v === 'formulário' || v === 'formulário / orgânico' || v === 'form' || v === 'google' || v === 'seo' || v === 'referral') return 'Tráfego Direto';
 
   // Offline
   if (v === 'offline' || v === 'evento' || v === 'indicação' || v === 'indicacao') return 'Offline';
