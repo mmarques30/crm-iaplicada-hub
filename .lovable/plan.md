@@ -1,32 +1,69 @@
 
 
-## Fix: Spinner infinito no Painel Financeiro
+## Plano: Carga Completa de Dados Financeiros e Comerciais
 
-### Causa raiz
+### Contexto
 
-As tabelas `parcelas`, `despesas`, `metas`, `notas_fiscais` e `repasses` nunca foram criadas no Supabase. O SQL existe no arquivo `supabase-migration-financeiro.sql` mas não foi executado. Queries retornam 404 e o React Query entra em retry infinito.
+Todas as tabelas financeiras (`vendas`, `parcelas`, `despesas`, `notas_fiscais`, `repasses`) estão vazias. Os dados existem nos 6 arquivos enviados e precisam ser inseridos no Supabase para alimentar os módulos Comercial e Financeiro.
 
-### Solução
+### Fontes de Dados
 
-**Passo 1: Migração SQL** -- Criar todas as tabelas faltantes
+| Arquivo | Destino | Registros |
+|---------|---------|-----------|
+| `vendas_2026-03-25.csv` | tabela `vendas` | 46 vendas |
+| `financeiro_empresa_*.csv` (seção DESPESAS) | tabela `despesas` | ~162 despesas |
+| `fiscal_clientes_todos_mar_o_2026.csv` | tabela `notas_fiscais` + atualiza `vendas` (cpf_cnpj, razao_social, endereco, cep) | ~47 clientes |
+| `regularizacao_nf_business_mar_2026_1.csv` | tabela `notas_fiscais` (NFs de regularização Business março/2026) | 7 NFs |
+| `Relatorio_Repasse_LAB_1.pdf` | tabela `repasses` | 2 repasses (Valéria Sales R$107,30 + Ariane Calados R$110,40) |
 
-Executar o conteudo do `supabase-migration-financeiro.sql`:
-- Adicionar campos na tabela `vendas` (telefone, total_parcelas, por_indicacao, cpf_cnpj, razao_social, endereco, cep)
-- Criar tabela `parcelas` (venda_id, tipo, numero, valor, data_vencimento, status, data_pagamento)
-- Criar tabela `notas_fiscais` (venda_id, numero_nf, cpf_cnpj, razao_social, valor, status_nf, etc.)
-- Criar tabela `despesas` (data, descricao, categoria, tipo, status, pagamento, forma_pgto, valor)
-- Criar tabela `metas` (ano, mes, categoria, valor_projetado) com UNIQUE(ano, mes, categoria)
-- Criar tabela `repasses` (venda_id, indicador_nome, valor, status, data_pagamento)
-- RLS com policy "allow all" em cada tabela (consistente com padrão atual)
-- Views `fluxo_caixa_mensal` e `despesas_mensal`
+### Execução — 5 Passos
 
-**Passo 2: Tornar `FinanceiroPainel.tsx` resiliente**
+**Passo 1: Inserir 46 vendas na tabela `vendas`**
+- Mapear campos: Nome→nome, Email→email, Produto→produto (lowercase), Data Venda→data_venda, Forma Pagamento→forma_pagamento, Parcelas→parcelas/total_parcelas, Valor→valor, Status→status
+- Marcar vendas de Valéria Sales e Ariane Calados com `por_indicacao = true` (conforme relatório de repasses)
+- Enriquecer com dados fiscais do CSV fiscal: cpf_cnpj, razao_social, endereco, cep para clientes Business que possuem esses dados
 
-- Adicionar `retry: 1` em todas as queries de parcelas, despesas e metas para evitar retry infinito
-- Tratar estado de erro: quando as queries falham, exibir mensagem de erro em vez de spinner eterno
-- Garantir que `isLoading` considera `isError` para sair do estado de loading
+**Passo 2: Gerar parcelas para vendas parceladas**
+- Para vendas com parcelas > 1: gerar N registros na tabela `parcelas`
+- Tipo "entrada" para primeira parcela de vendas `entrada_boleto`/`entrada_cartao`, demais como "parcela"
+- Valor da parcela = valor_contrato / total_parcelas
+- Data vencimento: mensal a partir da data da venda
+- Status: vendas `concluido` → todas as parcelas como `pago`; vendas `em_andamento` → parcelas com vencimento passado como `pago`, futuras como `pendente`
+- Para vendas à vista (1 parcela): 1 registro, status conforme status da venda
 
-### Arquivos afetados
-- Nova migração SQL via ferramenta de migração
-- `src/pages/FinanceiroPainel.tsx` -- adicionar tratamento de erro e limitar retries
+**Passo 3: Inserir ~162 despesas na tabela `despesas`**
+- Mapear: Título→descricao, Categoria→categoria (normalizar: "Folha"→"folha", "Assinaturas Fixas/Teste"→"sistemas", "software"→"sistemas", "marketing"→"publicidade", "administrativo"→"outros", "pessoal"→"outros", "infraestrutura"→"outros")
+- Tipo: fixa/pontual conforme CSV
+- Status: "paga"→"pago", "pendente"→"pendente"
+
+**Passo 4: Inserir notas fiscais na tabela `notas_fiscais`**
+- Inserir os 7 registros de regularização NF Business (março/2026) do CSV de regularização
+- Inserir registro da Cimed (única com status "emitida" no CSV fiscal, NF valor R$777)
+- Vincular cada NF ao venda_id correspondente via nome do cliente
+
+**Passo 5: Inserir 2 repasses na tabela `repasses`**
+- Valéria Sales: valor R$107,30, status "pago", indicador_nome "LAB"
+- Ariane Calados: valor R$110,40, status "pago", indicador_nome "LAB"
+- Vincular ao venda_id correspondente
+
+### Implementação Técnica
+
+- Usar script Python via `code--exec` para:
+  1. Parsear todos os CSVs
+  2. Normalizar e mapear dados
+  3. Gerar SQL INSERT statements
+  4. Executar via `psql` (que tem acesso de INSERT)
+- Categorias de despesas normalizadas: folha, sistemas, publicidade, custos, outros
+- Valores monetários com vírgula (ex: "1814,17") serão convertidos para ponto decimal
+- Datas no formato DD/MM/YYYY serão convertidas para YYYY-MM-DD
+
+### Resultado Esperado
+
+Após a carga, os painéis Financeiro e Comercial exibirão:
+- 46 vendas com KPIs por produto (Academy ~31, Business ~14, Ferramentas 2)
+- Faturamento total ~R$217.816
+- ~162 despesas categorizadas alimentando Business Plan e Painel Geral
+- Parcelas geradas alimentando Fluxo de Caixa e Contas a Receber
+- NFs de regularização Business para março/2026
+- Repasses LAB com 2 indicações pagas
 
