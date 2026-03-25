@@ -65,10 +65,18 @@ export default function PainelGeral() {
   const { data: dealsByChannel } = useQuery({
     queryKey: ['deals_by_channel'],
     queryFn: async () => {
-      const { data } = await (supabase as any).from('deals_full').select('canal_origem')
+      const { data: dealsData } = await supabase.from('deals').select('canal_origem, contact_id')
+      const { data: contactsData } = await supabase.from('contacts').select('id, utm_source, fonte_registro')
+
+      const contactSource: Record<string, string> = {}
+      for (const c of (contactsData || [])) {
+        contactSource[c.id] = c.utm_source || c.fonte_registro || ''
+      }
+
       const channels: Record<string, number> = {}
-      for (const d of (data || []) as any[]) {
-        const ch = normalizeChannel(d.canal_origem)
+      for (const d of (dealsData || [])) {
+        const raw = d.canal_origem || (d.contact_id ? contactSource[d.contact_id] : '') || ''
+        const ch = normalizeChannel(raw)
         channels[ch] = (channels[ch] || 0) + 1
       }
       return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
