@@ -338,7 +338,7 @@ function FunnelTab() {
       // Most common source
       const srcMap: Record<string, number> = {}
       for (const d of pDeals) {
-        const ch = normalizeChannel(d.canal_origem || '')
+        const ch = getDealChannel(d)
         srcMap[ch] = (srcMap[ch] || 0) + 1
       }
       const topSrc = Object.entries(srcMap).sort((a, b) => b[1] - a[1])[0]
