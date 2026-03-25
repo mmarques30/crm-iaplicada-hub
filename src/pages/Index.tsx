@@ -168,7 +168,7 @@ const SalesPipelineDashboard = () => {
 
   /* ── Deals em Risco donut ────────────────────────────────── */
   const riskData = useMemo(() => {
-    const allDeals = deals || [];
+    const allDeals = filteredDeals;
     const won = allDeals.filter(d => d.is_won === true).length;
     const lost = allDeals.filter(d => d.is_won === false).length;
     const active = allDeals.filter(d => d.is_won === null).length;
@@ -179,7 +179,7 @@ const SalesPipelineDashboard = () => {
       { name: "Em risco", value: atRisk, color: C.amber },
       { name: "Perdidos", value: lost, color: C.coral },
     ].filter(d => d.value > 0);
-  }, [deals]);
+  }, [filteredDeals]);
 
   const totalDeals = riskData.reduce((s, d) => s + d.value, 0);
 
