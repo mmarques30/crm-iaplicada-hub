@@ -161,7 +161,7 @@ function FunnelTab() {
       sourceContacts[ch] = (sourceContacts[ch] || 0) + 1
     }
     for (const d of deals) {
-      const ch = normalizeChannel(d.canal_origem || '')
+      const ch = getDealChannel(d)
       const isOpp = (d.stage_order ?? 0) >= 2
       const isCust = d.is_won === true
       if (isOpp) sourceOpps[ch] = (sourceOpps[ch] || 0) + 1
