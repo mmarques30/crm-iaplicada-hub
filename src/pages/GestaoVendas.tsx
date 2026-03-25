@@ -1031,7 +1031,8 @@ export default function GestaoVendas() {
 
           <Card>
             <CardHeader>
-              <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Regularizacao de Notas Fiscais</CardTitle>
                 <FiscalAIButton
                   action="generate_nf_data"
                   data={{
@@ -1047,6 +1048,7 @@ export default function GestaoVendas() {
                   onResult={() => toast.success('Dados fiscais gerados! Revise os resultados.')}
                 />
               </div>
+            </CardHeader>
             <CardContent className="space-y-4">
               {/* Filters */}
               <div className="flex flex-wrap items-center gap-3">
