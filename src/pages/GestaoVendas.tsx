@@ -421,8 +421,8 @@ export default function GestaoVendas() {
     })
     if (!regMostrarRegularizados) {
       result = result.filter((n: any) => {
-        const st = n.status_regularizacao || n.status
-        return st !== 'regularizado' && st !== 'emitida' && st !== 'enviada'
+        const st = n.status_nf || 'pendente'
+        return st !== 'emitida' && st !== 'enviada'
       })
     }
     return result
