@@ -227,7 +227,7 @@ function FunnelTab() {
         return { source, stages, total }
       })
       .sort((a, b) => b.total - a.total)
-  }, [deals])
+  }, [deals, getDealChannel])
 
   const allColumns = [...uniqueStages, 'NEGÓCIO PERDIDO']
 
