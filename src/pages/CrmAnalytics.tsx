@@ -162,33 +162,8 @@ export default function CrmAnalytics() {
         </TabsList>
 
         {/* ─── Funil ─── */}
-        <TabsContent value="funnel" className="mt-4">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Pipeline por Estágio</CardTitle></CardHeader>
-            <CardContent>
-              {funnelStages.length > 0 ? (
-                <div className="space-y-3">
-                  {funnelStages.map(stage => (
-                    <div key={stage.stage_name} className="space-y-1">
-                      <div className="flex justify-between text-sm">
-                        <span className="font-medium">{stage.stage_name}</span>
-                        <div className="flex gap-4">
-                          <span className="text-xs text-muted-foreground">{formatCurrency(Number(stage.total_amount || 0))}</span>
-                          <span className="font-bold font-mono tabular-nums">{stage.deal_count} deals</span>
-                        </div>
-                      </div>
-                      <div className="h-8 bg-[var(--c-raised)] rounded-lg overflow-hidden">
-                        <div className="h-full rounded-lg transition-all duration-500" style={{ width: `${Math.max((Number(stage.deal_count) / Number(maxStage)) * 100, 3)}%`, background: 'linear-gradient(90deg, #738925, #AFC040)' }} />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : <p className="text-center text-muted-foreground py-8">Sem dados de pipeline</p>}
-            </CardContent>
-          </Card>
-          <div className="mt-4">
-            <FunnelTab />
-          </div>
+        <TabsContent value="funnel" className="mt-4 space-y-4">
+          <FunnelTab />
         </TabsContent>
 
 
