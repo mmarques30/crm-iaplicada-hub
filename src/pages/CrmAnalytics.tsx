@@ -275,14 +275,14 @@ export default function CrmAnalytics() {
                 </div>
 
                 {/* Channel cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                <div className="flex overflow-x-auto gap-3 pb-2">
                   {sourceEntries.map(([name, s], i) => (
-                    <Card key={name} className="p-4 space-y-3">
+                    <Card key={name} className="p-3 space-y-2 min-w-[160px] flex-shrink-0 flex-1">
                       <div className="flex items-center gap-2">
                         <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SOURCE_COLORS[i % SOURCE_COLORS.length] }} />
                         <span className="text-xs font-medium truncate">{name}</span>
                       </div>
-                      <p className="text-2xl font-bold font-mono tabular-nums">{s.total}</p>
+                      <p className="text-xl font-bold font-mono tabular-nums">{s.total}</p>
                       <div className="space-y-1 text-[11px] text-muted-foreground">
                         <div className="flex justify-between"><span>Opportunities</span><span className="font-mono font-semibold text-foreground">{s.opportunities}</span></div>
                         <div className="flex justify-between"><span>Customers</span><span className="font-mono font-semibold text-foreground">{s.customers}</span></div>
