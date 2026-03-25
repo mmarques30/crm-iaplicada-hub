@@ -159,37 +159,8 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
   const totalClicks = campaignsWithInsights.reduce((s: number, c: any) => s + c.clicks, 0)
   const totalLeads = campaignsWithInsights.reduce((s: number, c: any) => s + c.leads, 0)
 
-  // Parse daily insights for evolution charts
-  const daily = dailyInsights.map((d: any) => {
-    const leads = (d.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
-    return {
-      date: d.date_start,
-      spend: parseFloat(d.spend || '0'),
-      impressions: parseInt(d.impressions || '0'),
-      reach: parseInt(d.reach || '0'),
-      clicks: parseInt(d.clicks || '0'),
-      ctr: parseFloat(d.ctr || '0'),
-      leads: parseInt(leads),
-    }
-  }).sort((a: any, b: any) => a.date.localeCompare(b.date))
-
-  // Parse ads-level data (individual ads within campaigns)
-  const ads = (adsData.data || []).map((ad: any) => {
-    const adInsight = ad.insights?.data?.[0] || {}
-    const leads = (adInsight.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
-    return {
-      id: ad.id, name: ad.name, status: ad.status,
-      campaign_id: ad.campaign_id, adset_id: ad.adset_id,
-      creative_name: ad.creative?.name || null,
-      thumbnail_url: ad.creative?.thumbnail_url || null,
-      spend: parseFloat(adInsight.spend || '0'),
-      impressions: parseInt(adInsight.impressions || '0'),
-      reach: parseInt(adInsight.reach || '0'),
-      clicks: parseInt(adInsight.clicks || '0'),
-      ctr: parseFloat(adInsight.ctr || '0'),
-      leads: parseInt(leads),
-    }
-  }).filter((ad: any) => ad.spend > 0 || ad.impressions > 0)
+  // Sort daily data chronologically
+  daily.sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''))
 
   console.log(`FB Ads: ${campaigns.length} campaigns, ${daily.length} daily points, ${ads.length} ads`)
 
