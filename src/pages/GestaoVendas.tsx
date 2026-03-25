@@ -1031,8 +1031,22 @@ export default function GestaoVendas() {
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Regularizacao de Notas Fiscais</CardTitle>
-            </CardHeader>
+              <div className="flex flex-wrap items-center gap-3">
+                <FiscalAIButton
+                  action="generate_nf_data"
+                  data={{
+                    nfs_pendentes: filteredReg.filter((n: any) => !n.descricao_servico).slice(0, 10).map((n: any) => ({
+                      id: n.id,
+                      produto: n.produto,
+                      valor: n.valor,
+                      nome: n.nome || n.razao_social,
+                      mes_referencia: n.mes_referencia || n.mes_ref,
+                    })),
+                  }}
+                  label="Gerar Dados Fiscais com IA"
+                  onResult={() => toast.success('Dados fiscais gerados! Revise os resultados.')}
+                />
+              </div>
             <CardContent className="space-y-4">
               {/* Filters */}
               <div className="flex flex-wrap items-center gap-3">
