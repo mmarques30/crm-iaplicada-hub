@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers, Mail, Send, Workflow } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers, Mail, Send, Workflow, ShoppingCart, Receipt, Wallet } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useState } from "react";
@@ -30,7 +30,15 @@ const analyticsItems = [
   { title: "Instagram", url: "/analytics/instagram", icon: Instagram },
   { title: "Facebook Ads", url: "/analytics/facebook-ads", icon: Facebook },
   { title: "Funil de Vendas", url: "/analytics/crm", icon: TrendingUp },
-  { title: "Financeiro", url: "/financeiro", icon: DollarSign },
+];
+
+const comercialItems = [
+  { title: "Vendas & Fiscal", url: "/comercial/vendas", icon: ShoppingCart },
+];
+
+const financeiroItems = [
+  { title: "Painel Geral", url: "/financeiro/painel", icon: BarChart3 },
+  { title: "Vendas & Receita", url: "/financeiro/receita", icon: DollarSign },
 ];
 
 export function AppSidebar() {
@@ -38,11 +46,15 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const location = useLocation();
   const isPipelineActive = location.pathname.startsWith("/pipeline");
-  const isAnalyticsActive = location.pathname.startsWith("/painel") || location.pathname.startsWith("/analytics") || location.pathname.startsWith("/financeiro");
+  const isAnalyticsActive = location.pathname.startsWith("/painel") || location.pathname.startsWith("/analytics");
   const isEmailActive = location.pathname.startsWith("/email");
+  const isComercialActive = location.pathname.startsWith("/comercial");
+  const isFinanceiroActive = location.pathname.startsWith("/financeiro");
   const [pipelineOpen, setPipelineOpen] = useState(isPipelineActive);
   const [analyticsOpen, setAnalyticsOpen] = useState(isAnalyticsActive);
   const [emailOpen, setEmailOpen] = useState(isEmailActive);
+  const [comercialOpen, setComercialOpen] = useState(isComercialActive);
+  const [financeiroOpen, setFinanceiroOpen] = useState(isFinanceiroActive);
 
   const { data: pipelines } = useQuery({
     queryKey: ["pipelines-sidebar"],
@@ -62,6 +74,52 @@ export function AppSidebar() {
       url: `/pipeline/${p.product}`,
       icon: PIPELINE_ICONS[p.product] || DEFAULT_PIPELINE_ICON,
     }));
+
+  const renderCollapsible = (
+    label: string,
+    icon: typeof BarChart3,
+    items: Array<{ title: string; url: string; icon: typeof BarChart3 }>,
+    isActive: boolean,
+    open: boolean,
+    setOpen: (v: boolean) => void
+  ) => {
+    const Icon = icon;
+    return (
+      <SidebarMenuItem>
+        <Collapsible open={open || isActive} onOpenChange={setOpen}>
+          <CollapsibleTrigger asChild>
+            <SidebarMenuButton className={`w-full ${isActive ? ACTIVE_CLASS : ''}`}>
+              <Icon className="h-4 w-4" />
+              {!collapsed && (
+                <>
+                  <span className="flex-1 text-left">{label}</span>
+                  <ChevronDown className={`h-3 w-3 transition-transform ${open || isActive ? 'rotate-180' : ''}`} />
+                </>
+              )}
+            </SidebarMenuButton>
+          </CollapsibleTrigger>
+          {!collapsed && (
+            <CollapsibleContent>
+              <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
+                {items.map((item) => (
+                  <NavLink
+                    key={item.url}
+                    to={item.url}
+                    end
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                    activeClassName={ACTIVE_CLASS}
+                  >
+                    <item.icon className="h-3.5 w-3.5" />
+                    <span>{item.title}</span>
+                  </NavLink>
+                ))}
+              </div>
+            </CollapsibleContent>
+          )}
+        </Collapsible>
+      </SidebarMenuItem>
+    );
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -93,40 +151,8 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Pipeline with submenu */}
-              <SidebarMenuItem>
-                <Collapsible open={pipelineOpen || isPipelineActive} onOpenChange={setPipelineOpen}>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className={`w-full ${isPipelineActive ? ACTIVE_CLASS : ''}`}>
-                      <Kanban className="h-4 w-4" />
-                      {!collapsed && (
-                        <>
-                          <span className="flex-1 text-left">Pipeline</span>
-                          <ChevronDown className={`h-3 w-3 transition-transform ${pipelineOpen || isPipelineActive ? 'rotate-180' : ''}`} />
-                        </>
-                      )}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  {!collapsed && (
-                    <CollapsibleContent>
-                      <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                        {pipelineItems.map((item) => (
-                          <NavLink
-                            key={item.url}
-                            to={item.url}
-                            end
-                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                            activeClassName={ACTIVE_CLASS}
-                          >
-                            <item.icon className="h-3.5 w-3.5" />
-                            <span>{item.title}</span>
-                          </NavLink>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  )}
-                </Collapsible>
-              </SidebarMenuItem>
+              {/* Pipeline */}
+              {renderCollapsible("Pipeline", Kanban, pipelineItems, isPipelineActive, pipelineOpen, setPipelineOpen)}
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild>
@@ -137,42 +163,16 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Analytics with submenu */}
-              <SidebarMenuItem>
-                <Collapsible open={analyticsOpen || isAnalyticsActive} onOpenChange={setAnalyticsOpen}>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className={`w-full ${isAnalyticsActive ? ACTIVE_CLASS : ''}`}>
-                      <BarChart3 className="h-4 w-4" />
-                      {!collapsed && (
-                        <>
-                          <span className="flex-1 text-left">Analytics</span>
-                          <ChevronDown className={`h-3 w-3 transition-transform ${analyticsOpen || isAnalyticsActive ? 'rotate-180' : ''}`} />
-                        </>
-                      )}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  {!collapsed && (
-                    <CollapsibleContent>
-                      <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                        {analyticsItems.map((item) => (
-                          <NavLink
-                            key={item.url}
-                            to={item.url}
-                            end
-                            className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
-                            activeClassName={ACTIVE_CLASS}
-                          >
-                            <item.icon className="h-3.5 w-3.5" />
-                            <span>{item.title}</span>
-                          </NavLink>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  )}
-                </Collapsible>
-              </SidebarMenuItem>
+              {/* Comercial (Vendas & Fiscal) */}
+              {renderCollapsible("Comercial", ShoppingCart, comercialItems, isComercialActive, comercialOpen, setComercialOpen)}
 
-              {/* Email Marketing with submenu */}
+              {/* Financeiro */}
+              {renderCollapsible("Financeiro", Wallet, financeiroItems, isFinanceiroActive, financeiroOpen, setFinanceiroOpen)}
+
+              {/* Analytics */}
+              {renderCollapsible("Analytics", BarChart3, analyticsItems, isAnalyticsActive, analyticsOpen, setAnalyticsOpen)}
+
+              {/* Email Marketing */}
               <SidebarMenuItem>
                 <Collapsible open={emailOpen || isEmailActive} onOpenChange={setEmailOpen}>
                   <CollapsibleTrigger asChild>
@@ -190,24 +190,19 @@ export function AppSidebar() {
                     <CollapsibleContent>
                       <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
                         <NavLink to="/email" end className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <BarChart3 className="h-3.5 w-3.5" />
-                          <span>Visão Geral</span>
+                          <BarChart3 className="h-3.5 w-3.5" /><span>Visão Geral</span>
                         </NavLink>
                         <NavLink to="/email/templates" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <FileText className="h-3.5 w-3.5" />
-                          <span>Templates</span>
+                          <FileText className="h-3.5 w-3.5" /><span>Templates</span>
                         </NavLink>
                         <NavLink to="/email/campaigns" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <Send className="h-3.5 w-3.5" />
-                          <span>Campanhas</span>
+                          <Send className="h-3.5 w-3.5" /><span>Campanhas</span>
                         </NavLink>
                         <NavLink to="/email/workflows" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <Workflow className="h-3.5 w-3.5" />
-                          <span>Automações</span>
+                          <Workflow className="h-3.5 w-3.5" /><span>Automações</span>
                         </NavLink>
                         <NavLink to="/email/lists" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <Users className="h-3.5 w-3.5" />
-                          <span>Listas</span>
+                          <Users className="h-3.5 w-3.5" /><span>Listas</span>
                         </NavLink>
                       </div>
                     </CollapsibleContent>
