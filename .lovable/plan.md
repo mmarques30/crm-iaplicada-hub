@@ -1,30 +1,29 @@
 
 
-## Fix: Mostrar todos os leads + atualizar dados externos
+## Ajuste: Tabelas com 10 linhas iniciais + botão expandir
 
-### Problemas identificados
+### O que muda
 
-1. **Tabelas limitadas a 50 linhas** — `CrmAnalytics.tsx` usa `.slice(0, 50)` nas linhas 339 e 493, cortando os leads exibidos. Não há paginação.
+Substituir a paginação atual (50 por página com Anterior/Próximo) por um modelo "mostrar 10 iniciais + expandir":
 
-2. **Dados externos não atualizam** — Os hooks `usePresencaData` e `useVisitantesData` têm `staleTime: 5min` + `refetchOnWindowFocus: false`. Não existe botão de refresh manual. Os dados ficam cache'd na sessão.
+- Mostrar apenas as **10 primeiras linhas** por padrão
+- Botão **"Ver todos (X leads)"** abaixo da tabela para expandir e mostrar todos os registros
+- Quando expandido, botão muda para **"Mostrar menos"** para recolher de volta a 10
 
-3. **Query de contatos para cruzamento** (linhas 184-186 do hook) não tem `.limit()`, então o Supabase aplica o default de 1000 linhas — OK se há menos de 1000 contatos.
+### Implementação — `src/pages/CrmAnalytics.tsx`
 
-### Solução
+1. **Trocar estados** — Substituir `aulaPage` e `visitantePage` por `aulaExpanded: boolean` e `visitanteExpanded: boolean` (ambos `false` por padrão)
 
-**Arquivo 1: `src/pages/CrmAnalytics.tsx`**
+2. **Lógica de slice** — Em ambas as tabelas:
+   - Se `expanded === false`: `.slice(0, 10)`
+   - Se `expanded === true`: sem slice (mostra todos)
 
-- Adicionar estado de paginação para cada tabela de leads (leadsAula e leadsVisitantes)
-- Remover `.slice(0, 50)` e substituir por paginação real: `leads.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)`
-- Constante `PAGE_SIZE = 50`
-- Adicionar controles de paginação (Anterior/Próximo + "Mostrando X-Y de Z") abaixo de cada tabela
-- Adicionar botão "Atualizar dados" no header de cada tab que chama `queryClient.invalidateQueries` para forçar refresh dos dados externos
+3. **Substituir controles de paginação** — Trocar os botões Anterior/Próximo por:
+   - Quando recolhido: `"Ver todos (115 leads)"` com ícone ChevronDown
+   - Quando expandido: `"Mostrar menos"` com ícone ChevronUp
+   - Só aparece se total > 10
 
-**Arquivo 2: `src/hooks/useExternalSupabase.ts`**
+4. **Remover** `PAGE_SIZE`, imports de `ChevronLeft`/`ChevronRight` (se não usados em outro lugar), e a lógica de página
 
-- Reduzir `staleTime` de `5 * 60_000` para `2 * 60_000` (2 min) nos hooks `usePresencaData` e `useVisitantesData`
-- Adicionar `refetchOnMount: 'always'` para garantir que os dados são re-fetched quando o componente monta
-- Exportar as `queryKey`s para que o componente possa invalidar manualmente
-
-### Nenhuma query Supabase é alterada. Nenhuma lógica de cruzamento muda.
+5. **Adicionar import** `ChevronDown`, `ChevronUp` do lucide-react
 
