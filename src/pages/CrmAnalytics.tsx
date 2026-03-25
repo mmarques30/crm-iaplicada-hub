@@ -393,19 +393,15 @@ export default function CrmAnalytics() {
                       </TableBody>
                     </Table>
                   </div>
-                  {leadsAula.leadsQuentes.length > PAGE_SIZE && (
-                    <div className="flex items-center justify-between mt-3">
-                      <p className="text-xs text-muted-foreground">
-                        Mostrando {aulaPage * PAGE_SIZE + 1}–{Math.min((aulaPage + 1) * PAGE_SIZE, leadsAula.leadsQuentes.length)} de {leadsAula.leadsQuentes.length}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" disabled={aulaPage === 0} onClick={() => setAulaPage(p => p - 1)}>
-                          <ChevronLeft className="h-4 w-4" /> Anterior
-                        </Button>
-                        <Button variant="outline" size="sm" disabled={(aulaPage + 1) * PAGE_SIZE >= leadsAula.leadsQuentes.length} onClick={() => setAulaPage(p => p + 1)}>
-                          Próximo <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
+                  {leadsAula.leadsQuentes.length > INITIAL_ROWS && (
+                    <div className="flex justify-center mt-3">
+                      <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => setAulaExpanded(e => !e)}>
+                        {aulaExpanded ? (
+                          <><ChevronUp className="h-4 w-4" /> Mostrar menos</>
+                        ) : (
+                          <><ChevronDown className="h-4 w-4" /> Ver todos ({leadsAula.leadsQuentes.length} leads)</>
+                        )}
+                      </Button>
                     </div>
                   )}
                 </CardContent>
