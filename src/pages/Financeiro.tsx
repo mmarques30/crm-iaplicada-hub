@@ -98,14 +98,16 @@ export default function Financeiro() {
               <CardHeader><CardTitle className="text-base">Formas de Pagamento</CardTitle></CardHeader>
               <CardContent>
                 {paymentData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie data={paymentData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label>
-                        {paymentData.map((_, i) => (<Cell key={i} fill={PAY_COLORS[i % PAY_COLORS.length]} />))}
-                      </Pie>
+                  <ResponsiveContainer width="100%" height={Math.max(280, paymentData.length * 40)}>
+                    <BarChart data={paymentData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
+                      <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <YAxis dataKey="name" type="category" width={130} tick={{ fontSize: 12, ...AXIS_TICK }} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Legend />
-                    </PieChart>
+                      <Bar dataKey="value" name="Vendas" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#E8EDD8', fontSize: 12 }}>
+                        {paymentData.map((_, i) => (<Cell key={i} fill={PAY_COLORS[i % PAY_COLORS.length]} />))}
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
               </CardContent>
