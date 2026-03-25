@@ -1,26 +1,22 @@
 
 
-## Plano: Corrigir overflow de números nos cards
+## Plano: Corrigir layout "Custo por Contato por Canal"
 
-### Problema
-Os números nos KPICards e SourceSummaryCards estão extrapolando os limites dos cards:
-- KPICard: `text-[28px]` é grande demais para 6 cards numa linha com valores como "R$ 8.462,99"
-- SourceSummaryCard: valores como "R$ 8.462,99" e "29.671" se sobrepõem na grid 2×2
+### Problemas identificados
+1. **Backgrounds claros (pastéis)** nos cards de canal — `hsl(0 80% 95%)`, `hsl(210 80% 95%)`, `hsl(270 60% 95%)` — criam contraste quebrado no tema escuro. Os títulos dos canais ficam invisíveis porque usam `text-foreground` (claro) sobre fundo claro.
+2. **Roxo (#8b5cf6)** usado no card "Campanhas Meta" viola a regra de branding (roxo proibido).
+3. O visual não combina com o restante da página escura.
 
-### Alterações
+### Alterações em `src/pages/PainelGeral.tsx` (linhas 588-638)
 
-#### 1. `src/components/dashboard/KPICard.tsx`
-- Reduzir font-size do valor de `text-[28px]` para `text-xl sm:text-2xl` (responsivo)
-- Adicionar `overflow-hidden text-ellipsis whitespace-nowrap` no valor para evitar quebra
-- Reduzir padding de `p-[18px_20px]` para `p-3 sm:p-[18px_20px]`
-- Adicionar `min-w-0` no container para permitir truncamento em flex
+Substituir os 3 cards de canal por backgrounds escuros semi-transparentes com borda lateral colorida, consistentes com o tema:
 
-#### 2. `src/components/dashboard/SourceSummaryCard.tsx`
-- Reduzir font-size do valor de `text-lg` para `text-sm sm:text-base`
-- Adicionar `truncate` no valor para evitar sobreposição
-- Reduzir label de `text-[10px]` para `text-[9px]` para dar mais espaço
+- **Instagram Orgânico**: `bg-[#1A0804]` com borda `border-l-3 border-[#E8684A]` (coral)
+- **Facebook Ads**: `bg-[#040E1A]` com borda `border-l-3 border-[#4A9FE0]` (blue)
+- **Campanhas Meta**: `bg-[#0C1A14]` com borda `border-l-3 border-[#2CBBA6]` (teal, substituindo roxo)
 
-### Arquivos afetados
-- `src/components/dashboard/KPICard.tsx`
-- `src/components/dashboard/SourceSummaryCard.tsx`
+Cada card mantém a mesma estrutura (badge circular + nome + métricas) mas com cores de texto que funcionam no tema escuro (`text-[#E8EDD8]` para títulos).
+
+### Arquivo afetado
+- `src/pages/PainelGeral.tsx`
 
