@@ -27,16 +27,8 @@ const META_SOURCES = {
     META_SOURCES.isInstagramOrganic(ch) || META_SOURCES.isFacebookAds(ch) || META_SOURCES.isMetaCampaign(raw),
 }
 
-const SOURCE_COLORS: Record<string, string> = {
-  'Instagram Orgânico': '#E8684A',
-  'Facebook Ads': '#4A9FE0',
-  'Tráfego Direto': '#E8A43C',
-  'WhatsApp': '#2CBBA6',
-  'Formulário / Orgânico': '#AFC040',
-  'Offline': '#7A8460',
-  'Não rastreado': '#555',
-}
-const getSourceColor = (s: string) => SOURCE_COLORS[s] || SEMANTIC_COLORS[Object.keys(SOURCE_COLORS).length % SEMANTIC_COLORS.length]
+
+
 
 
 export function FunnelTab() {
