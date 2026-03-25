@@ -37,8 +37,13 @@ const LIFECYCLE_COLORS: Record<string, string> = {
   sql: '#2CBBA6',
 }
 
+const PAGE_SIZE = 50
+
 export default function CrmAnalytics() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
+  const [aulaPage, setAulaPage] = useState(0)
+  const [visitantePage, setVisitantePage] = useState(0)
 
   const { data: productMetrics } = useQuery({
     queryKey: ['product_metrics'],
