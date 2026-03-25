@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useState, useMemo, useRef } from 'react'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
@@ -8,11 +8,15 @@ import { KPICard } from '@/components/dashboard/KPICard'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { formatCurrency, formatDate } from '@/lib/format'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
-import { DollarSign, TrendingUp, TrendingDown, ArrowDownCircle, ArrowUpCircle, Wallet, Receipt, CreditCard, Copy, Plus, Loader2 } from 'lucide-react'
+import { DollarSign, TrendingUp, TrendingDown, ArrowDownCircle, ArrowUpCircle, Wallet, Receipt, CreditCard, Copy, Plus, Loader2, Trash2, Upload } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { toast } from 'sonner'
 
 /* ─── Design tokens ─── */
 const TOOLTIP_STYLE = { background: '#191D0C', border: '1px solid #2E3A18', borderRadius: 8, fontFamily: 'Sora', fontSize: 12, color: '#E8EDD8' }
@@ -69,7 +73,131 @@ export default function FinanceiroPainel() {
   const [bpYear, setBpYear] = useState(2026)
   const [registroTab, setRegistroTab] = useState<'receitas' | 'despesas'>('receitas')
 
+  // Nova Despesa dialog state
+  const [novaDespesaOpen, setNovaDespesaOpen] = useState(false)
+  const [novaDespesa, setNovaDespesa] = useState({
+    data: new Date().toISOString().substring(0, 10),
+    descricao: '',
+    categoria: 'outros',
+    tipo: 'pontual',
+    status: 'pendente',
+    pagamento: 'a_vista',
+    forma_pgto: 'pix',
+    valor: '',
+  })
+
+  // CSV import state
+  const [csvDialogOpen, setCsvDialogOpen] = useState(false)
+  const [csvRows, setCsvRows] = useState<any[]>([])
+  const [csvImporting, setCsvImporting] = useState(false)
+  const csvInputRef = useRef<HTMLInputElement>(null)
+
+  const queryClient = useQueryClient()
+
   const range = useMemo(() => getDateRange(period), [period])
+
+  // ─── Mutations ───
+  const insertDespesaMutation = useMutation({
+    mutationFn: async (despesa: any) => {
+      const { error } = await (supabase as any).from('despesas').insert(despesa)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fin_despesas'] })
+      queryClient.invalidateQueries({ queryKey: ['fin_despesas_year'] })
+      setNovaDespesaOpen(false)
+      setNovaDespesa({ data: new Date().toISOString().substring(0, 10), descricao: '', categoria: 'outros', tipo: 'pontual', status: 'pendente', pagamento: 'a_vista', forma_pgto: 'pix', valor: '' })
+      toast.success('Despesa criada com sucesso!')
+    },
+    onError: (err: any) => toast.error(`Erro ao criar despesa: ${err.message}`),
+  })
+
+  const deleteDespesaMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await (supabase as any).from('despesas').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['fin_despesas'] })
+      queryClient.invalidateQueries({ queryKey: ['fin_despesas_year'] })
+      toast.success('Despesa excluída com sucesso!')
+    },
+    onError: (err: any) => toast.error(`Erro ao excluir despesa: ${err.message}`),
+  })
+
+  const replicarMesMutation = useMutation({
+    mutationFn: async () => {
+      const now = new Date()
+      const y = now.getFullYear()
+      const m = now.getMonth()
+      const currentStart = `${y}-${String(m + 1).padStart(2, '0')}-01`
+      const currentEnd = new Date(y, m + 1, 0).toISOString().substring(0, 10)
+
+      const { data: fixas, error: fetchErr } = await (supabase as any)
+        .from('despesas')
+        .select('*')
+        .eq('tipo', 'fixa')
+        .gte('data', currentStart)
+        .lte('data', currentEnd)
+      if (fetchErr) throw fetchErr
+      if (!fixas || fixas.length === 0) throw new Error('Nenhuma despesa fixa encontrada no mês atual')
+
+      const cloned = fixas.map((d: any) => {
+        const origDate = new Date(d.data + 'T12:00:00')
+        const nextMonth = new Date(origDate.getFullYear(), origDate.getMonth() + 1, origDate.getDate())
+        const { id, created_at, ...rest } = d
+        return { ...rest, data: nextMonth.toISOString().substring(0, 10) }
+      })
+
+      const { error: insertErr } = await (supabase as any).from('despesas').insert(cloned)
+      if (insertErr) throw insertErr
+      return cloned.length
+    },
+    onSuccess: (count: number) => {
+      queryClient.invalidateQueries({ queryKey: ['fin_despesas'] })
+      queryClient.invalidateQueries({ queryKey: ['fin_despesas_year'] })
+      toast.success(`${count} despesa(s) fixa(s) replicada(s) para o próximo mês!`)
+    },
+    onError: (err: any) => toast.error(`Erro ao replicar: ${err.message}`),
+  })
+
+  function handleCsvFile(file: File) {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const text = e.target?.result as string
+      const lines = text.split('\n').filter(l => l.trim())
+      if (lines.length < 2) { toast.error('CSV vazio ou sem dados'); return }
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
+      const rows = lines.slice(1).map(line => {
+        const values = line.split(',').map(v => v.trim())
+        const row: any = {}
+        headers.forEach((h, i) => { row[h] = values[i] || '' })
+        if (row.valor) row.valor = Number(row.valor)
+        return row
+      }).filter(r => r.descricao && r.valor)
+      setCsvRows(rows)
+      setCsvDialogOpen(true)
+    }
+    reader.readAsText(file)
+  }
+
+  async function handleCsvImport() {
+    if (csvRows.length === 0) return
+    setCsvImporting(true)
+    try {
+      const { error } = await (supabase as any).from('despesas').insert(csvRows)
+      if (error) throw error
+      queryClient.invalidateQueries({ queryKey: ['fin_despesas'] })
+      queryClient.invalidateQueries({ queryKey: ['fin_despesas_year'] })
+      toast.success(`${csvRows.length} despesa(s) importada(s) com sucesso!`)
+      setCsvDialogOpen(false)
+      setCsvRows([])
+    } catch (err: any) {
+      toast.error(`Erro na importação: ${err.message}`)
+    } finally {
+      setCsvImporting(false)
+    }
+  }
 
   /* ─── Queries ─── */
   const { data: vendas, isLoading: vendasLoading } = useQuery({
@@ -670,11 +798,32 @@ export default function FinanceiroPainel() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">Despesas</CardTitle>
                   <div className="flex items-center gap-2">
-                    <Button variant="outline" size="sm" className="gap-1.5">
-                      <Copy className="h-3.5 w-3.5" />
+                    <input
+                      ref={csvInputRef}
+                      type="file"
+                      accept=".csv"
+                      className="hidden"
+                      onChange={(e) => { if (e.target.files?.[0]) handleCsvFile(e.target.files[0]); e.target.value = '' }}
+                    />
+                    <Button variant="outline" size="sm" className="gap-1.5" onClick={() => csvInputRef.current?.click()}>
+                      <Upload className="h-3.5 w-3.5" />
+                      Importar CSV
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-1.5"
+                      disabled={replicarMesMutation.isPending}
+                      onClick={() => replicarMesMutation.mutate()}
+                    >
+                      {replicarMesMutation.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Copy className="h-3.5 w-3.5" />}
                       Replicar Mês
                     </Button>
-                    <Button size="sm" className="gap-1.5 bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90">
+                    <Button
+                      size="sm"
+                      className="gap-1.5 bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
+                      onClick={() => setNovaDespesaOpen(true)}
+                    >
                       <Plus className="h-3.5 w-3.5" />
                       Nova Despesa
                     </Button>
@@ -692,6 +841,7 @@ export default function FinanceiroPainel() {
                         <TableHead>Tipo</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="w-10" />
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -715,11 +865,26 @@ export default function FinanceiroPainel() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right font-mono font-medium" style={{ color: '#E8684A' }}>{formatCurrency(Number(d.valor))}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
+                              disabled={deleteDespesaMutation.isPending}
+                              onClick={() => {
+                                if (window.confirm('Tem certeza que deseja excluir esta despesa?')) {
+                                  deleteDespesaMutation.mutate(d.id)
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                       {allDespesas.length === 0 && (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                             Sem despesas no período
                           </TableCell>
                         </TableRow>
@@ -745,6 +910,165 @@ export default function FinanceiroPainel() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* ─── Nova Despesa Dialog ─── */}
+      <Dialog open={novaDespesaOpen} onOpenChange={setNovaDespesaOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle>Nova Despesa</DialogTitle>
+            <DialogDescription>Preencha os campos para adicionar uma nova despesa.</DialogDescription>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              if (!novaDespesa.descricao || !novaDespesa.valor) { toast.error('Preencha todos os campos obrigatórios'); return }
+              insertDespesaMutation.mutate({
+                data: novaDespesa.data,
+                descricao: novaDespesa.descricao,
+                categoria: novaDespesa.categoria,
+                tipo: novaDespesa.tipo,
+                status: novaDespesa.status,
+                pagamento: novaDespesa.pagamento,
+                forma_pgto: novaDespesa.forma_pgto,
+                valor: Number(novaDespesa.valor),
+              })
+            }}
+            className="space-y-4"
+          >
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="desp-data">Data *</Label>
+                <Input id="desp-data" type="date" required value={novaDespesa.data} onChange={(e) => setNovaDespesa(p => ({ ...p, data: e.target.value }))} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="desp-valor">Valor *</Label>
+                <Input id="desp-valor" type="number" step="0.01" min="0" required placeholder="0.00" value={novaDespesa.valor} onChange={(e) => setNovaDespesa(p => ({ ...p, valor: e.target.value }))} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="desp-descricao">Descrição *</Label>
+              <Input id="desp-descricao" required placeholder="Ex: Aluguel escritório" value={novaDespesa.descricao} onChange={(e) => setNovaDespesa(p => ({ ...p, descricao: e.target.value }))} />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Categoria</Label>
+                <Select value={novaDespesa.categoria} onValueChange={(v) => setNovaDespesa(p => ({ ...p, categoria: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="folha">Folha</SelectItem>
+                    <SelectItem value="sistemas">Sistemas</SelectItem>
+                    <SelectItem value="publicidade">Publicidade</SelectItem>
+                    <SelectItem value="custos">Custos</SelectItem>
+                    <SelectItem value="outros">Outros</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Tipo</Label>
+                <Select value={novaDespesa.tipo} onValueChange={(v) => setNovaDespesa(p => ({ ...p, tipo: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fixa">Fixa</SelectItem>
+                    <SelectItem value="pontual">Pontual</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select value={novaDespesa.status} onValueChange={(v) => setNovaDespesa(p => ({ ...p, status: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pendente">Pendente</SelectItem>
+                    <SelectItem value="pago">Pago</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Pagamento</Label>
+                <Select value={novaDespesa.pagamento} onValueChange={(v) => setNovaDespesa(p => ({ ...p, pagamento: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="a_vista">À Vista</SelectItem>
+                    <SelectItem value="parcelado">Parcelado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Forma Pgto</Label>
+                <Select value={novaDespesa.forma_pgto} onValueChange={(v) => setNovaDespesa(p => ({ ...p, forma_pgto: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pix">PIX</SelectItem>
+                    <SelectItem value="boleto">Boleto</SelectItem>
+                    <SelectItem value="cartao">Cartão</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setNovaDespesaOpen(false)}>Cancelar</Button>
+              <Button type="submit" className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold" disabled={insertDespesaMutation.isPending}>
+                {insertDespesaMutation.isPending && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Salvar
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* ─── CSV Import Dialog ─── */}
+      <Dialog open={csvDialogOpen} onOpenChange={setCsvDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Importar Despesas via CSV</DialogTitle>
+            <DialogDescription>
+              Colunas esperadas: data, descricao, categoria, tipo, status, pagamento, forma_pgto, valor
+            </DialogDescription>
+          </DialogHeader>
+          {csvRows.length > 0 && (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">Preview ({Math.min(csvRows.length, 5)} de {csvRows.length} linhas):</p>
+              <div className="overflow-x-auto max-h-[240px] border rounded-md">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="text-xs">Data</TableHead>
+                      <TableHead className="text-xs">Descrição</TableHead>
+                      <TableHead className="text-xs">Categoria</TableHead>
+                      <TableHead className="text-xs">Tipo</TableHead>
+                      <TableHead className="text-xs text-right">Valor</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {csvRows.slice(0, 5).map((r, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="text-xs">{r.data}</TableCell>
+                        <TableCell className="text-xs">{r.descricao}</TableCell>
+                        <TableCell className="text-xs">{r.categoria}</TableCell>
+                        <TableCell className="text-xs">{r.tipo}</TableCell>
+                        <TableCell className="text-xs text-right font-mono">{r.valor}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setCsvDialogOpen(false); setCsvRows([]) }}>Cancelar</Button>
+            <Button
+              className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
+              disabled={csvImporting || csvRows.length === 0}
+              onClick={handleCsvImport}
+            >
+              {csvImporting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+              Importar {csvRows.length} linha(s)
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
