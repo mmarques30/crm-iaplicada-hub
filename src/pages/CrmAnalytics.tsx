@@ -332,7 +332,7 @@ export default function CrmAnalytics() {
               const dealsForProduct = allDeals.filter(d => d.product === p)
               const sourceCount: Record<string, number> = {}
               for (const d of dealsForProduct) {
-                const ch = d.canal_origem || 'Não informado'
+                const ch = normalizeChannel(d.canal_origem)
                 sourceCount[ch] = (sourceCount[ch] || 0) + 1
               }
               const topSource = Object.entries(sourceCount).sort((a, b) => b[1] - a[1])[0]
