@@ -1044,7 +1044,7 @@ export default function FacebookAdsPage() {
                         <XAxis dataKey="date" tick={{ fontSize: 9, ...AXIS_TICK }} interval={Math.max(Math.floor(dailyInsights.length / 12), 1)} axisLine={false} tickLine={false} />
                         <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
                         <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatCurrency(v)} labelFormatter={l => `Data: ${l}`} />
-                        <Area type="monotone" dataKey="spend" name="Investimento" stroke="#E8684A" fill="#E8684A" fillOpacity={0.2} />
+                        <Area type="monotone" dataKey="spend" name="Investimento" stroke="#E8684A" fill="#E8684A" fillOpacity={0.4} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </CardContent>
