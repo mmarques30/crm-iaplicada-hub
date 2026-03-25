@@ -413,7 +413,7 @@ export default function CrmAnalytics() {
         {/* ─── Leads Visitantes (Supabase Visitantes) ─── */}
         <TabsContent value="leads-visitantes" className="mt-4 space-y-4">
           <div className="flex justify-end">
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.invalidateQueries({ queryKey: VISITANTES_QUERY_KEY }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'visitantes'] }); setVisitantePage(0); }}>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.invalidateQueries({ queryKey: VISITANTES_QUERY_KEY }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'visitantes'] }); }}>
               <RefreshCw className="h-3.5 w-3.5" /> Atualizar dados
             </Button>
           </div>
