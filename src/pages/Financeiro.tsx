@@ -8,11 +8,12 @@ import { formatCurrency, formatDate } from '@/lib/format'
 import { DollarSign, ShoppingCart, Receipt, CreditCard } from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, Legend, LineChart, Line } from 'recharts'
 
 const PRODUCT_COLORS: Record<string, string> = { academy: '#4A9FE0', business: '#AFC040' }
 const PRODUCT_LABELS: Record<string, string> = { academy: 'Academy', business: 'Business', skills: 'Skills' }
-const PAY_COLORS = ['#AFC040', '#4A9FE0', '#E8A43C', '#E8684A', '#7A8460']
+const PAY_COLORS = ['#AFC040', '#4A9FE0', '#E8A43C', '#E8684A', '#7A8460', '#2CBBA6', '#9B87F5', '#D4A574']
+const PAY_LABELS: Record<string, string> = { pix_avista: 'Pix à Vista', entrada_boleto: 'Entrada + Boleto', cartao_avista: 'Cartão à Vista', parcelado_cartao: 'Parcelado Cartão', parcelado_boleto: 'Parcelado Boleto', parcelado_pix: 'Parcelado Pix', entrada_cartao: 'Entrada + Cartão' }
 const TOOLTIP_STYLE = { background: '#191D0C', border: '1px solid #2E3A18', borderRadius: 8, fontFamily: 'Sora', fontSize: 12, color: '#E8EDD8' }
 const AXIS_TICK = { fontSize: 11, fill: '#7A8460' }
 const GRID_STROKE = '#1E2610'
@@ -35,7 +36,7 @@ export default function Financeiro() {
 
   const byPayment: Record<string, number> = {}
   for (const v of allVendas) { const fp = v.forma_pagamento || 'Não informado'; byPayment[fp] = (byPayment[fp] || 0) + 1 }
-  const paymentData = Object.entries(byPayment).map(([name, value]) => ({ name, value }))
+  const paymentData = Object.entries(byPayment).map(([name, value]) => ({ name: PAY_LABELS[name] || name, value })).sort((a, b) => b.value - a.value)
 
   const monthlyData: Record<string, { receita: number; vendas: number }> = {}
   for (const v of allVendas) { const month = v.data_venda.substring(0, 7); if (!monthlyData[month]) monthlyData[month] = { receita: 0, vendas: 0 }; monthlyData[month].receita += Number(v.valor || 0); monthlyData[month].vendas++ }
@@ -97,14 +98,16 @@ export default function Financeiro() {
               <CardHeader><CardTitle className="text-base">Formas de Pagamento</CardTitle></CardHeader>
               <CardContent>
                 {paymentData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie data={paymentData} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label>
-                        {paymentData.map((_, i) => (<Cell key={i} fill={PAY_COLORS[i % PAY_COLORS.length]} />))}
-                      </Pie>
+                  <ResponsiveContainer width="100%" height={Math.max(280, paymentData.length * 40)}>
+                    <BarChart data={paymentData} layout="vertical" margin={{ left: 10, right: 30 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} horizontal={false} />
+                      <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} allowDecimals={false} />
+                      <YAxis dataKey="name" type="category" width={130} tick={{ fontSize: 12, ...AXIS_TICK }} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Legend />
-                    </PieChart>
+                      <Bar dataKey="value" name="Vendas" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#E8EDD8', fontSize: 12 }}>
+                        {paymentData.map((_, i) => (<Cell key={i} fill={PAY_COLORS[i % PAY_COLORS.length]} />))}
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
               </CardContent>
