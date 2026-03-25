@@ -1099,21 +1099,21 @@ export default function GestaoVendas() {
                       </TableRow>
                     ) : (
                       filteredReg.map((n: any) => {
-                        const regStatus = n.status_regularizacao || n.status || 'pendente'
+                        const regStatus = n.status_nf || 'pendente'
                         return (
                           <TableRow key={n.id} className="hover:bg-[var(--c-raised)]">
                             <TableCell className="font-mono text-xs">{n.numero_nf || n.id?.substring(0, 8) || '—'}</TableCell>
                             <TableCell className="text-muted-foreground font-mono text-xs">{n.cpf_cnpj || '—'}</TableCell>
                             <TableCell className="text-muted-foreground">{n.razao_social || '—'}</TableCell>
-                            <TableCell className="text-muted-foreground">{n.mes_ref || formatDate(n.data_emissao) || '—'}</TableCell>
+                            <TableCell className="text-muted-foreground">{n.mes_referencia || formatDate(n.data_emissao) || '—'}</TableCell>
                             <TableCell className="text-muted-foreground text-xs max-w-[180px] truncate">{n.endereco || n.cep || '—'}</TableCell>
-                            <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{n.descricao_servico || n.descricao || '—'}</TableCell>
+                            <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{n.descricao_servico || '—'}</TableCell>
                             <TableCell className="text-right font-medium font-mono" style={{ color: '#E8A43C' }}>
                               {formatCurrency(Number(n.valor || 0))}
                             </TableCell>
                             <TableCell>
-                              <Badge className={`text-xs ${regStatusBadgeClass(regStatus)}`}>
-                                {regStatus === 'regularizado' ? 'Regularizado' : regStatus === 'pendente' ? 'Pendente' : nfStatusLabel(regStatus)}
+                              <Badge className={`text-xs ${nfStatusBadgeClass(regStatus)}`}>
+                                {nfStatusLabel(regStatus)}
                               </Badge>
                             </TableCell>
                           </TableRow>
