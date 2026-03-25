@@ -55,12 +55,7 @@ export default function FacebookAdsPage() {
   const spendByObjective = useMemo(() => {
     const obj: Record<string, number> = {}
     for (const c of campaigns) {
-      const name = (c.objective || c.name || '').toLowerCase()
-      let label = 'Outros'
-      if (name.includes('lead') || name.includes('conversao')) label = 'Leads'
-      else if (name.includes('venda') || name.includes('sales')) label = 'Vendas'
-      else if (name.includes('traffic') || name.includes('trafego')) label = 'Tráfego'
-      else if (name.includes('awareness') || name.includes('alcance')) label = 'Alcance'
+      const label = mapFbObjective(c.objective, c.name)
       obj[label] = (obj[label] || 0) + (c.spend || 0)
     }
     return Object.entries(obj).filter(([, v]) => v > 0).map(([name, value]) => ({ name, value }))
