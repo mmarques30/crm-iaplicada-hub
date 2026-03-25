@@ -14,6 +14,7 @@ import {
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
 import { useLeadsAula, useLeadsVisitantes, PRESENCA_QUERY_KEY, VISITANTES_QUERY_KEY } from '@/hooks/useExternalSupabase'
+import { useDealsByChannel } from '@/hooks/useDealsChannel'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
@@ -57,15 +58,7 @@ export default function CrmAnalytics() {
     queryKey: ['contacts_count'],
     queryFn: async () => { const { count } = await supabase.from('contacts').select('*', { count: 'exact', head: true }); return count || 0 },
   })
-  const { data: dealsByChannel } = useQuery({
-    queryKey: ['deals_by_channel_crm'],
-    queryFn: async () => {
-      const { data } = await (supabase as any).from('deals_full').select('canal_origem')
-      const channels: Record<string, number> = {}
-      for (const d of (data || []) as any[]) { const ch = normalizeChannel(d.canal_origem); channels[ch] = (channels[ch] || 0) + 1 }
-      return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
-    },
-  })
+  const { data: dealsByChannel } = useDealsByChannel()
 
   // Detailed deals_full for correlated analysis
   const { data: dealsFullDetailed } = useQuery({

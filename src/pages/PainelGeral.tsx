@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { KPICard } from '@/components/dashboard/KPICard'
 import { SourceSummaryCard } from '@/components/dashboard/SourceSummaryCard'
 import { useDashboardSnapshot, useCollectDashboardData } from '@/hooks/useDashboardData'
-import { formatCurrency, formatDateTime, normalizeChannel } from '@/lib/format'
+import { formatCurrency, formatDateTime } from '@/lib/format'
 import {
   Users, Eye, Heart, Target, DollarSign, TrendingUp, RefreshCw, Loader2,
   Instagram, Facebook, BarChart3, GraduationCap, BookOpen, AlertTriangle,
@@ -20,6 +20,7 @@ import {
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { useLeadsAula, useLeadsVisitantes } from '@/hooks/useExternalSupabase'
+import { useDealsByChannel } from '@/hooks/useDealsChannel'
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table'
@@ -62,26 +63,7 @@ export default function PainelGeral() {
     },
   })
 
-  const { data: dealsByChannel } = useQuery({
-    queryKey: ['deals_by_channel'],
-    queryFn: async () => {
-      const { data: dealsData } = await supabase.from('deals').select('canal_origem, contact_id')
-      const { data: contactsData } = await supabase.from('contacts').select('id, utm_source, fonte_registro')
-
-      const contactSource: Record<string, string> = {}
-      for (const c of (contactsData || [])) {
-        contactSource[c.id] = c.utm_source || c.fonte_registro || ''
-      }
-
-      const channels: Record<string, number> = {}
-      for (const d of (dealsData || [])) {
-        const raw = d.canal_origem || (d.contact_id ? contactSource[d.contact_id] : '') || ''
-        const ch = normalizeChannel(raw)
-        channels[ch] = (channels[ch] || 0) + 1
-      }
-      return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
-    },
-  })
+  const { data: dealsByChannel } = useDealsByChannel()
 
   const leadsAula = useLeadsAula()
   const leadsVisitantes = useLeadsVisitantes()
