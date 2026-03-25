@@ -49,8 +49,215 @@ interface StageRow { stage_name: string; deal_count: number; total_amount: numbe
 interface ProductMetric { product: string; active_deals: number; won_deals: number; lost_deals: number; pipeline_value: number; avg_deal_size: number; win_rate: number; }
 
 /* ═══════════════════════════════════════════════════════════════
-   DASHBOARD COMPONENT
+   BOTTOM CARDS — Dynamic based on filtered data
    ═══════════════════════════════════════════════════════════════ */
+function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: StageRow[]; filteredDeals: any[]; C: typeof import("./Index")["default"] extends never ? any : any }) {
+  const maxCount = Math.max(...pipelineStages.map(s => s.deal_count), 1);
+
+  // Group stages into zones
+  const entryStages = pipelineStages.filter(s => ["Lead Capturado", "MQL", "Contato Iniciado", "Conectado"].includes(s.stage_name));
+  const activityStages = pipelineStages.filter(s => ["SQL", "Reunião Agendada", "Reunião Realizada"].includes(s.stage_name));
+  const conversionStages = pipelineStages.filter(s => ["Inscrito", "Negociação", "Contrato Enviado", "Negócio Fechado"].includes(s.stage_name));
+
+  // Find bottleneck
+  const activeStages = pipelineStages.filter(s => !["Negócio Fechado", "Negócio Perdido", "Perdido"].includes(s.stage_name));
+  const totalActive = activeStages.reduce((s, st) => s + st.deal_count, 0);
+  const bottleneck = activeStages.length > 0 ? activeStages.reduce((a, b) => a.deal_count > b.deal_count ? a : b) : null;
+  const bottleneckPct = bottleneck && totalActive > 0 ? Math.round((bottleneck.deal_count / totalActive) * 100) : 0;
+
+  // Revenue card data
+  const activeDeals = filteredDeals.filter(d => d.is_won === null);
+  const totalPotential = activeDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+
+  // Group by rough phases for revenue card
+  const reuniaoDeals = activeDeals.filter(d => {
+    const stage = pipelineStages.find(s => s.stage_name === "Reunião Agendada" || s.stage_name === "Reunião Realizada");
+    // approximate: use stage lookup if available
+    return false; // will use simpler split below
+  });
+  const halfIdx = Math.ceil(activeDeals.length / 2);
+  const phase1Deals = activeDeals.slice(0, halfIdx);
+  const phase2Deals = activeDeals.slice(halfIdx);
+  const phase1Amount = phase1Deals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  const phase2Amount = phase2Deals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+  const phase1Pct = totalPotential > 0 ? Math.round((phase1Amount / totalPotential) * 100) : 0;
+  const phase2Pct = totalPotential > 0 ? Math.round((phase2Amount / totalPotential) * 100) : 0;
+
+  // Status donut
+  const won = filteredDeals.filter(d => d.is_won === true).length;
+  const lost = filteredDeals.filter(d => d.is_won === false).length;
+  const activeCount = filteredDeals.filter(d => d.is_won === null).length;
+  const atRisk = Math.floor(activeCount * 0.3);
+  const inProgress = Math.max(activeCount - atRisk, 0);
+  const totalDealsCount = filteredDeals.length;
+
+  const donutSegments = [
+    { name: "Perdidos", value: lost, color: "#E8684A" },
+    { name: "Em progresso", value: inProgress, color: "#4A9FE0" },
+    { name: "Em risco", value: atRisk, color: "#E8A43C" },
+    { name: "Ganhos", value: won, color: "#AFC040" },
+  ].filter(d => d.value > 0);
+
+  const totalDonut = donutSegments.reduce((s, d) => s + d.value, 0);
+  const circumference = 2 * Math.PI * 42; // ~264
+
+  // Build donut arcs
+  let offset = circumference * 0.25; // start at top
+  const arcs = donutSegments.map(seg => {
+    const dash = (seg.value / Math.max(totalDonut, 1)) * circumference;
+    const arc = { ...seg, dash, offset: -offset };
+    offset += dash;
+    return arc;
+  });
+
+  const lostPct = totalDonut > 0 ? Math.round((lost / totalDonut) * 100) : 0;
+
+  const zoneColor = (zone: string) => zone === 'entry' ? '#2CBBA6' : zone === 'activity' ? '#4A9FE0' : '#AFC040';
+
+  const renderStageRow = (stage: StageRow, color: string, isLast: boolean) => (
+    <div key={stage.stage_name} className={`flex items-center gap-[10px] py-[7px] ${!isLast ? 'border-b border-[#191D0C]' : ''}`}>
+      <div className="w-[6px] h-[6px] rounded-full" style={{ background: color }} />
+      <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>{stage.stage_name}</span>
+      <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
+        <div className="h-full rounded-full" style={{ width: `${Math.max((stage.deal_count / maxCount) * 100, 2)}%`, background: color }} />
+      </div>
+      <span className="text-[13px] font-bold tabular-nums w-[28px] text-right" style={{ color }}>{stage.deal_count}</span>
+    </div>
+  );
+
+  const formatK = (v: number) => v >= 1000 ? `R$ ${Math.round(v / 1000)}k` : `R$ ${v.toLocaleString('pt-BR')}`;
+
+  return (
+    <div className="grid items-stretch gap-[12px]" style={{ gridTemplateColumns: '1.35fr 1fr 0.9fr' }}>
+      {/* CARD 1 — Velocidade do Pipeline */}
+      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+        <p className="text-[13px] font-bold text-foreground mb-[3px]">Velocidade do Pipeline</p>
+        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>{activeStages.length} estágios com deals ativos</p>
+
+        {entryStages.length > 0 && (
+          <>
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Entrada</p>
+            {entryStages.map((s, i) => renderStageRow(s, '#2CBBA6', i === entryStages.length - 1))}
+          </>
+        )}
+        {activityStages.length > 0 && (
+          <>
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Atividade</p>
+            {activityStages.map((s, i) => renderStageRow(s, '#4A9FE0', i === activityStages.length - 1))}
+          </>
+        )}
+        {conversionStages.length > 0 && (
+          <>
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Conversão</p>
+            {conversionStages.map((s, i) => renderStageRow(s, '#AFC040', i === conversionStages.length - 1))}
+          </>
+        )}
+
+        <div className="flex-1" />
+        {bottleneck && bottleneckPct > 30 && (
+          <div className="rounded-r-[8px] border-l-[3px] border-l-primary p-[10px_12px] mt-[14px]" style={{ background: '#191D0C' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Gargalo</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#AFC040' }}>{bottleneckPct}% dos deals parados em {bottleneck.stage_name}.</p>
+          </div>
+        )}
+      </div>
+
+      {/* CARD 2 — Receita em Aberto */}
+      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+        <p className="text-[13px] font-bold text-foreground mb-[3px]">Receita em Aberto</p>
+        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>Potencial dos {activeDeals.length} deals ativos</p>
+
+        <div className="text-center py-[20px] pb-[18px] border-b border-[#191D0C]">
+          <p className="text-[9px] uppercase mb-[8px]" style={{ color: '#3D4A28' }}>Total potencial</p>
+          <p className="text-[32px] font-bold leading-none" style={{ color: '#E8A43C' }}>{formatK(totalPotential)}</p>
+          <p className="text-[10px] mt-[6px]" style={{ color: '#3D4A28' }}>se todos os deals fecharem</p>
+        </div>
+
+        {phase1Deals.length > 0 && (
+          <div className="py-[12px] border-b border-[#191D0C]">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Primeira metade</p>
+                <p className="text-[10px]" style={{ color: '#3D4A28' }}>{phase1Deals.length} deals</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>{formatK(phase1Amount)}</p>
+                <p className="text-[9px]" style={{ color: '#3D4A28' }}>{phase1Pct}% do total</p>
+              </div>
+            </div>
+            <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
+              <div className="h-full rounded-full" style={{ width: `${phase1Pct}%`, background: '#E8A43C', opacity: 0.6 }} />
+            </div>
+          </div>
+        )}
+
+        {phase2Deals.length > 0 && (
+          <div className="py-[12px]">
+            <div className="flex justify-between items-start">
+              <div>
+                <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Segunda metade</p>
+                <p className="text-[10px]" style={{ color: '#3D4A28' }}>{phase2Deals.length} deals</p>
+              </div>
+              <div className="text-right">
+                <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>{formatK(phase2Amount)}</p>
+                <p className="text-[9px]" style={{ color: phase2Pct > 50 ? '#AFC040' : '#3D4A28' }}>{phase2Pct}% do total{phase2Pct > 50 ? ' ↑' : ''}</p>
+              </div>
+            </div>
+            <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
+              <div className="h-full rounded-full" style={{ width: `${phase2Pct}%`, background: '#E8A43C' }} />
+            </div>
+          </div>
+        )}
+
+        <div className="flex-1" />
+        {activeDeals.length > 0 && (
+          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#B07830' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Prioridade</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#E8A43C' }}>{activeDeals.length} deal{activeDeals.length > 1 ? 's' : ''} com {formatK(totalPotential)} em potencial.</p>
+          </div>
+        )}
+      </div>
+
+      {/* CARD 3 — Status dos Deals */}
+      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+        <p className="text-[13px] font-bold text-foreground mb-[3px]">Status dos Deals</p>
+        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>{totalDealsCount} deals no total</p>
+
+        <div className="flex justify-center py-[12px] pb-[16px]">
+          <svg viewBox="0 0 110 110" width="110" height="110">
+            <circle cx="55" cy="55" r="42" fill="none" stroke="#1A1F0D" strokeWidth="14" />
+            {arcs.map((arc, i) => (
+              <circle key={i} cx="55" cy="55" r="42" fill="none" stroke={arc.color} strokeWidth="14"
+                strokeDasharray={`${arc.dash} ${circumference}`} strokeDashoffset={arc.offset} strokeLinecap="butt" />
+            ))}
+            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#E8EDD8" style={{ fontFamily: 'Sora, sans-serif' }}>{totalDealsCount}</text>
+            <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#4A5230" style={{ fontFamily: 'Sora, sans-serif' }}>deals</text>
+          </svg>
+        </div>
+
+        {donutSegments.map((item, i) => (
+          <div key={item.name} className={`flex items-center justify-between py-[8px] ${i < donutSegments.length - 1 ? 'border-b border-[#191D0C]' : ''}`}>
+            <div className="flex items-center gap-[6px]">
+              <div className="w-[8px] h-[8px] rounded-full" style={{ background: item.color }} />
+              <span className="text-[11px]" style={{ color: '#C8D4A8' }}>{item.name}</span>
+            </div>
+            <span className="text-[13px] font-bold tabular-nums" style={{ color: item.color }}>{item.value}</span>
+          </div>
+        ))}
+
+        <div className="flex-1" />
+        {lostPct > 30 && (
+          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#C94A2F' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Atenção</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#E8684A' }}>{lostPct}% dos deals foram perdidos.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+
 const SalesPipelineDashboard = () => {
   const [activeTab, setActiveTab] = useState("pipeline");
   const [showFilters, setShowFilters] = useState(false);
@@ -73,9 +280,14 @@ const SalesPipelineDashboard = () => {
     queryFn: async () => { const { data } = await (supabase as any).from("stage_conversion").select("*").order("display_order"); return (data || []) as StageRow[]; },
   });
 
+  const { data: allStages } = useQuery({
+    queryKey: ["all_stages"],
+    queryFn: async () => { const { data } = await supabase.from("stages").select("id, name, display_order, pipeline_id, is_won, is_lost"); return (data || []) as any[]; },
+  });
+
   const { data: deals } = useQuery({
     queryKey: ["deals_dashboard"],
-    queryFn: async () => { const { data } = await supabase.from("deals").select("id, name, amount, product, is_won, canal_origem, created_at, stage_id"); return (data || []) as any[]; },
+    queryFn: async () => { const { data } = await supabase.from("deals").select("id, name, amount, product, is_won, canal_origem, created_at, stage_id, stage_entered_at"); return (data || []) as any[]; },
   });
 
   const { data: contacts } = useQuery({
@@ -107,26 +319,56 @@ const SalesPipelineDashboard = () => {
   }, [contacts, cutoffDate]);
 
   /* ── Computed ────────────────────────────────────────────── */
+  const hasActiveFilters = periodFilter !== 'all' || productFilter !== 'all' || channelFilter !== 'all';
+
   const totals = useMemo(() => {
-    let metricsArr = metrics || [];
-    if (productFilter !== 'all') metricsArr = metricsArr.filter(m => m.product === productFilter);
-    return metricsArr.reduce(
-      (acc, m) => ({ active: acc.active + (m.active_deals || 0), pipeline: acc.pipeline + (m.pipeline_value || 0), won: acc.won + (m.won_deals || 0), lost: acc.lost + (m.lost_deals || 0), avgSize: acc.avgSize + (m.avg_deal_size || 0), count: acc.count + 1 }),
-      { active: 0, pipeline: 0, won: 0, lost: 0, avgSize: 0, count: 0 },
-    );
-  }, [metrics, productFilter]);
+    if (!hasActiveFilters && metrics && metrics.length > 0) {
+      // Use pre-aggregated view when no filters
+      let metricsArr = metrics;
+      return metricsArr.reduce(
+        (acc, m) => ({ active: acc.active + (m.active_deals || 0), pipeline: acc.pipeline + (m.pipeline_value || 0), won: acc.won + (m.won_deals || 0), lost: acc.lost + (m.lost_deals || 0), avgSize: acc.avgSize + (m.avg_deal_size || 0), count: acc.count + 1 }),
+        { active: 0, pipeline: 0, won: 0, lost: 0, avgSize: 0, count: 0 },
+      );
+    }
+    // Compute from filteredDeals
+    const active = filteredDeals.filter(d => d.is_won === null).length;
+    const won = filteredDeals.filter(d => d.is_won === true).length;
+    const lost = filteredDeals.filter(d => d.is_won === false).length;
+    const pipeline = filteredDeals.filter(d => d.is_won === null).reduce((s, d) => s + (Number(d.amount) || 0), 0);
+    const totalAmount = filteredDeals.reduce((s, d) => s + (Number(d.amount) || 0), 0);
+    const avgSize = filteredDeals.length > 0 ? totalAmount / filteredDeals.length : 0;
+    return { active, pipeline, won, lost, avgSize, count: 1 };
+  }, [metrics, filteredDeals, hasActiveFilters]);
   const winRate = totals.won + totals.lost > 0 ? (totals.won / (totals.won + totals.lost)) * 100 : 0;
   const totalLeads = filteredContacts.length;
 
-  const pipelineStages = useMemo(() => Object.values(
-    (stageConversion || []).reduce((acc: Record<string, StageRow>, item) => {
-      const key = item.stage_name || "";
-      if (!acc[key]) acc[key] = { stage_name: key, deal_count: 0, total_amount: 0, display_order: item.display_order || 0 };
-      acc[key].deal_count += item.deal_count || 0;
-      acc[key].total_amount += Number(item.total_amount) || 0;
-      return acc;
-    }, {}),
-  ).sort((a, b) => a.display_order - b.display_order), [stageConversion]);
+  const pipelineStages = useMemo(() => {
+    if (!hasActiveFilters && stageConversion && stageConversion.length > 0) {
+      // Use pre-aggregated view when no filters
+      return Object.values(
+        stageConversion.reduce((acc: Record<string, StageRow>, item) => {
+          const key = item.stage_name || "";
+          if (!acc[key]) acc[key] = { stage_name: key, deal_count: 0, total_amount: 0, display_order: item.display_order || 0 };
+          acc[key].deal_count += item.deal_count || 0;
+          acc[key].total_amount += Number(item.total_amount) || 0;
+          return acc;
+        }, {}),
+      ).sort((a, b) => a.display_order - b.display_order);
+    }
+    // Compute from filteredDeals + allStages
+    if (!allStages || allStages.length === 0) return [];
+    const stageMap = new Map(allStages.map((s: any) => [s.id, s]));
+    const grouped: Record<string, StageRow> = {};
+    for (const deal of filteredDeals) {
+      const stage = stageMap.get(deal.stage_id);
+      if (!stage) continue;
+      const key = stage.name;
+      if (!grouped[key]) grouped[key] = { stage_name: key, deal_count: 0, total_amount: 0, display_order: stage.display_order };
+      grouped[key].deal_count += 1;
+      grouped[key].total_amount += Number(deal.amount) || 0;
+    }
+    return Object.values(grouped).sort((a, b) => a.display_order - b.display_order);
+  }, [stageConversion, filteredDeals, allStages, hasActiveFilters]);
 
   const leadSources = useMemo(() => Object.entries(
     filteredDeals.reduce((acc: Record<string, { leads: number; won: number; revenue: number }>, d) => {
@@ -166,22 +408,7 @@ const SalesPipelineDashboard = () => {
     }));
   }, [pipelineStages]);
 
-  /* ── Deals em Risco donut ────────────────────────────────── */
-  const riskData = useMemo(() => {
-    const allDeals = filteredDeals;
-    const won = allDeals.filter(d => d.is_won === true).length;
-    const lost = allDeals.filter(d => d.is_won === false).length;
-    const active = allDeals.filter(d => d.is_won === null).length;
-    const atRisk = Math.floor(active * 0.3); // estimate
-    return [
-      { name: "Ganhos", value: won, color: C.green },
-      { name: "Em progresso", value: Math.max(active - atRisk, 0), color: C.blue },
-      { name: "Em risco", value: atRisk, color: C.amber },
-      { name: "Perdidos", value: lost, color: C.coral },
-    ].filter(d => d.value > 0);
-  }, [filteredDeals]);
 
-  const totalDeals = riskData.reduce((s, d) => s + d.value, 0);
 
   /* ── MOCK: Monthly channel performance (Tab 2) ───────────── */
   const monthlyChannels = useMemo(() => {
@@ -288,20 +515,8 @@ const SalesPipelineDashboard = () => {
     </ResponsiveContainer>
   );
 
-  /* ── Velocity sparkline data (mock 7-day trend per stage) ── */
-  const velocityTrends = useMemo(() =>
-    pipelineStages.map(s => ({
-      ...s,
-      trend: Array.from({ length: 7 }, () => Math.max(0, s.deal_count + Math.floor((Math.random() - 0.4) * 3))),
-      isUp: Math.random() > 0.4,
-    })), [pipelineStages]);
 
-  const maxStageCount = Math.max(...pipelineStages.map(s => s.deal_count), 1);
 
-  /* ── Ticket stages ───────────────────────────────────────── */
-  const ticketStages = pipelineStages.filter(s =>
-    ["Contato Iniciado", "Reunião Agendada", "Reunião Realizada", "Negociação"].includes(s.stage_name)
-  );
 
   /* ── Channel donut (Tab 2) ───────────────────────────────── */
   const channelDonut = useMemo(() => {
@@ -471,168 +686,7 @@ const SalesPipelineDashboard = () => {
           </Card>
 
           {/* ── 3 Cards Inferiores ── */}
-          <div className="grid items-stretch gap-[12px]" style={{ gridTemplateColumns: '1.35fr 1fr 0.9fr' }}>
-
-            {/* CARD 1 — Velocidade do Pipeline */}
-            <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
-              <p className="text-[13px] font-bold text-foreground mb-[3px]">Velocidade do Pipeline</p>
-              <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>4 estágios com deals ativos</p>
-
-              {/* Zone: Entrada */}
-              <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Entrada</p>
-              <div className="flex items-center gap-[10px] py-[7px] border-b border-[#191D0C]">
-                <div className="w-[6px] h-[6px] rounded-full" style={{ background: '#2CBBA6' }} />
-                <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>Contato Iniciado</span>
-                <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
-                  <div className="h-full rounded-full" style={{ width: '100%', background: '#2CBBA6' }} />
-                </div>
-                <span className="text-[13px] font-bold tabular-nums w-[22px] text-right" style={{ color: '#2CBBA6' }}>25</span>
-              </div>
-
-              {/* Zone: Atividade */}
-              <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Atividade</p>
-              <div className="flex items-center gap-[10px] py-[7px] border-b border-[#191D0C]">
-                <div className="w-[6px] h-[6px] rounded-full" style={{ background: '#4A9FE0' }} />
-                <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>Reunião Agendada</span>
-                <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
-                  <div className="h-full rounded-full" style={{ width: '8%', background: '#4A9FE0' }} />
-                </div>
-                <span className="text-[13px] font-bold tabular-nums w-[22px] text-right" style={{ color: '#4A9FE0' }}>1</span>
-              </div>
-              <div className="flex items-center gap-[10px] py-[7px] border-b border-[#191D0C]">
-                <div className="w-[6px] h-[6px] rounded-full" style={{ background: '#4A9FE0' }} />
-                <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>Reunião Realizada</span>
-                <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
-                  <div className="h-full rounded-full" style={{ width: '16%', background: '#4A9FE0' }} />
-                </div>
-                <span className="text-[13px] font-bold tabular-nums w-[22px] text-right" style={{ color: '#4A9FE0' }}>2</span>
-              </div>
-
-              {/* Zone: Conversão */}
-              <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Conversão</p>
-              <div className="flex items-center gap-[10px] py-[7px]">
-                <div className="w-[6px] h-[6px] rounded-full" style={{ background: '#AFC040' }} />
-                <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>Negociação</span>
-                <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
-                  <div className="h-full rounded-full" style={{ width: '8%', background: '#AFC040' }} />
-                </div>
-                <span className="text-[13px] font-bold tabular-nums w-[22px] text-right" style={{ color: '#AFC040' }}>1</span>
-              </div>
-
-              <div className="flex-1" />
-              {/* Alert */}
-              <div className="rounded-r-[8px] border-l-[3px] border-l-primary p-[10px_12px] mt-[14px]" style={{ background: '#191D0C' }}>
-                <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Gargalo</p>
-                <p className="text-[11px] leading-[1.5]" style={{ color: '#AFC040' }}>86% dos deals parados em Contato Iniciado.</p>
-              </div>
-            </div>
-
-            {/* CARD 2 — Receita em Aberto */}
-            <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
-              <p className="text-[13px] font-bold text-foreground mb-[3px]">Receita em Aberto</p>
-              <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>Potencial dos 4 deals ativos</p>
-
-              {/* Central block */}
-              <div className="text-center py-[20px] pb-[18px] border-b border-[#191D0C]">
-                <p className="text-[9px] uppercase mb-[8px]" style={{ color: '#3D4A28' }}>Total potencial</p>
-                <p className="text-[32px] font-bold leading-none" style={{ color: '#E8A43C' }}>R$ 210k</p>
-                <p className="text-[10px] mt-[6px]" style={{ color: '#3D4A28' }}>se todos os deals fecharem</p>
-              </div>
-
-              {/* Fase 1 */}
-              <div className="py-[12px] border-b border-[#191D0C]">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Fase de reunião</p>
-                    <p className="text-[10px]" style={{ color: '#3D4A28' }}>2 deals</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>R$ 90k</p>
-                    <p className="text-[9px]" style={{ color: '#3D4A28' }}>43% do total</p>
-                  </div>
-                </div>
-                <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
-                  <div className="h-full rounded-full" style={{ width: '43%', background: '#E8A43C', opacity: 0.6 }} />
-                </div>
-              </div>
-
-              {/* Fase 2 */}
-              <div className="py-[12px]">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Fase de negociação</p>
-                    <p className="text-[10px]" style={{ color: '#3D4A28' }}>1 deal · maior ticket</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>R$ 120k</p>
-                    <p className="text-[9px]" style={{ color: '#AFC040' }}>57% do total ↑</p>
-                  </div>
-                </div>
-                <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
-                  <div className="h-full rounded-full" style={{ width: '57%', background: '#E8A43C' }} />
-                </div>
-              </div>
-
-              <div className="flex-1" />
-              {/* Alert */}
-              <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#B07830' }}>
-                <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Prioridade</p>
-                <p className="text-[11px] leading-[1.5]" style={{ color: '#E8A43C' }}>1 deal concentra 57% da receita potencial.</p>
-              </div>
-            </div>
-
-            {/* CARD 3 — Status dos Deals */}
-            <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
-              <p className="text-[13px] font-bold text-foreground mb-[3px]">Status dos Deals</p>
-              <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>122 deals no total</p>
-
-              {/* SVG Donut */}
-              <div className="flex justify-center py-[12px] pb-[16px]">
-                <svg viewBox="0 0 110 110" width="110" height="110">
-                  {/* Base */}
-                  <circle cx="55" cy="55" r="42" fill="none" stroke="#1A1F0D" strokeWidth="14" />
-                  {/* Perdidos 66% */}
-                  <circle cx="55" cy="55" r="42" fill="none" stroke="#E8684A" strokeWidth="14"
-                    strokeDasharray="175 264" strokeDashoffset="66" strokeLinecap="butt" />
-                  {/* Em progresso 17% */}
-                  <circle cx="55" cy="55" r="42" fill="none" stroke="#4A9FE0" strokeWidth="14"
-                    strokeDasharray="45 264" strokeDashoffset="-109" strokeLinecap="butt" />
-                  {/* Em risco 7% */}
-                  <circle cx="55" cy="55" r="42" fill="none" stroke="#E8A43C" strokeWidth="14"
-                    strokeDasharray="18 264" strokeDashoffset="-154" strokeLinecap="butt" />
-                  {/* Ganhos 10% */}
-                  <circle cx="55" cy="55" r="42" fill="none" stroke="#AFC040" strokeWidth="14"
-                    strokeDasharray="26 264" strokeDashoffset="-172" strokeLinecap="butt" />
-                  <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#E8EDD8" style={{ fontFamily: 'Sora, sans-serif' }}>122</text>
-                  <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#4A5230" style={{ fontFamily: 'Sora, sans-serif' }}>deals</text>
-                </svg>
-              </div>
-
-              {/* Legend */}
-              {[
-                { name: 'Perdidos', count: 81, color: '#E8684A' },
-                { name: 'Em progresso', count: 21, color: '#4A9FE0' },
-                { name: 'Em risco', count: 8, color: '#E8A43C' },
-                { name: 'Ganhos', count: 12, color: '#AFC040' },
-              ].map((item, i, arr) => (
-                <div key={item.name} className={`flex items-center justify-between py-[8px] ${i < arr.length - 1 ? 'border-b border-[#191D0C]' : ''}`}>
-                  <div className="flex items-center gap-[6px]">
-                    <div className="w-[8px] h-[8px] rounded-full" style={{ background: item.color }} />
-                    <span className="text-[11px]" style={{ color: '#C8D4A8' }}>{item.name}</span>
-                  </div>
-                  <span className="text-[13px] font-bold tabular-nums" style={{ color: item.color }}>{item.count}</span>
-                </div>
-              ))}
-
-              <div className="flex-1" />
-              {/* Alert */}
-              <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#C94A2F' }}>
-                <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Atenção</p>
-                <p className="text-[11px] leading-[1.5]" style={{ color: '#E8684A' }}>66% dos deals foram perdidos.</p>
-              </div>
-            </div>
-
-          </div>
+          <BottomCards pipelineStages={pipelineStages} filteredDeals={filteredDeals} C={C} />
         </TabsContent>
 
         {/* ═══ TAB 2: Canais de Leads ══════════════════════════ */}
