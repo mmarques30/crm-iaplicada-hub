@@ -173,12 +173,12 @@ export default function FacebookAdsPage() {
                   <div className="grid grid-cols-2 gap-3 mt-3">
                     <div className="p-3 rounded-lg bg-[#031411] text-center">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Melhor CPL</p>
-                      <p className="text-xl font-bold font-mono" style={{ color: '#AFC040' }}>{formatCurrency(bestCPL.costPerLead)}</p>
+                      <p className="text-xl font-bold font-mono" style={{ color: '#AFC040' }}>{formatCurrency(bestCPL.cplCalc)}</p>
                       <p className="text-[10px] text-muted-foreground truncate mt-1">{shortName(bestCPL.name, 30)}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-[#1A0604] text-center">
                       <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pior CPL</p>
-                      <p className="text-xl font-bold font-mono" style={{ color: '#E8684A' }}>{formatCurrency(worstCPL?.costPerLead || 0)}</p>
+                      <p className="text-xl font-bold font-mono" style={{ color: '#E8684A' }}>{formatCurrency(worstCPL?.cplCalc || 0)}</p>
                       <p className="text-[10px] text-muted-foreground truncate mt-1">{shortName(worstCPL?.name || '', 30)}</p>
                     </div>
                   </div>
