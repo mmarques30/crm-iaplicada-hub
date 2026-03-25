@@ -507,10 +507,13 @@ export default function GestaoVendas() {
     enabled: allParcelas.length > 0,
   })
 
-  /* ─── Available years for filters ─── */
+  /* ─── Available years for reg filters ─── */
   const availableYears = useMemo(() => {
     const years = new Set<string>()
     for (const n of allNFs) {
+      // mes_referencia is like "Março/2026"
+      const match = (n.mes_referencia || '').match(/(\d{4})/)
+      if (match) years.add(match[1])
       const y = (n.data_emissao || n.created_at || '').substring(0, 4)
       if (y && y.length === 4) years.add(y)
     }
