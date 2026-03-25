@@ -183,80 +183,270 @@ export default function CrmAnalytics() {
         </TabsContent>
 
         {/* ─── Fontes ─── */}
-        <TabsContent value="sources" className="mt-4">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Deals por Canal de Origem</CardTitle></CardHeader>
-            <CardContent>
-              {(dealsByChannel || []).length > 0 ? (
-                <ResponsiveContainer width="100%" height={350}>
-                  <BarChart data={dealsByChannel} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                    <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                    <YAxis dataKey="name" type="category" width={130} tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} />
-                    <Bar dataKey="value" name="Deals" radius={[0, 4, 4, 0]}>
-                      {(dealsByChannel || []).map((_, i) => (<Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : <p className="text-center text-muted-foreground py-8">Sem dados de canais</p>}
-            </CardContent>
-          </Card>
+        <TabsContent value="sources" className="mt-4 space-y-4">
+          {(() => {
+            const allDeals = dealsFullDetailed || []
+            // Source stats
+            const sourceMap: Record<string, { total: number; opportunities: number; customers: number; won: number }> = {}
+            for (const d of allDeals) {
+              const ch = d.canal_origem || 'Não informado'
+              if (!sourceMap[ch]) sourceMap[ch] = { total: 0, opportunities: 0, customers: 0, won: 0 }
+              sourceMap[ch].total++
+              if ((d.stage_order ?? 0) >= 2) sourceMap[ch].opportunities++
+              if (d.is_won === true) { sourceMap[ch].customers++; sourceMap[ch].won++ }
+            }
+            const sourceEntries = Object.entries(sourceMap).sort((a, b) => b[1].total - a[1].total)
+
+            // Conversion data
+            const conversionData = sourceEntries.slice(0, 8).map(([name, s]) => ({
+              name,
+              'Lead→Opp': s.total > 0 ? Math.round((s.opportunities / s.total) * 100) : 0,
+              'Opp→Won': s.opportunities > 0 ? Math.round((s.customers / s.opportunities) * 100) : 0,
+            }))
+
+            // Monthly evolution
+            const monthMap: Record<string, Record<string, number>> = {}
+            const topSources = sourceEntries.slice(0, 5).map(([n]) => n)
+            for (const d of allDeals) {
+              if (!d.created_at) continue
+              const month = d.created_at.substring(0, 7)
+              const ch = d.canal_origem || 'Não informado'
+              const src = topSources.includes(ch) ? ch : 'Outros'
+              if (!monthMap[month]) monthMap[month] = {}
+              monthMap[month][src] = (monthMap[month][src] || 0) + 1
+            }
+            const monthlyData = Object.entries(monthMap).sort().map(([month, sources]) => ({ month, ...sources }))
+            const areaKeys = [...new Set(monthlyData.flatMap(m => Object.keys(m).filter(k => k !== 'month')))]
+
+            return (
+              <>
+                {/* Charts row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader><CardTitle className="text-base">Deals por Fonte de Aquisição</CardTitle></CardHeader>
+                    <CardContent>
+                      {sourceEntries.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={Math.max(280, sourceEntries.slice(0, 8).length * 40)}>
+                          <BarChart data={sourceEntries.slice(0, 8).map(([name, s]) => ({ name, value: s.total }))} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                            <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                            <YAxis dataKey="name" type="category" width={130} tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={TOOLTIP_STYLE} />
+                            <Bar dataKey="value" name="Deals" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#E8EDD8', fontSize: 11 }}>
+                              {sourceEntries.slice(0, 8).map((_, i) => (<Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />))}
+                            </Bar>
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : <p className="text-center text-muted-foreground py-8">Sem dados de canais</p>}
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Taxa de Conversão por Fonte</CardTitle>
+                      <p className="text-xs text-muted-foreground">Lead→Opportunity e Opportunity→Won (%)</p>
+                    </CardHeader>
+                    <CardContent>
+                      {conversionData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={Math.max(280, conversionData.length * 40)}>
+                          <BarChart data={conversionData} layout="vertical">
+                            <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                            <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" domain={[0, 100]} />
+                            <YAxis dataKey="name" type="category" width={130} tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                            <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `${v}%`} />
+                            <Legend />
+                            <Bar dataKey="Lead→Opp" name="Lead→Opp" fill="#4A9FE0" radius={[0, 4, 4, 0]} barSize={12} />
+                            <Bar dataKey="Opp→Won" name="Opp→Won" fill="#AFC040" radius={[0, 4, 4, 0]} barSize={12} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Channel cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {sourceEntries.map(([name, s], i) => (
+                    <Card key={name} className="p-4 space-y-3">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SOURCE_COLORS[i % SOURCE_COLORS.length] }} />
+                        <span className="text-xs font-medium truncate">{name}</span>
+                      </div>
+                      <p className="text-2xl font-bold font-mono tabular-nums">{s.total}</p>
+                      <div className="space-y-1 text-[11px] text-muted-foreground">
+                        <div className="flex justify-between"><span>Opportunities</span><span className="font-mono font-semibold text-foreground">{s.opportunities}</span></div>
+                        <div className="flex justify-between"><span>Customers</span><span className="font-mono font-semibold text-foreground">{s.customers}</span></div>
+                        <div className="flex justify-between"><span>Win Rate</span><span className="font-mono font-semibold text-foreground">{s.total > 0 ? Math.round((s.won / s.total) * 100) : 0}%</span></div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+
+                {/* Monthly evolution */}
+                {monthlyData.length > 1 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-base">Evolução Mensal de Novos Deals por Fonte</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ResponsiveContainer width="100%" height={320}>
+                        <AreaChart data={monthlyData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                          <XAxis dataKey="month" tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                          <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                          <Tooltip contentStyle={TOOLTIP_STYLE} />
+                          <Legend />
+                          {areaKeys.map((key, i) => (
+                            <Area key={key} type="monotone" dataKey={key} stackId="1" stroke={SOURCE_COLORS[i % SOURCE_COLORS.length]} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} fillOpacity={0.4} />
+                          ))}
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )
+          })()}
         </TabsContent>
 
         {/* ─── Produtos ─── */}
-        <TabsContent value="products" className="mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader><CardTitle className="text-base">Deals por Produto</CardTitle></CardHeader>
-              <CardContent>
-                {productPie.length > 0 ? (
-                  <div className="space-y-4">
-                    {productPie.map((p) => {
-                      const total = productPie.reduce((s, x) => s + x.value, 0)
-                      const pct = total > 0 ? (p.value / total) * 100 : 0
-                      return (
-                        <div key={p.name} className="space-y-2">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: p.fill }} />
-                              <span className="font-medium text-sm">{p.name}</span>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className="text-xs text-muted-foreground font-mono">{pct.toFixed(0)}%</span>
-                              <span className="font-bold font-mono tabular-nums">{p.value}</span>
-                            </div>
+        <TabsContent value="products" className="mt-4 space-y-4">
+          {(() => {
+            const allDeals = dealsFullDetailed || []
+            const products = [...new Set(allDeals.map(d => d.product).filter(Boolean))] as string[]
+            const stages = [...new Set((stageConversion || []).map((s: any) => s.stage_name))].filter(Boolean) as string[]
+
+            // Cross-tab: product × stage
+            const crossTab: Record<string, Record<string, number>> = {}
+            for (const s of stages) { crossTab[s] = {} }
+            for (const sc of (stageConversion || []) as any[]) {
+              if (sc.stage_name && sc.product) {
+                if (!crossTab[sc.stage_name]) crossTab[sc.stage_name] = {}
+                crossTab[sc.stage_name][sc.product] = Number(sc.deal_count || 0)
+              }
+            }
+
+            // Product summary with top source
+            const productSummaries = products.map(p => {
+              const pm = (productMetrics || []).find((m: any) => m.product === p) as any
+              const dealsForProduct = allDeals.filter(d => d.product === p)
+              const sourceCount: Record<string, number> = {}
+              for (const d of dealsForProduct) {
+                const ch = d.canal_origem || 'Não informado'
+                sourceCount[ch] = (sourceCount[ch] || 0) + 1
+              }
+              const topSource = Object.entries(sourceCount).sort((a, b) => b[1] - a[1])[0]
+              const topSourcePct = topSource && dealsForProduct.length > 0 ? Math.round((topSource[1] / dealsForProduct.length) * 100) : 0
+
+              return {
+                product: p,
+                label: p.charAt(0).toUpperCase() + p.slice(1),
+                color: PRODUCT_COLORS[p] || '#7A8460',
+                total: Number(pm?.active_deals || 0) + Number(pm?.won_deals || 0) + Number(pm?.lost_deals || 0),
+                active: Number(pm?.active_deals || 0),
+                won: Number(pm?.won_deals || 0),
+                lost: Number(pm?.lost_deals || 0),
+                winRate: Number(pm?.win_rate || 0),
+                topSource: topSource ? topSource[0] : '—',
+                topSourcePct,
+              }
+            })
+
+            return (
+              <>
+                {/* Cross-tab table */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Deals por Produto × Estágio do Funil</CardTitle>
+                    <p className="text-xs text-muted-foreground">Distribuição cruzada de deals em cada etapa</p>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="border border-[var(--c-border)] rounded-lg overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-[var(--c-raised)]">
+                            <TableHead>Estágio</TableHead>
+                            {products.map(p => (
+                              <TableHead key={p} className="text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: PRODUCT_COLORS[p] || '#7A8460' }} />
+                                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                                </div>
+                              </TableHead>
+                            ))}
+                            <TableHead className="text-center font-bold">Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {stages.map(stage => {
+                            const row = crossTab[stage] || {}
+                            const total = products.reduce((s, p) => s + (row[p] || 0), 0)
+                            return (
+                              <TableRow key={stage}>
+                                <TableCell className="font-medium text-sm">{stage}</TableCell>
+                                {products.map(p => (
+                                  <TableCell key={p} className="text-center">
+                                    {(row[p] || 0) > 0 ? (
+                                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold" style={{ backgroundColor: `${PRODUCT_COLORS[p] || '#7A8460'}22`, color: PRODUCT_COLORS[p] || '#7A8460' }}>
+                                        {row[p]}
+                                      </span>
+                                    ) : (
+                                      <span className="text-muted-foreground text-xs">0</span>
+                                    )}
+                                  </TableCell>
+                                ))}
+                                <TableCell className="text-center font-bold font-mono">{total}</TableCell>
+                              </TableRow>
+                            )
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Product summary cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {productSummaries.map(ps => (
+                    <Card key={ps.product} className="overflow-hidden" style={{ borderLeft: `4px solid ${ps.color}` }}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: `${ps.color}22`, color: ps.color }}>
+                            {ps.label[0]}
+                          </span>
+                          <CardTitle className="text-base">{ps.label}</CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Total Deals</p>
+                            <p className="text-xl font-bold font-mono tabular-nums">{ps.total}</p>
                           </div>
-                          <div className="h-7 bg-[var(--c-raised)] rounded-md overflow-hidden">
-                            <div className="h-full rounded-md transition-all duration-500" style={{ width: `${Math.max(pct, 3)}%`, backgroundColor: p.fill, opacity: 0.85 }} />
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Ativos</p>
+                            <p className="text-xl font-bold font-mono tabular-nums" style={{ color: '#4A9FE0' }}>{ps.active}</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Win Rate</p>
+                            <p className="text-xl font-bold font-mono tabular-nums" style={{ color: '#AFC040' }}>{ps.winRate.toFixed(0)}%</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Perdidos</p>
+                            <p className="text-xl font-bold font-mono tabular-nums" style={{ color: '#E8684A' }}>{ps.lost}</p>
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
-                ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader><CardTitle className="text-base">Performance por Produto</CardTitle></CardHeader>
-              <CardContent>
-                {(productMetrics || []).length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart data={(productMetrics || []).map(pm => ({ name: String(pm.product).charAt(0).toUpperCase() + String(pm.product).slice(1), ganhos: Number(pm.won_deals), perdidos: Number(pm.lost_deals), ativos: Number(pm.active_deals) }))}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 13, ...AXIS_TICK }} axisLine={false} tickLine={false} />
-                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                      <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Legend />
-                      <Bar dataKey="ganhos" name="Ganhos" fill="#AFC040" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="perdidos" name="Perdidos" fill="#E8684A" radius={[4, 4, 0, 0]} />
-                      <Bar dataKey="ativos" name="Ativos" fill="#4A9FE0" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
-              </CardContent>
-            </Card>
-          </div>
+                        <div className="pt-3 border-t border-[var(--c-border)] flex items-center gap-2 text-xs text-muted-foreground">
+                          <Target className="h-3.5 w-3.5" style={{ color: ps.color }} />
+                          <span>Principal fonte: <strong className="text-foreground">{ps.topSource}</strong> ({ps.topSourcePct}%)</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </>
+            )
+          })()}
         </TabsContent>
 
         {/* ─── Leads Aula (Supabase Presença) ─── */}
