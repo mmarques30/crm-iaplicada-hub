@@ -1044,7 +1044,7 @@ export default function FacebookAdsPage() {
                         <XAxis dataKey="date" tick={{ fontSize: 9, ...AXIS_TICK }} interval={Math.max(Math.floor(dailyInsights.length / 12), 1)} axisLine={false} tickLine={false} />
                         <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
                         <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatCurrency(v)} labelFormatter={l => `Data: ${l}`} />
-                        <Area type="monotone" dataKey="spend" name="Investimento" stroke="#E8684A" fill="#E8684A" fillOpacity={0.2} />
+                        <Area type="monotone" dataKey="spend" name="Investimento" stroke="#E8684A" fill="#E8684A" fillOpacity={0.4} />
                       </AreaChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -1072,13 +1072,13 @@ export default function FacebookAdsPage() {
 
                   {/* CTR Diário */}
                   <Card>
-                    <CardHeader><CardTitle className="text-base">CTR Diário (%)</CardTitle></CardHeader>
+                    <CardHeader><CardTitle className="text-base">CTR Diário</CardTitle></CardHeader>
                     <CardContent>
                       <ResponsiveContainer width="100%" height={260}>
                         <AreaChart data={dailyInsights.map(d => ({ date: fmtDate(d.date), ctr: Math.round(d.ctr * 100) / 100 }))}>
                           <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
                           <XAxis dataKey="date" tick={{ fontSize: 9, ...AXIS_TICK }} interval={Math.max(Math.floor(dailyInsights.length / 8), 1)} axisLine={false} tickLine={false} />
-                          <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" />
+                          <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={(v: number) => `${v}%`} />
                           <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `${v}%`} />
                           <Area type="monotone" dataKey="ctr" name="CTR" stroke="#4A9FE0" fill="#4A9FE0" fillOpacity={0.15} />
                         </AreaChart>
@@ -1099,8 +1099,8 @@ export default function FacebookAdsPage() {
                         <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                         <Tooltip contentStyle={TOOLTIP_STYLE} />
                         <Legend />
-                        <Bar yAxisId="left" dataKey="gasto" name="Gasto (R$)" fill="#E8684A" radius={[4, 4, 0, 0]} />
-                        <Bar yAxisId="right" dataKey="leads" name="Leads" fill="#1E3A5F" radius={[4, 4, 0, 0]} />
+                        <Bar yAxisId="left" dataKey="gasto" name="Gasto (R$)" fill="#E8446E" radius={[4, 4, 0, 0]} />
+                        <Bar yAxisId="right" dataKey="leads" name="Leads" fill="#1E2A3F" radius={[4, 4, 0, 0]} />
                       </ComposedChart>
                     </ResponsiveContainer>
                     <p className="text-[10px] text-muted-foreground text-center mt-1">Eixo esquerdo: gasto (R$) · Eixo direito: leads</p>
