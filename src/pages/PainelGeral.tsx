@@ -156,9 +156,14 @@ export default function PainelGeral() {
   const roiData = useMemo(() => {
     const igContacts = channelDistribution.find(c => c.name === 'Instagram Orgânico')
     const fbContacts = channelDistribution.find(c => c.name === 'Facebook Ads')
+    const metaContacts = channelDistribution.find(c => c.name === 'Campanhas Meta (Ads)')
+    const totalPaidContacts = (fbContacts?.contatos || 0) + (metaContacts?.contatos || 0)
+    const cplPonderado = totalPaidContacts > 0 ? investment / totalPaidContacts : 0
     return {
       instagram: { contatos: igContacts?.contatos || 0, opportunities: igContacts?.opportunities || 0, custo: 0, cpl: 0 },
       facebookAds: { contatos: fbContacts?.contatos || 0, opportunities: fbContacts?.opportunities || 0, custo: investment, cpl: fbContacts && fbContacts.contatos > 0 ? investment / fbContacts.contatos : 0 },
+      campanhasMeta: { contatos: metaContacts?.contatos || 0, opportunities: metaContacts?.opportunities || 0, custo: investment, cpl: metaContacts && metaContacts.contatos > 0 ? investment / metaContacts.contatos : 0 },
+      cplPonderado,
     }
   }, [channelDistribution, investment])
 
