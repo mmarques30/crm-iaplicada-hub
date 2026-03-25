@@ -165,8 +165,9 @@ export function useVisitantesData() {
 
       return { resumo, topConteudos, engajamento }
     },
-    staleTime: 5 * 60_000,
+    staleTime: 2 * 60_000,
     refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
   })
 }
 

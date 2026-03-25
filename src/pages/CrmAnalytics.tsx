@@ -565,8 +565,20 @@ export default function CrmAnalytics() {
                       </TableBody>
                     </Table>
                   </div>
-                  {leadsVisitantes.leads.length > 50 && (
-                    <p className="text-xs text-muted-foreground text-center mt-2">Mostrando 50 de {leadsVisitantes.leads.length} leads</p>
+                  {leadsVisitantes.leads.length > PAGE_SIZE && (
+                    <div className="flex items-center justify-between mt-3">
+                      <p className="text-xs text-muted-foreground">
+                        Mostrando {visitantePage * PAGE_SIZE + 1}–{Math.min((visitantePage + 1) * PAGE_SIZE, leadsVisitantes.leads.length)} de {leadsVisitantes.leads.length}
+                      </p>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" disabled={visitantePage === 0} onClick={() => setVisitantePage(p => p - 1)}>
+                          <ChevronLeft className="h-4 w-4" /> Anterior
+                        </Button>
+                        <Button variant="outline" size="sm" disabled={(visitantePage + 1) * PAGE_SIZE >= leadsVisitantes.leads.length} onClick={() => setVisitantePage(p => p + 1)}>
+                          Próximo <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>
