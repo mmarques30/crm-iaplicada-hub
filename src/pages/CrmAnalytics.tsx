@@ -9,7 +9,7 @@ import { KPICard } from '@/components/dashboard/KPICard'
 import { formatCurrency, formatDate } from '@/lib/format'
 import {
   Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent,
-  GraduationCap, Eye, Video, FileDown, UserCheck, UserX, Flame, Loader2, RefreshCw, ChevronLeft, ChevronRight,
+  GraduationCap, Eye, Video, FileDown, UserCheck, UserX, Flame, Loader2, RefreshCw, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
