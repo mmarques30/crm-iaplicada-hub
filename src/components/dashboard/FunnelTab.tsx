@@ -38,12 +38,6 @@ const SOURCE_COLORS: Record<string, string> = {
 }
 const getSourceColor = (s: string) => SOURCE_COLORS[s] || SEMANTIC_COLORS[Object.keys(SOURCE_COLORS).length % SEMANTIC_COLORS.length]
 
-const PRODUCT_COLORS: Record<string, string> = {
-  'Academy': '#7C5CFC',
-  'Business': '#E8A43C',
-  'Skills': '#2CBBA6',
-  'Offline/Importados': '#7A8460',
-}
 
 export function FunnelTab() {
   const { data: dealsRes } = useQuery({
