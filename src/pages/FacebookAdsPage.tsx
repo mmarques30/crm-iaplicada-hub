@@ -4,11 +4,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { KPICard } from '@/components/dashboard/KPICard'
 import { useDashboardSnapshot } from '@/hooks/useDashboardData'
-import { formatCurrency, humanizeCampaignName, mapFbObjective } from '@/lib/format'
+import { formatCurrency, humanizeCampaignName, mapFbObjective, normalizeChannel } from '@/lib/format'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { DollarSign, Eye, MousePointer, Target, TrendingUp, BarChart3, Percent, ExternalLink } from 'lucide-react'
+import { DollarSign, Eye, MousePointer, Target, TrendingUp, BarChart3, Percent, ExternalLink, Users, Filter } from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
+import { useQuery } from '@tanstack/react-query'
+import { supabase } from '@/integrations/supabase/client'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend, ComposedChart, Line, Area, AreaChart,
