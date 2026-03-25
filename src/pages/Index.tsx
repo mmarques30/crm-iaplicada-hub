@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   ComposedChart, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid,
@@ -14,9 +15,10 @@ import {
 } from "recharts";
 import {
   DollarSign, Users, Target, BarChart3, Filter, Download, Calendar,
-  ArrowUpRight, ArrowDownRight, TrendingUp, AlertTriangle,
+  ArrowUpRight, ArrowDownRight, TrendingUp, AlertTriangle, X,
 } from "lucide-react";
 import { useDashboardSnapshot } from "@/hooks/useDashboardData";
+import { subDays } from "date-fns";
 
 /* ═══════════════════════════════════════════════════════════════
    SEMANTIC COLORS (hex for Recharts — matches CSS vars)
@@ -50,8 +52,15 @@ interface ProductMetric { product: string; active_deals: number; won_deals: numb
    DASHBOARD COMPONENT
    ═══════════════════════════════════════════════════════════════ */
 const SalesPipelineDashboard = () => {
-  const [selectedPeriod] = useState("30d");
   const [activeTab, setActiveTab] = useState("pipeline");
+  const [showFilters, setShowFilters] = useState(false);
+  const [periodFilter, setPeriodFilter] = useState<'7d' | '30d' | '90d' | 'all'>('30d');
+  const [productFilter, setProductFilter] = useState('all');
+  const [qualificationFilter, setQualificationFilter] = useState('all');
+  const [channelFilter, setChannelFilter] = useState('all');
+
+  const activeFilterCount = [productFilter, qualificationFilter, channelFilter].filter(f => f !== 'all').length;
+  const periodLabel = { '7d': 'Últimos 7 dias', '30d': 'Últimos 30 dias', '90d': 'Últimos 90 dias', 'all': 'Todo período' }[periodFilter];
 
   /* ── Queries ─────────────────────────────────────────────── */
   const { data: metrics, isLoading: metricsLoading } = useQuery({
@@ -76,13 +85,38 @@ const SalesPipelineDashboard = () => {
 
   const { data: snapshot } = useDashboardSnapshot();
 
+  /* ── Filtered data ────────────────────────────────────────── */
+  const cutoffDate = useMemo(() => {
+    if (periodFilter === 'all') return null;
+    const days = { '7d': 7, '30d': 30, '90d': 90 }[periodFilter];
+    return subDays(new Date(), days).toISOString();
+  }, [periodFilter]);
+
+  const filteredDeals = useMemo(() => {
+    let result = deals || [];
+    if (cutoffDate) result = result.filter(d => d.created_at && d.created_at >= cutoffDate);
+    if (productFilter !== 'all') result = result.filter(d => d.product === productFilter);
+    if (channelFilter !== 'all') result = result.filter(d => (d.canal_origem || 'direto') === channelFilter);
+    return result;
+  }, [deals, cutoffDate, productFilter, channelFilter]);
+
+  const filteredContacts = useMemo(() => {
+    let result = contacts || [];
+    if (cutoffDate) result = result.filter(c => c.created_at && c.created_at >= cutoffDate);
+    return result;
+  }, [contacts, cutoffDate]);
+
   /* ── Computed ────────────────────────────────────────────── */
-  const totals = (metrics || []).reduce(
-    (acc, m) => ({ active: acc.active + (m.active_deals || 0), pipeline: acc.pipeline + (m.pipeline_value || 0), won: acc.won + (m.won_deals || 0), lost: acc.lost + (m.lost_deals || 0), avgSize: acc.avgSize + (m.avg_deal_size || 0), count: acc.count + 1 }),
-    { active: 0, pipeline: 0, won: 0, lost: 0, avgSize: 0, count: 0 },
-  );
+  const totals = useMemo(() => {
+    let metricsArr = metrics || [];
+    if (productFilter !== 'all') metricsArr = metricsArr.filter(m => m.product === productFilter);
+    return metricsArr.reduce(
+      (acc, m) => ({ active: acc.active + (m.active_deals || 0), pipeline: acc.pipeline + (m.pipeline_value || 0), won: acc.won + (m.won_deals || 0), lost: acc.lost + (m.lost_deals || 0), avgSize: acc.avgSize + (m.avg_deal_size || 0), count: acc.count + 1 }),
+      { active: 0, pipeline: 0, won: 0, lost: 0, avgSize: 0, count: 0 },
+    );
+  }, [metrics, productFilter]);
   const winRate = totals.won + totals.lost > 0 ? (totals.won / (totals.won + totals.lost)) * 100 : 0;
-  const totalLeads = contacts?.length || 0;
+  const totalLeads = filteredContacts.length;
 
   const pipelineStages = useMemo(() => Object.values(
     (stageConversion || []).reduce((acc: Record<string, StageRow>, item) => {
@@ -95,7 +129,7 @@ const SalesPipelineDashboard = () => {
   ).sort((a, b) => a.display_order - b.display_order), [stageConversion]);
 
   const leadSources = useMemo(() => Object.entries(
-    (deals || []).reduce((acc: Record<string, { leads: number; won: number; revenue: number }>, d) => {
+    filteredDeals.reduce((acc: Record<string, { leads: number; won: number; revenue: number }>, d) => {
       const source = d.canal_origem || "Direto";
       if (!acc[source]) acc[source] = { leads: 0, won: 0, revenue: 0 };
       acc[source].leads += 1;
@@ -104,12 +138,12 @@ const SalesPipelineDashboard = () => {
     }, {}),
   ).map(([name, data]: [string, { leads: number; won: number; revenue: number }]) => ({
     name, leads: data.leads, conversion: data.leads > 0 ? Math.round((data.won / data.leads) * 100) : 0, revenue: data.revenue,
-  })).sort((a, b) => b.leads - a.leads), [deals]);
+  })).sort((a, b) => b.leads - a.leads), [filteredDeals]);
 
   const fbAds = snapshot?.data?.facebook_ads;
   const fbCampaigns = fbAds?.campaigns || [];
   const totalAdSpend = fbAds?.metrics?.totalSpend || 0;
-  const wonRevenue = (deals || []).filter((d) => d.is_won).reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+  const wonRevenue = filteredDeals.filter((d) => d.is_won).reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
   const roi = totalAdSpend > 0 ? (wonRevenue / totalAdSpend).toFixed(2) : "—";
   const productMetrics = (metrics || []).filter((m) => m.product !== "skills");
 
@@ -134,7 +168,7 @@ const SalesPipelineDashboard = () => {
 
   /* ── Deals em Risco donut ────────────────────────────────── */
   const riskData = useMemo(() => {
-    const allDeals = deals || [];
+    const allDeals = filteredDeals;
     const won = allDeals.filter(d => d.is_won === true).length;
     const lost = allDeals.filter(d => d.is_won === false).length;
     const active = allDeals.filter(d => d.is_won === null).length;
@@ -145,7 +179,7 @@ const SalesPipelineDashboard = () => {
       { name: "Em risco", value: atRisk, color: C.amber },
       { name: "Perdidos", value: lost, color: C.coral },
     ].filter(d => d.value > 0);
-  }, [deals]);
+  }, [filteredDeals]);
 
   const totalDeals = riskData.reduce((s, d) => s + d.value, 0);
 
@@ -289,17 +323,66 @@ const SalesPipelineDashboard = () => {
           <p className="text-muted-foreground text-sm mt-1">Visão completa do pipeline, leads e performance de marketing</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-muted-foreground">
-            <Calendar className="h-4 w-4 mr-2" />Últimos 30 dias
-          </Button>
-          <Button variant="ghost" size="sm" className="text-muted-foreground">
+          <Select value={periodFilter} onValueChange={(v) => setPeriodFilter(v as any)}>
+            <SelectTrigger className="h-9 w-auto gap-2 border-border bg-transparent text-muted-foreground text-sm">
+              <Calendar className="h-4 w-4" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="7d">Últimos 7 dias</SelectItem>
+              <SelectItem value="30d">Últimos 30 dias</SelectItem>
+              <SelectItem value="90d">Últimos 90 dias</SelectItem>
+              <SelectItem value="all">Todo período</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="ghost" size="sm" className="text-muted-foreground relative" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="h-4 w-4 mr-2" />Filtros
+            {activeFilterCount > 0 && (
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[#AFC040] text-[#0D0D0D] text-[10px] font-bold flex items-center justify-center">{activeFilterCount}</span>
+            )}
           </Button>
           <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
             <Download className="h-4 w-4 mr-2" />Exportar
           </Button>
         </div>
       </div>
+
+      {/* ── Filter Panel ───────────────────────────────────── */}
+      {showFilters && (
+        <div className="rounded-lg border p-4 flex flex-wrap items-end gap-4" style={{ background: 'var(--c-card)', borderColor: 'var(--c-border)' }}>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium" style={{ color: 'var(--c-text-s)' }}>Produto</label>
+            <Select value={productFilter} onValueChange={setProductFilter}>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="business">Business</SelectItem>
+                <SelectItem value="academy">Academy</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-medium" style={{ color: 'var(--c-text-s)' }}>Canal</label>
+            <Select value={channelFilter} onValueChange={setChannelFilter}>
+              <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="instagram">Instagram</SelectItem>
+                <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                <SelectItem value="site">Site</SelectItem>
+                <SelectItem value="indicação">Indicação</SelectItem>
+                <SelectItem value="evento">Evento</SelectItem>
+                <SelectItem value="Direto">Direto</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" className="h-8 text-xs text-muted-foreground" onClick={() => { setProductFilter('all'); setQualificationFilter('all'); setChannelFilter('all'); }}>
+              <X className="h-3 w-3 mr-1" />Limpar filtros
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* ── KPI Cards ──────────────────────────────────────── */}
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
