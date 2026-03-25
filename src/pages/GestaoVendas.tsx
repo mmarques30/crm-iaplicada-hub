@@ -384,30 +384,24 @@ export default function GestaoVendas() {
     return result
   }, [allVendas, searchVendas, filterStatus, filterProduto, sortVendas])
 
-  /* ─── Fiscal KPIs ─── */
-  const fiscalClientes = useMemo(() => {
-    const unique = new Set(allNFs.map((n: any) => n.cpf_cnpj).filter(Boolean))
-    return unique.size
-  }, [allNFs])
-  const nfPendentes = allNFs.filter((n: any) => n.status === 'pendente').length
-  const nfEmitidas = allNFs.filter((n: any) => n.status === 'emitida').length
-  const nfEnviadas = allNFs.filter((n: any) => n.status === 'enviada').length
+  /* ─── Fiscal KPIs (from vendas table - client fiscal profile) ─── */
+  const fiscalClientes = allVendas.length
+  const nfPendentesVendas = allVendas.filter((v: any) => (v.status_nf || 'pendente') === 'pendente').length
+  const nfEmitidasVendas = allVendas.filter((v: any) => v.status_nf === 'emitida').length
+  const nfEnviadasVendas = allVendas.filter((v: any) => v.status_nf === 'enviada').length
 
-  /* ─── Filtered Fiscal ─── */
-  const filteredNFs = useMemo(() => {
-    let result = [...allNFs]
-    if (fiscalProduto !== 'todos') result = result.filter((n: any) => n.produto === fiscalProduto)
-    if (fiscalStatus !== 'todos') result = result.filter((n: any) => n.status === fiscalStatus)
-    if (fiscalMes !== 'todos') result = result.filter((n: any) => {
-      const m = (n.data_emissao || n.created_at || '').substring(5, 7)
-      return m === fiscalMes
-    })
-    if (fiscalAno !== 'todos') result = result.filter((n: any) => {
-      const y = (n.data_emissao || n.created_at || '').substring(0, 4)
-      return y === fiscalAno
-    })
+  /* ─── Filtered Fiscal (from vendas) ─── */
+  const filteredFiscal = useMemo(() => {
+    let result = [...allVendas]
+    if (fiscalProduto !== 'todos') result = result.filter((v: any) => v.produto === fiscalProduto)
+    if (fiscalStatus !== 'todos') result = result.filter((v: any) => (v.status_nf || 'pendente') === fiscalStatus)
     return result
-  }, [allNFs, fiscalProduto, fiscalStatus, fiscalMes, fiscalAno])
+  }, [allVendas, fiscalProduto, fiscalStatus])
+
+  /* ─── Regularização KPIs (from notas_fiscais - monthly NFs) ─── */
+  const nfPendentes = allNFs.filter((n: any) => n.status_nf === 'pendente').length
+  const nfEmitidas = allNFs.filter((n: any) => n.status_nf === 'emitida').length
+  const nfEnviadas = allNFs.filter((n: any) => n.status_nf === 'enviada').length
 
   /* ─── Regularizacao KPIs ─── */
   const regRecords = useMemo(() => {
