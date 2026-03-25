@@ -8,7 +8,7 @@ import { formatCurrency, formatDate } from '@/lib/format'
 import { DollarSign, ShoppingCart, Receipt, CreditCard } from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend, LineChart, Line } from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, LineChart, Line } from 'recharts'
 
 const PRODUCT_COLORS: Record<string, string> = { academy: '#4A9FE0', business: '#AFC040' }
 const PRODUCT_LABELS: Record<string, string> = { academy: 'Academy', business: 'Business', skills: 'Skills' }
