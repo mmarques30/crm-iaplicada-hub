@@ -15,8 +15,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
 import { FiscalAIButton } from '@/components/financeiro/FiscalAIButton'
+import { EditVendaDialog } from '@/components/financeiro/EditVendaDialog'
+import { VendaParcelasDialog } from '@/components/financeiro/VendaParcelasDialog'
+import { RepassesTab } from '@/components/financeiro/RepassesTab'
 import { toast } from 'sonner'
-import { ShoppingCart, Receipt, FileText, Search, DollarSign, Users, AlertCircle, CheckCircle, Send, Plus, Trash2, Upload } from 'lucide-react'
+import { ShoppingCart, Receipt, FileText, Search, DollarSign, Users, AlertCircle, CheckCircle, Send, Plus, Trash2, Upload, Pencil, CreditCard, Save } from 'lucide-react'
 
 const PRODUCT_LABELS: Record<string, string> = { academy: 'Academy', business: 'Business', skills: 'Skills', ferramentas: 'Ferramentas' }
 
