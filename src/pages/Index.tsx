@@ -143,7 +143,7 @@ const SalesPipelineDashboard = () => {
   const fbAds = snapshot?.data?.facebook_ads;
   const fbCampaigns = fbAds?.campaigns || [];
   const totalAdSpend = fbAds?.metrics?.totalSpend || 0;
-  const wonRevenue = (deals || []).filter((d) => d.is_won).reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
+  const wonRevenue = filteredDeals.filter((d) => d.is_won).reduce((sum, d) => sum + (Number(d.amount) || 0), 0);
   const roi = totalAdSpend > 0 ? (wonRevenue / totalAdSpend).toFixed(2) : "—";
   const productMetrics = (metrics || []).filter((m) => m.product !== "skills");
 
