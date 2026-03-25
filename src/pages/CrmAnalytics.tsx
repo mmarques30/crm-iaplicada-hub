@@ -9,7 +9,7 @@ import { KPICard } from '@/components/dashboard/KPICard'
 import { formatCurrency, formatDate } from '@/lib/format'
 import {
   Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent,
-  GraduationCap, Eye, Video, FileDown, UserCheck, UserX, Flame, Loader2, RefreshCw, ChevronLeft, ChevronRight,
+  GraduationCap, Eye, Video, FileDown, UserCheck, UserX, Flame, Loader2, RefreshCw, ChevronDown, ChevronUp,
 } from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
@@ -37,13 +37,13 @@ const LIFECYCLE_COLORS: Record<string, string> = {
   sql: '#2CBBA6',
 }
 
-const PAGE_SIZE = 50
+const INITIAL_ROWS = 10
 
 export default function CrmAnalytics() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [aulaPage, setAulaPage] = useState(0)
-  const [visitantePage, setVisitantePage] = useState(0)
+  const [aulaExpanded, setAulaExpanded] = useState(false)
+  const [visitanteExpanded, setVisitanteExpanded] = useState(false)
 
   const { data: productMetrics } = useQuery({
     queryKey: ['product_metrics'],
@@ -239,7 +239,7 @@ export default function CrmAnalytics() {
         {/* ─── Leads Aula (Supabase Presença) ─── */}
         <TabsContent value="leads-aula" className="mt-4 space-y-4">
           <div className="flex justify-end">
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.invalidateQueries({ queryKey: PRESENCA_QUERY_KEY }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'presenca'] }); setAulaPage(0); }}>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.invalidateQueries({ queryKey: PRESENCA_QUERY_KEY }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'presenca'] }); }}>
               <RefreshCw className="h-3.5 w-3.5" /> Atualizar dados
             </Button>
           </div>
@@ -348,7 +348,7 @@ export default function CrmAnalytics() {
                             </TableCell>
                           </TableRow>
                          ) : (
-                          leadsAula.leadsQuentes.slice(aulaPage * PAGE_SIZE, (aulaPage + 1) * PAGE_SIZE).map((lead) => (
+                          (aulaExpanded ? leadsAula.leadsQuentes : leadsAula.leadsQuentes.slice(0, INITIAL_ROWS)).map((lead) => (
                             <TableRow
                               key={lead.email}
                               className={lead.contactId ? 'cursor-pointer hover:bg-[var(--c-raised)]' : ''}
@@ -393,19 +393,15 @@ export default function CrmAnalytics() {
                       </TableBody>
                     </Table>
                   </div>
-                  {leadsAula.leadsQuentes.length > PAGE_SIZE && (
-                    <div className="flex items-center justify-between mt-3">
-                      <p className="text-xs text-muted-foreground">
-                        Mostrando {aulaPage * PAGE_SIZE + 1}–{Math.min((aulaPage + 1) * PAGE_SIZE, leadsAula.leadsQuentes.length)} de {leadsAula.leadsQuentes.length}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" disabled={aulaPage === 0} onClick={() => setAulaPage(p => p - 1)}>
-                          <ChevronLeft className="h-4 w-4" /> Anterior
-                        </Button>
-                        <Button variant="outline" size="sm" disabled={(aulaPage + 1) * PAGE_SIZE >= leadsAula.leadsQuentes.length} onClick={() => setAulaPage(p => p + 1)}>
-                          Próximo <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
+                  {leadsAula.leadsQuentes.length > INITIAL_ROWS && (
+                    <div className="flex justify-center mt-3">
+                      <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => setAulaExpanded(e => !e)}>
+                        {aulaExpanded ? (
+                          <><ChevronUp className="h-4 w-4" /> Mostrar menos</>
+                        ) : (
+                          <><ChevronDown className="h-4 w-4" /> Ver todos ({leadsAula.leadsQuentes.length} leads)</>
+                        )}
+                      </Button>
                     </div>
                   )}
                 </CardContent>
@@ -417,7 +413,7 @@ export default function CrmAnalytics() {
         {/* ─── Leads Visitantes (Supabase Visitantes) ─── */}
         <TabsContent value="leads-visitantes" className="mt-4 space-y-4">
           <div className="flex justify-end">
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.invalidateQueries({ queryKey: VISITANTES_QUERY_KEY }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'visitantes'] }); setVisitantePage(0); }}>
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.invalidateQueries({ queryKey: VISITANTES_QUERY_KEY }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'visitantes'] }); }}>
               <RefreshCw className="h-3.5 w-3.5" /> Atualizar dados
             </Button>
           </div>
@@ -519,7 +515,7 @@ export default function CrmAnalytics() {
                             </TableCell>
                           </TableRow>
                          ) : (
-                          leadsVisitantes.leads.slice(visitantePage * PAGE_SIZE, (visitantePage + 1) * PAGE_SIZE).map((lead) => (
+                          (visitanteExpanded ? leadsVisitantes.leads : leadsVisitantes.leads.slice(0, INITIAL_ROWS)).map((lead) => (
                             <TableRow
                               key={lead.email}
                               className={lead.contactId ? 'cursor-pointer hover:bg-[var(--c-raised)]' : ''}
@@ -565,19 +561,15 @@ export default function CrmAnalytics() {
                       </TableBody>
                     </Table>
                   </div>
-                  {leadsVisitantes.leads.length > PAGE_SIZE && (
-                    <div className="flex items-center justify-between mt-3">
-                      <p className="text-xs text-muted-foreground">
-                        Mostrando {visitantePage * PAGE_SIZE + 1}–{Math.min((visitantePage + 1) * PAGE_SIZE, leadsVisitantes.leads.length)} de {leadsVisitantes.leads.length}
-                      </p>
-                      <div className="flex gap-2">
-                        <Button variant="outline" size="sm" disabled={visitantePage === 0} onClick={() => setVisitantePage(p => p - 1)}>
-                          <ChevronLeft className="h-4 w-4" /> Anterior
-                        </Button>
-                        <Button variant="outline" size="sm" disabled={(visitantePage + 1) * PAGE_SIZE >= leadsVisitantes.leads.length} onClick={() => setVisitantePage(p => p + 1)}>
-                          Próximo <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
+                  {leadsVisitantes.leads.length > INITIAL_ROWS && (
+                    <div className="flex justify-center mt-3">
+                      <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground" onClick={() => setVisitanteExpanded(e => !e)}>
+                        {visitanteExpanded ? (
+                          <><ChevronUp className="h-4 w-4" /> Mostrar menos</>
+                        ) : (
+                          <><ChevronDown className="h-4 w-4" /> Ver todos ({leadsVisitantes.leads.length} leads)</>
+                        )}
+                      </Button>
                     </div>
                   )}
                 </CardContent>
