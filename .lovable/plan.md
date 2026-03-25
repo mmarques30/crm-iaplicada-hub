@@ -1,25 +1,24 @@
 
 
-## Plano: Simplificar aba Origem — apenas cards de canal
+## Plano: Corrigir gráfico "Previsão Próximos 90 Dias"
 
-### Alterações
+### Problema
+O intervalo de confiança está renderizado de forma quebrada. A técnica atual usa duas `Area` sobrepostas — `forecastHigh` preenchido com roxo e `forecastLow` preenchido com a cor do card (`#121509`) para "recortar" a banda. Isso gera artefatos visuais porque a cor de fundo do mask não casa perfeitamente com o fundo real do card.
 
-#### 1. `src/lib/format.ts` — `normalizeChannel`
-- Adicionar mapeamento para **TikTok** (`tiktok`, `tik_tok`, `tt`) e **YouTube** (`youtube`, `yt`, `youtube_ads`)
-- Renomear "Facebook Ads" para **"Ads"** (englobando Facebook Ads, Google Ads, paid, paid_social, paid_search)
-- Manter: Offline, Instagram Orgânico → "Instagram", Tráfego Direto, Ads, TikTok, YouTube, Não rastreado
+### Solução
 
-#### 2. `src/components/dashboard/OrigemTab.tsx`
-- **Remover** todas as seções abaixo dos cards de canal:
-  - Formulários de Conversão
-  - Fonte de Origem × Produto (gráfico)
-  - Deals por Produto × Estágio (tabela)
-  - Product Summary Cards
-- **Remover** imports e useMemos não usados: `formConversion`, `sourceByProduct`, `dealsByProductStage`, `productSummary`, `getDealChannel`, queries de `deals_full` e `stages`, imports de Recharts, Badge, Table, etc.
-- **Atualizar** `CHANNEL_COLORS` e `CHANNEL_DESCRIPTIONS` para os 6 canais desejados: Offline, Instagram, Tráfego Direto, Ads, TikTok, YouTube (+ Não rastreado)
-- Manter apenas o header card com os cards de canal
+**Arquivo: `src/pages/Index.tsx`**
 
-### Arquivos afetados
-- `src/lib/format.ts`
-- `src/components/dashboard/OrigemTab.tsx`
+1. **Dados**: Adicionar um campo calculado `band` = `forecastHigh - forecastLow` em cada ponto do `forecastData` futuro.
+
+2. **Gráfico**: Substituir as duas Areas (`forecastHigh` + `forecastLow` mask) por um approach de `stackId`:
+   - `Area` com `dataKey="forecastLow"` — invisível (fill/stroke = "none"), serve como base do stack
+   - `Area` com `dataKey="band"` — preenchida com roxo semitransparente, empilhada sobre `forecastLow` via `stackId="confidence"`
+   
+   Isso renderiza a banda de confiança corretamente entre os valores low e high sem depender de cor de fundo como máscara.
+
+3. Manter a `Line` de projeção (`forecast`) e a `Area` de realizado (`actual`) inalteradas.
+
+### Arquivo afetado
+- `src/pages/Index.tsx` (linhas 504-509 para dados, linhas 1007-1008 para o gráfico)
 
