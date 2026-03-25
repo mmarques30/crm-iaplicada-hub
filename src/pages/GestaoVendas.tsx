@@ -86,8 +86,6 @@ export default function GestaoVendas() {
 
   const [fiscalProduto, setFiscalProduto] = useState('todos')
   const [fiscalStatus, setFiscalStatus] = useState('todos')
-  const [fiscalMes, setFiscalMes] = useState('todos')
-  const [fiscalAno, setFiscalAno] = useState('todos')
 
   const [regAno, setRegAno] = useState('todos')
   const [regMes, setRegMes] = useState('todos')
