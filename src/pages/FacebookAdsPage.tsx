@@ -504,7 +504,9 @@ function FunnelTab() {
                     <span className="text-sm font-medium">{product}</span>
                   </div>
                   <p className="text-2xl font-bold font-mono">{count}</p>
-                  <Progress value={pct} className="h-2" style={{ '--progress-color': color } as any} />
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+                  </div>
                   <p className="text-xs text-muted-foreground">{pct}% do total</p>
                   <p className="text-[10px] text-muted-foreground leading-tight">{productDescriptions[product]}</p>
                 </div>
