@@ -418,15 +418,35 @@ export default function PainelGeral() {
               <CardHeader><CardTitle className="text-base">Distribuição de Contatos</CardTitle></CardHeader>
               <CardContent>
                 {channelDistribution.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie data={channelDistribution.map((ch, i) => ({ name: ch.name, value: ch.contatos, fill: CHANNEL_COLORS[i % CHANNEL_COLORS.length] }))} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label>
-                        {channelDistribution.map((_, i) => <Cell key={i} fill={CHANNEL_COLORS[i % CHANNEL_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="space-y-3">
+                    {channelDistribution.map((ch, i) => {
+                      const pct = totalContacts > 0 ? (ch.contatos / totalContacts) * 100 : 0
+                      return (
+                        <div key={ch.name} className="space-y-1.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CHANNEL_COLORS[i % CHANNEL_COLORS.length] }} />
+                              <span className="font-medium truncate">{ch.name}</span>
+                            </div>
+                            <span className="font-mono font-bold tabular-nums shrink-0 ml-2">{ch.contatos}</span>
+                          </div>
+                          <div className="h-6 bg-[var(--c-raised)] rounded-md overflow-hidden relative">
+                            <div
+                              className="h-full rounded-md transition-all duration-700 ease-out"
+                              style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: CHANNEL_COLORS[i % CHANNEL_COLORS.length], opacity: 0.85 }}
+                            />
+                            <span className="absolute inset-0 flex items-center justify-end pr-2 text-[10px] font-mono font-semibold text-foreground">
+                              {pct.toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    <div className="pt-2 border-t border-[var(--c-border)] flex justify-between text-xs text-muted-foreground">
+                      <span>Total</span>
+                      <span className="font-mono font-bold text-foreground">{totalContacts}</span>
+                    </div>
+                  </div>
                 ) : null}
               </CardContent>
             </Card>
