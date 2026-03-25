@@ -138,7 +138,7 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
   })
 
   // Parse ads-level data (individual ads within campaigns)
-  const ads = (adsData.data || []).map((ad: any) => {
+  const parsedAds = ads.map((ad: any) => {
     const adInsight = ad.insights?.data?.[0] || {}
     const leads = (adInsight.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
     return {
