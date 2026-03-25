@@ -448,23 +448,23 @@ export default function GestaoVendas() {
     enabled: totalVendas > 0,
   })
 
-  /* ─── Fiscal Insights ─── */
-  const fiscalInsightsData = allNFs.length > 0 ? {
-    totalNFs: allNFs.length,
-    nfPendentes,
-    nfEmitidas,
-    nfEnviadas,
-    clientesSemCpfCnpj: allNFs.filter((n: any) => !n.cpf_cnpj).length,
-    clientesSemRazaoSocial: allNFs.filter((n: any) => !n.razao_social).length,
-    nfsSemDescricao: allNFs.filter((n: any) => !n.descricao_servico).length,
-    valorTotalNFs: allNFs.reduce((s: number, n: any) => s + Number(n.valor || 0), 0),
-    totalClientes: fiscalClientes,
+  /* ─── Fiscal Insights (from vendas - client fiscal profile) ─── */
+  const fiscalInsightsData = allVendas.length > 0 ? {
+    totalClientes: allVendas.length,
+    nfPendentes: nfPendentesVendas,
+    nfEmitidas: nfEmitidasVendas,
+    nfEnviadas: nfEnviadasVendas,
+    clientesSemCpfCnpj: allVendas.filter((v: any) => !v.cpf_cnpj).length,
+    clientesSemRazaoSocial: allVendas.filter((v: any) => !v.razao_social).length,
+    clientesSemEmailFiscal: allVendas.filter((v: any) => !v.email_fiscal).length,
+    clientesSemDescricaoServico: allVendas.filter((v: any) => !v.descricao_servico).length,
+    receitaTotal,
   } : null
 
   const { data: fiscalInsights, isLoading: fiscalInsightsLoading, error: fiscalInsightsError, refetch: refetchFiscalInsights } = useInsights({
     context: 'fiscal',
     data: fiscalInsightsData,
-    enabled: allNFs.length > 0,
+    enabled: allVendas.length > 0,
   })
 
   /* ─── Parcelas Insights ─── */
