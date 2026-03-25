@@ -194,7 +194,7 @@ export default function FacebookAdsPage() {
                 {spendByObjective.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
                     <PieChart>
-                      <Pie data={spendByObjective} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false}>
+                      <Pie data={spendByObjective} cx="50%" cy="50%" innerRadius={45} outerRadius={85} dataKey="value" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={true}>
                         {spendByObjective.map((_, i) => <Cell key={i} fill={SEMANTIC_COLORS[i % SEMANTIC_COLORS.length]} />)}
                       </Pie>
                       <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatCurrency(v)} />
