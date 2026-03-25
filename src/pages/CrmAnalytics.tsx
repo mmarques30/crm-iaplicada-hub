@@ -62,7 +62,7 @@ export default function CrmAnalytics() {
     queryFn: async () => {
       const { data } = await (supabase as any).from('deals_full').select('canal_origem')
       const channels: Record<string, number> = {}
-      for (const d of (data || []) as any[]) { const ch = d.canal_origem || 'Não informado'; channels[ch] = (channels[ch] || 0) + 1 }
+      for (const d of (data || []) as any[]) { const ch = normalizeChannel(d.canal_origem); channels[ch] = (channels[ch] || 0) + 1 }
       return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
     },
   })
