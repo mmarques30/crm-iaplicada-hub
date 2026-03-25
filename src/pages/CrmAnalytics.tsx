@@ -4,11 +4,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { KPICard } from '@/components/dashboard/KPICard'
-import { formatCurrency } from '@/lib/format'
-import { Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent } from 'lucide-react'
+import { formatCurrency, formatDate } from '@/lib/format'
+import {
+  Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent,
+  GraduationCap, Eye, Video, FileDown, UserCheck, UserX, Flame, Loader2,
+} from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts'
+import { useLeadsAula, useLeadsVisitantes } from '@/hooks/useExternalSupabase'
+import { Skeleton } from '@/components/ui/skeleton'
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from '@/components/ui/table'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, Legend,
+} from 'recharts'
+import { useNavigate } from 'react-router-dom'
 
 const PRODUCT_COLORS: Record<string, string> = { business: '#AFC040', academy: '#4A9FE0' }
 const SOURCE_COLORS = ['#2CBBA6', '#4A9FE0', '#AFC040', '#E8A43C', '#E8684A', '#7A8460']
@@ -16,7 +28,16 @@ const TOOLTIP_STYLE = { background: '#191D0C', border: '1px solid #2E3A18', bord
 const AXIS_TICK = { fontSize: 11, fill: '#7A8460' }
 const GRID_STROKE = '#1E2610'
 
+const FREQ_COLORS = ['#7A8460', '#4A9FE0', '#E8A43C', '#E8684A', '#AFC040']
+const LIFECYCLE_COLORS: Record<string, string> = {
+  lead: '#7A8460',
+  mql: '#E8A43C',
+  sql: '#2CBBA6',
+}
+
 export default function CrmAnalytics() {
+  const navigate = useNavigate()
+
   const { data: productMetrics } = useQuery({
     queryKey: ['product_metrics'],
     queryFn: async () => { const { data } = await (supabase as any).from('product_metrics').select('*'); return (data || []) as any[] },
@@ -38,6 +59,10 @@ export default function CrmAnalytics() {
       return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
     },
   })
+
+  // External data
+  const leadsAula = useLeadsAula()
+  const leadsVisitantes = useLeadsVisitantes()
 
   const totals = (productMetrics || []).reduce(
     (acc, pm) => ({ activeDeals: acc.activeDeals + Number(pm.active_deals || 0), wonDeals: acc.wonDeals + Number(pm.won_deals || 0), lostDeals: acc.lostDeals + Number(pm.lost_deals || 0), pipelineValue: acc.pipelineValue + Number(pm.pipeline_value || 0), avgDealSize: acc.avgDealSize + Number(pm.avg_deal_size || 0) }),
@@ -61,6 +86,17 @@ export default function CrmAnalytics() {
     funnelStages: funnelStages.map(s => ({ name: s.stage_name, deals: s.deal_count, amount: s.total_amount })),
     productMetrics: (productMetrics || []).map(pm => ({ product: pm.product, active: pm.active_deals, won: pm.won_deals, lost: pm.lost_deals, winRate: pm.win_rate })),
     dealsByChannel: (dealsByChannel || []).slice(0, 6),
+    leadsAula: {
+      totalParticipantes: leadsAula.totalUnique,
+      leadsQuentes: leadsAula.leadsQuentes.length,
+      noCrm: leadsAula.inCrmCount,
+      semCrm: leadsAula.notInCrmCount,
+    },
+    leadsVisitantes: {
+      totalAcessos: leadsVisitantes.resumo.totalAcessos,
+      uniqueUsers: leadsVisitantes.resumo.uniqueUsers,
+      noCrm: leadsVisitantes.inCrmCount,
+    },
   }
 
   const { data: insights, isLoading: insightsLoading, error: insightsError, refetch: refetchInsights } = useInsights({ context: 'crm', data: insightsData, enabled: (contactCount || 0) > 0 || totals.activeDeals > 0 })
@@ -91,11 +127,19 @@ export default function CrmAnalytics() {
 
       <Tabs defaultValue="funnel">
         <TabsList className="flex-wrap h-auto bg-transparent border-b border-[var(--c-border)] rounded-none p-0 gap-1">
-          {[{ v: 'funnel', l: 'Funil' }, { v: 'sources', l: 'Fontes' }, { v: 'products', l: 'Produtos' }, { v: 'insights', l: 'Insights' }].map(t => (
+          {[
+            { v: 'funnel', l: 'Funil' },
+            { v: 'sources', l: 'Fontes' },
+            { v: 'products', l: 'Produtos' },
+            { v: 'leads-aula', l: 'Leads Aula' },
+            { v: 'leads-visitantes', l: 'Leads Visitantes' },
+            { v: 'insights', l: 'Insights' },
+          ].map(t => (
             <TabsTrigger key={t.v} value={t.v} className="data-[state=active]:bg-[#AFC040] data-[state=active]:text-[#0D0D0D] data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">{t.l}</TabsTrigger>
           ))}
         </TabsList>
 
+        {/* ─── Funil ─── */}
         <TabsContent value="funnel" className="mt-4">
           <Card>
             <CardHeader><CardTitle className="text-base">Pipeline por Estágio</CardTitle></CardHeader>
@@ -122,6 +166,7 @@ export default function CrmAnalytics() {
           </Card>
         </TabsContent>
 
+        {/* ─── Fontes ─── */}
         <TabsContent value="sources" className="mt-4">
           <Card>
             <CardHeader><CardTitle className="text-base">Deals por Canal de Origem</CardTitle></CardHeader>
@@ -143,6 +188,7 @@ export default function CrmAnalytics() {
           </Card>
         </TabsContent>
 
+        {/* ─── Produtos ─── */}
         <TabsContent value="products" className="mt-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
@@ -182,8 +228,326 @@ export default function CrmAnalytics() {
             </Card>
           </div>
         </TabsContent>
+
+        {/* ─── Leads Aula (Supabase Presença) ─── */}
+        <TabsContent value="leads-aula" className="mt-4 space-y-4">
+          {leadsAula.isLoading ? (
+            <Card>
+              <CardContent className="py-12 space-y-3">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Carregando dados de presença...</span>
+                </div>
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+              </CardContent>
+            </Card>
+          ) : leadsAula.error ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <p>Erro ao carregar dados de presença</p>
+                <p className="text-xs mt-1">{(leadsAula.error as Error).message}</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* 4 KPI Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                <KPICard label="Total Participantes" value={leadsAula.totalUnique} icon={GraduationCap} accentColor="#4A9FE0" />
+                <KPICard label="Leads Quentes (3+)" value={leadsAula.leadsQuentes.length} icon={Flame} accentColor="#E8A43C" />
+                <KPICard label="No CRM" value={leadsAula.inCrmCount} icon={UserCheck} accentColor="#2CBBA6" />
+                <KPICard label="Sem CRM (cadastrar)" value={leadsAula.notInCrmCount} icon={UserX} accentColor="#E8684A" />
+              </div>
+
+              {/* Charts */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Distribuição de Frequência</CardTitle></CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={leadsAula.freqDist}>
+                        <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                        <XAxis dataKey="label" tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                        <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                        <Tooltip contentStyle={TOOLTIP_STYLE} />
+                        <Bar dataKey="count" name="Participantes" radius={[4, 4, 0, 0]}>
+                          {leadsAula.freqDist.map((_, i) => (
+                            <Cell key={i} fill={FREQ_COLORS[i]} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                <Card>
+                  <CardHeader><CardTitle className="text-base">Qualificação dos Leads Quentes</CardTitle></CardHeader>
+                  <CardContent>
+                    {Object.keys(leadsAula.lifecycleDist).length > 0 ? (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <PieChart>
+                          <Pie
+                            data={Object.entries(leadsAula.lifecycleDist).map(([name, value]) => ({
+                              name: name.toUpperCase(),
+                              value,
+                              fill: LIFECYCLE_COLORS[name] || '#7A8460',
+                            }))}
+                            cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label
+                          >
+                            {Object.entries(leadsAula.lifecycleDist).map(([name], i) => (
+                              <Cell key={i} fill={LIFECYCLE_COLORS[name] || '#7A8460'} />
+                            ))}
+                          </Pie>
+                          <Tooltip contentStyle={TOOLTIP_STYLE} />
+                          <Legend />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <p className="text-center text-muted-foreground py-8">Sem dados de qualificação</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Leads Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Leads Quentes — {leadsAula.leadsQuentes.length} participantes com 3+ aulas</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="border border-[var(--c-border)] rounded-lg overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-[var(--c-raised)]">
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Telefone</TableHead>
+                          <TableHead className="text-center">Aulas</TableHead>
+                          <TableHead>Frequência</TableHead>
+                          <TableHead>Score</TableHead>
+                          <TableHead>CRM</TableHead>
+                          <TableHead>Qualificação</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {leadsAula.leadsQuentes.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                              Nenhum lead com 3+ aulas encontrado
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          leadsAula.leadsQuentes.slice(0, 50).map((lead) => (
+                            <TableRow
+                              key={lead.email}
+                              className={lead.contactId ? 'cursor-pointer hover:bg-[var(--c-raised)]' : ''}
+                              onClick={() => lead.contactId && navigate(`/contacts/${lead.contactId}`)}
+                            >
+                              <TableCell className="font-medium whitespace-nowrap">{lead.name}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{lead.email}</TableCell>
+                              <TableCell className="text-muted-foreground whitespace-nowrap">{lead.phone || '—'}</TableCell>
+                              <TableCell className="text-center font-mono font-bold">{lead.totalAulas}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className={`text-[10px] ${
+                                  lead.totalAulas >= 10 ? 'bg-[#1A0604] text-[#E8684A]' :
+                                  lead.totalAulas >= 5 ? 'bg-[#1A0E04] text-[#E8A43C]' :
+                                  'bg-[#141A04] text-[#AFC040]'
+                                }`}>
+                                  {lead.frequenciaLabel}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="font-mono font-bold">{lead.score}</TableCell>
+                              <TableCell>
+                                {lead.inCrm ? (
+                                  <Badge className="text-[10px] bg-[#031411] text-[#2CBBA6]">No CRM</Badge>
+                                ) : (
+                                  <Badge className="text-[10px] bg-[#1A0604] text-[#E8684A]">Falta cadastro</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {lead.lifecycleStage ? (
+                                  <Badge className="text-[10px]" style={{
+                                    backgroundColor: `${LIFECYCLE_COLORS[lead.lifecycleStage] || '#7A8460'}22`,
+                                    color: LIFECYCLE_COLORS[lead.lifecycleStage] || '#7A8460',
+                                  }}>
+                                    {lead.lifecycleStage.toUpperCase()}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {leadsAula.leadsQuentes.length > 50 && (
+                    <p className="text-xs text-muted-foreground text-center mt-2">Mostrando 50 de {leadsAula.leadsQuentes.length} leads</p>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
+
+        {/* ─── Leads Visitantes (Supabase Visitantes) ─── */}
+        <TabsContent value="leads-visitantes" className="mt-4 space-y-4">
+          {leadsVisitantes.isLoading ? (
+            <Card>
+              <CardContent className="py-12 space-y-3">
+                <div className="flex items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <span>Carregando dados de visitantes...</span>
+                </div>
+                {[1, 2, 3].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+              </CardContent>
+            </Card>
+          ) : leadsVisitantes.error ? (
+            <Card>
+              <CardContent className="py-12 text-center text-muted-foreground">
+                <p>Erro ao carregar dados de visitantes</p>
+                <p className="text-xs mt-1">{(leadsVisitantes.error as Error).message}</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              {/* 4 KPI Cards */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+                <KPICard label="Total Acessos" value={leadsVisitantes.resumo.totalAcessos} icon={Eye} accentColor="#4A9FE0" />
+                <KPICard label="Visitantes Únicos" value={leadsVisitantes.resumo.uniqueUsers} icon={Users} accentColor="#AFC040" />
+                <KPICard label="Últimos 7 Dias" value={leadsVisitantes.resumo.accessesLast7Days} icon={TrendingUp} accentColor="#2CBBA6" />
+                <KPICard label="Também no CRM" value={leadsVisitantes.inCrmCount} icon={UserCheck} accentColor="#E8A43C" />
+              </div>
+
+              {/* Top Conteúdos */}
+              <Card>
+                <CardHeader><CardTitle className="text-base">Top Conteúdos Mais Acessados</CardTitle></CardHeader>
+                <CardContent>
+                  {leadsVisitantes.topConteudos.length > 0 ? (
+                    <div className="border border-[var(--c-border)] rounded-lg overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-[var(--c-raised)]">
+                            <TableHead className="w-8">#</TableHead>
+                            <TableHead>Título</TableHead>
+                            <TableHead>Tipo</TableHead>
+                            <TableHead className="text-right">Acessos</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {leadsVisitantes.topConteudos.slice(0, 10).map((tc, i) => (
+                            <TableRow key={tc.id || i}>
+                              <TableCell className="font-mono text-muted-foreground">{i + 1}</TableCell>
+                              <TableCell className="font-medium">{tc.title}</TableCell>
+                              <TableCell>
+                                <Badge variant="secondary" className="text-[10px] gap-1">
+                                  {tc.type === 'video' ? <Video className="h-3 w-3" /> : <FileDown className="h-3 w-3" />}
+                                  {tc.type === 'video' ? 'Vídeo' : 'Material'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-mono font-bold">{tc.count}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  ) : (
+                    <p className="text-center text-muted-foreground py-8">Sem dados de conteúdo</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Leads Table */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Leads por Engajamento — {leadsVisitantes.leads.length} visitantes</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="border border-[var(--c-border)] rounded-lg overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-[var(--c-raised)]">
+                          <TableHead>Nome</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead className="text-center">Score</TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1"><Video className="h-3 w-3" /> Vídeos</div>
+                          </TableHead>
+                          <TableHead className="text-center">
+                            <div className="flex items-center justify-center gap-1"><FileDown className="h-3 w-3" /> Materiais</div>
+                          </TableHead>
+                          <TableHead className="text-center">Acessos</TableHead>
+                          <TableHead>Último Acesso</TableHead>
+                          <TableHead>CRM</TableHead>
+                          <TableHead>Qualificação</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {leadsVisitantes.leads.length === 0 ? (
+                          <TableRow>
+                            <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                              Nenhum visitante com engajamento encontrado
+                            </TableCell>
+                          </TableRow>
+                        ) : (
+                          leadsVisitantes.leads.slice(0, 50).map((lead) => (
+                            <TableRow
+                              key={lead.email}
+                              className={lead.contactId ? 'cursor-pointer hover:bg-[var(--c-raised)]' : ''}
+                              onClick={() => lead.contactId && navigate(`/contacts/${lead.contactId}`)}
+                            >
+                              <TableCell className="font-medium whitespace-nowrap">{lead.name}</TableCell>
+                              <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{lead.email}</TableCell>
+                              <TableCell className="text-center">
+                                <span className={`font-mono font-bold`} style={{
+                                  color: lead.score >= 70 ? '#2CBBA6' : lead.score >= 40 ? '#E8A43C' : '#7A8460'
+                                }}>
+                                  {lead.score}
+                                </span>
+                              </TableCell>
+                              <TableCell className="text-center font-mono">{lead.videoCount}</TableCell>
+                              <TableCell className="text-center font-mono">{lead.materialCount}</TableCell>
+                              <TableCell className="text-center font-mono">{lead.totalAccesses}</TableCell>
+                              <TableCell className="text-muted-foreground whitespace-nowrap text-xs">
+                                {lead.lastAccess ? formatDate(lead.lastAccess) : '—'}
+                              </TableCell>
+                              <TableCell>
+                                {lead.inCrm ? (
+                                  <Badge className="text-[10px] bg-[#031411] text-[#2CBBA6]">No CRM</Badge>
+                                ) : (
+                                  <Badge className="text-[10px] bg-[#1A0604] text-[#E8684A]">Falta</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                {lead.lifecycleStage ? (
+                                  <Badge className="text-[10px]" style={{
+                                    backgroundColor: `${LIFECYCLE_COLORS[lead.lifecycleStage] || '#7A8460'}22`,
+                                    color: LIFECYCLE_COLORS[lead.lifecycleStage] || '#7A8460',
+                                  }}>
+                                    {lead.lifecycleStage.toUpperCase()}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-xs text-muted-foreground">—</span>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))
+                        )}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {leadsVisitantes.leads.length > 50 && (
+                    <p className="text-xs text-muted-foreground text-center mt-2">Mostrando 50 de {leadsVisitantes.leads.length} leads</p>
+                  )}
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </TabsContent>
+
+        {/* ─── Insights ─── */}
         <TabsContent value="insights" className="mt-4">
-          <InsightsTable insights={insights || []} isLoading={insightsLoading} error={insightsError?.message} onRetry={() => refetchInsights()} title="Insights do CRM" subtitle="Análise do funil de vendas e pipeline gerada por IA" context="crm" />
+          <InsightsTable insights={insights || []} isLoading={insightsLoading} error={insightsError?.message} onRetry={() => refetchInsights()} title="Insights do CRM" subtitle="Análise do funil de vendas, leads de aula e visitantes gerada por IA" context="crm" />
         </TabsContent>
       </Tabs>
     </div>

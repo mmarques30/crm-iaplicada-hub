@@ -5,7 +5,7 @@ import { KPICard } from '@/components/dashboard/KPICard'
 import { SourceSummaryCard } from '@/components/dashboard/SourceSummaryCard'
 import { useDashboardSnapshot, useCollectDashboardData } from '@/hooks/useDashboardData'
 import { formatCurrency, formatDateTime } from '@/lib/format'
-import { Users, Eye, Heart, Target, DollarSign, TrendingUp, RefreshCw, Loader2, Instagram, Facebook, BarChart3 } from 'lucide-react'
+import { Users, Eye, Heart, Target, DollarSign, TrendingUp, RefreshCw, Loader2, Instagram, Facebook, BarChart3, GraduationCap, BookOpen } from 'lucide-react'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
 import { Button } from '@/components/ui/button'
@@ -15,6 +15,7 @@ import {
 } from 'recharts'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
+import { useLeadsAula, useLeadsVisitantes } from '@/hooks/useExternalSupabase'
 
 const SEMANTIC_COLORS = ['#2CBBA6', '#4A9FE0', '#AFC040', '#E8A43C']
 const TOOLTIP_STYLE = { background: '#191D0C', border: '1px solid #2E3A18', borderRadius: 8, fontFamily: 'Sora', fontSize: 12, color: '#E8EDD8' }
@@ -91,6 +92,10 @@ export default function PainelGeral() {
     },
   })
 
+  // External Supabase data
+  const leadsAula = useLeadsAula()
+  const leadsVisitantes = useLeadsVisitantes()
+
   const painelInsightsData = {
     instagram: ig ? {
       followers: ig.metrics?.followers,
@@ -113,6 +118,17 @@ export default function PainelGeral() {
       pipelineValue: crmTotals.pipelineValue,
     },
     followers, totalReach, engagement, leads, investment, cpl,
+    presenca: {
+      totalParticipantes: leadsAula.totalUnique,
+      leadsQuentes: leadsAula.leadsQuentes.length,
+      noCrm: leadsAula.inCrmCount,
+      semCrm: leadsAula.notInCrmCount,
+    },
+    visitantes: {
+      totalAcessos: leadsVisitantes.resumo.totalAcessos,
+      uniqueUsers: leadsVisitantes.resumo.uniqueUsers,
+      noCrm: leadsVisitantes.inCrmCount,
+    },
   }
 
   const { data: painelInsights, isLoading: painelInsightsLoading, error: painelInsightsError, refetch: refetchPainelInsights } = useInsights({
@@ -132,6 +148,8 @@ export default function PainelGeral() {
             {ig && <Badge className="bg-[#141A04] text-[#AFC040] border-0">Instagram</Badge>}
             {fb && <Badge className="bg-[#040E1A] text-[#4A9FE0] border-0">Facebook Ads</Badge>}
             <Badge className="bg-[#031411] text-[#2CBBA6] border-0">CRM Interno</Badge>
+            {leadsAula.totalUnique > 0 && <Badge className="bg-[#1A0E04] text-[#E8A43C] border-0">Presença Aulas</Badge>}
+            {leadsVisitantes.resumo.uniqueUsers > 0 && <Badge className="bg-[#0E041A] text-[#8b5cf6] border-0">Visitantes</Badge>}
             {!ig && !fb && <Badge variant="secondary">Aguardando dados externos</Badge>}
           </div>
         </div>
@@ -176,7 +194,7 @@ export default function PainelGeral() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
             <SourceSummaryCard title="Instagram" icon={Instagram} accentColor="#AFC040" detailLink="/analytics/instagram"
               metrics={[
                 { label: 'Seguidores', value: ig?.metrics?.followers || 0 },
@@ -199,6 +217,22 @@ export default function PainelGeral() {
                 { label: 'Deals Ativos', value: crmTotals.activeDeals },
                 { label: 'Win Rate', value: `${crmWinRate.toFixed(1)}%` },
                 { label: 'Pipeline', value: formatCurrency(crmTotals.pipelineValue) },
+              ]}
+            />
+            <SourceSummaryCard title="Presença Aulas" icon={GraduationCap} accentColor="#E8A43C" detailLink="/analytics/crm"
+              metrics={[
+                { label: 'Participantes', value: leadsAula.totalUnique },
+                { label: 'Leads Quentes', value: leadsAula.leadsQuentes.length },
+                { label: 'No CRM', value: leadsAula.inCrmCount },
+                { label: 'Sem CRM', value: leadsAula.notInCrmCount },
+              ]}
+            />
+            <SourceSummaryCard title="Visitantes Plataforma" icon={BookOpen} accentColor="#E8684A" detailLink="/analytics/crm"
+              metrics={[
+                { label: 'Total Acessos', value: leadsVisitantes.resumo.totalAcessos },
+                { label: 'Únicos', value: leadsVisitantes.resumo.uniqueUsers },
+                { label: 'Últimos 7d', value: leadsVisitantes.resumo.accessesLast7Days },
+                { label: 'No CRM', value: leadsVisitantes.inCrmCount },
               ]}
             />
           </div>
@@ -347,7 +381,7 @@ export default function PainelGeral() {
             error={painelInsightsError?.message}
             onRetry={() => refetchPainelInsights()}
             title="Insights Consolidados"
-            subtitle="Análise cruzada entre Instagram, Facebook Ads e CRM gerada por IA"
+            subtitle="Análise cruzada entre Instagram, Facebook Ads, CRM, Presença e Visitantes gerada por IA"
             context="painel"
           />
         </TabsContent>
