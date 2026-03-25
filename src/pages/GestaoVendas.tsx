@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { InsightsTable } from '@/components/dashboard/InsightsTable'
 import { useInsights } from '@/hooks/useInsights'
+import { FiscalAIButton } from '@/components/financeiro/FiscalAIButton'
 import { toast } from 'sonner'
 import { ShoppingCart, Receipt, FileText, Search, DollarSign, Users, AlertCircle, CheckCircle, Send, Plus, Trash2, Upload } from 'lucide-react'
 
