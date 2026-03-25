@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { KPICard } from '@/components/dashboard/KPICard'
-import { formatCurrency, formatDate } from '@/lib/format'
+import { formatCurrency, formatDate, normalizeChannel } from '@/lib/format'
 import {
   Users, Target, Trophy, TrendingUp, Briefcase, BarChart3, XCircle, Percent,
   GraduationCap, Eye, Video, FileDown, UserCheck, UserX, Flame, Loader2, RefreshCw, ChevronDown, ChevronUp,
@@ -62,7 +62,7 @@ export default function CrmAnalytics() {
     queryFn: async () => {
       const { data } = await (supabase as any).from('deals_full').select('canal_origem')
       const channels: Record<string, number> = {}
-      for (const d of (data || []) as any[]) { const ch = d.canal_origem || 'Não informado'; channels[ch] = (channels[ch] || 0) + 1 }
+      for (const d of (data || []) as any[]) { const ch = normalizeChannel(d.canal_origem); channels[ch] = (channels[ch] || 0) + 1 }
       return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
     },
   })
@@ -189,7 +189,7 @@ export default function CrmAnalytics() {
             // Source stats
             const sourceMap: Record<string, { total: number; opportunities: number; customers: number; won: number }> = {}
             for (const d of allDeals) {
-              const ch = d.canal_origem || 'Não informado'
+              const ch = normalizeChannel(d.canal_origem)
               if (!sourceMap[ch]) sourceMap[ch] = { total: 0, opportunities: 0, customers: 0, won: 0 }
               sourceMap[ch].total++
               if ((d.stage_order ?? 0) >= 2) sourceMap[ch].opportunities++
@@ -210,7 +210,7 @@ export default function CrmAnalytics() {
             for (const d of allDeals) {
               if (!d.created_at) continue
               const month = d.created_at.substring(0, 7)
-              const ch = d.canal_origem || 'Não informado'
+              const ch = normalizeChannel(d.canal_origem)
               const src = topSources.includes(ch) ? ch : 'Outros'
               if (!monthMap[month]) monthMap[month] = {}
               monthMap[month][src] = (monthMap[month][src] || 0) + 1
@@ -332,7 +332,7 @@ export default function CrmAnalytics() {
               const dealsForProduct = allDeals.filter(d => d.product === p)
               const sourceCount: Record<string, number> = {}
               for (const d of dealsForProduct) {
-                const ch = d.canal_origem || 'Não informado'
+                const ch = normalizeChannel(d.canal_origem)
                 sourceCount[ch] = (sourceCount[ch] || 0) + 1
               }
               const topSource = Object.entries(sourceCount).sort((a, b) => b[1] - a[1])[0]

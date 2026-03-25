@@ -61,3 +61,37 @@ export const productColor = (product: string) => {
   };
   return colors[product] ?? 'bg-muted text-muted-foreground';
 };
+
+/**
+ * Normaliza valores brutos de canal_origem, utm_source, fonte_registro
+ * em labels consistentes usados em todo o produto.
+ */
+export const normalizeChannel = (raw: string | null | undefined): string => {
+  if (!raw) return 'Não rastreado';
+  const v = raw.trim().toLowerCase();
+
+  // Instagram Orgânico
+  if (v === 'instagram' || v === 'instagram orgânico' || v === 'social_media' || v === 'ig' || v === 'organic_social') return 'Instagram Orgânico';
+
+  // Facebook Ads
+  if (v === 'paid' || v === 'facebook' || v === 'facebook ads' || v === 'meta' || v === 'paid_social' || v === 'paid_search' || v === 'fb_ads' || v === 'facebook_ads') return 'Facebook Ads';
+
+  // Tráfego Direto
+  if (v === 'direct' || v === 'direct_traffic' || v === 'tráfego direto' || v === 'direto') return 'Tráfego Direto';
+
+  // WhatsApp
+  if (v === 'whatsapp' || v === 'wpp' || v === 'manychat') return 'WhatsApp';
+
+  // Formulário / Orgânico
+  if (v === 'organic' || v === 'organic_search' || v === 'formulário' || v === 'formulário / orgânico' || v === 'form' || v === 'google' || v === 'seo' || v === 'referral') return 'Formulário / Orgânico';
+
+  // Offline
+  if (v === 'offline' || v === 'evento' || v === 'indicação' || v === 'indicacao') return 'Offline';
+
+  // Se não bate com nada mas tem valor, retorna o valor capitalizado
+  if (v.length > 0) {
+    return raw.charAt(0).toUpperCase() + raw.slice(1).trim();
+  }
+
+  return 'Não rastreado';
+};

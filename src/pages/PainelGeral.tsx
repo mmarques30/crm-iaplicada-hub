@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { KPICard } from '@/components/dashboard/KPICard'
 import { SourceSummaryCard } from '@/components/dashboard/SourceSummaryCard'
 import { useDashboardSnapshot, useCollectDashboardData } from '@/hooks/useDashboardData'
-import { formatCurrency, formatDateTime } from '@/lib/format'
+import { formatCurrency, formatDateTime, normalizeChannel } from '@/lib/format'
 import {
   Users, Eye, Heart, Target, DollarSign, TrendingUp, RefreshCw, Loader2,
   Instagram, Facebook, BarChart3, GraduationCap, BookOpen, AlertTriangle,
@@ -15,7 +15,7 @@ import { useInsights } from '@/hooks/useInsights'
 import { Button } from '@/components/ui/button'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  AreaChart, Area,
+  AreaChart, Area, Cell,
 } from 'recharts'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
@@ -68,7 +68,7 @@ export default function PainelGeral() {
       const { data } = await (supabase as any).from('deals_full').select('canal_origem')
       const channels: Record<string, number> = {}
       for (const d of (data || []) as any[]) {
-        const ch = d.canal_origem || 'Não rastreado'
+        const ch = normalizeChannel(d.canal_origem)
         channels[ch] = (channels[ch] || 0) + 1
       }
       return Object.entries(channels).map(([name, value]) => ({ name, value })).sort((a, b) => b.value - a.value)
@@ -454,13 +454,17 @@ export default function PainelGeral() {
               <CardHeader><CardTitle className="text-base">Deals por Canal</CardTitle></CardHeader>
               <CardContent>
                 {(dealsByChannel || []).length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={Math.max(280, (dealsByChannel || []).length * 40)}>
                     <BarChart data={dealsByChannel} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
                       <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Bar dataKey="value" name="Deals" fill="#2CBBA6" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="value" name="Deals" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#E8EDD8', fontSize: 11 }}>
+                        {(dealsByChannel || []).map((_, i) => (
+                          <Cell key={i} fill={CHANNEL_COLORS[i % CHANNEL_COLORS.length]} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
