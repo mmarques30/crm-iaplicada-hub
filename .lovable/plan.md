@@ -1,22 +1,35 @@
 
 
-## Ajuste: reduzir tamanho das bolinhas no scatter "Engajamento por Post"
+## Plano: Corrigir Visão Geral do Facebook Ads
 
-### Problema
-A linha 155 define `ZAxis range={[20, 400]}`, ou seja, os pontos variam de 20px a 400px de área. Num gráfico de apenas 280px de altura, bolinhas de até 400px de área ficam enormes e se sobrepõem.
+### Problemas visíveis no screenshot
+1. **Nomes de campanha ilegíveis** — códigos como `LEAD_PF_AUT_AULA_IA_APL...` em todos os gráficos e cards
+2. **Pie chart cortado** — label "eads" em vez de "Leads", valor `R$5428.34` cortado à esquerda
+3. **CPL filtro restritivo** — `c.costPerLead > 0` exclui campanhas sem leads mas com gasto
+4. **Melhor/Pior CPL** com nomes técnicos brutos
 
-### Solução
-Reduzir o range do ZAxis de `[20, 400]` para `[10, 120]`. Isso mantém a proporção visual entre posts com alcance alto e baixo, mas com bolinhas muito menores e proporcionais ao tamanho do gráfico.
+### Alterações
 
-### Arquivo
-`src/pages/InstagramAnalytics.tsx` — linha 155
-
-### Alteração
+#### 1. `src/lib/format.ts` — novo helper `humanizeCampaignName`
+```ts
+export const humanizeCampaignName = (raw: string, maxLen = 25): string => {
+  // Remove prefixos técnicos comuns: LEAD_, LEADS_, VENDAS_, PF_, AUT_
+  // Substitui underscores por espaços, aplica Title Case
+  // Trunca com "…" se exceder maxLen
+}
 ```
-// De:
-<ZAxis dataKey="z" range={[20, 400]} name="Alcance" />
 
-// Para:
-<ZAxis dataKey="z" range={[10, 120]} name="Alcance" />
-```
+#### 2. `src/pages/FacebookAdsPage.tsx`
+
+**Nomes humanizados** — substituir `shortName(c.name)` por `humanizeCampaignName(c.name)` nos 4 gráficos e nos cards Melhor/Pior CPL.
+
+**Pie chart** — aumentar `outerRadius` de 90→100, adicionar `labelLine={true}`, formatar label para mostrar `{name}: {formatCurrency(value)}` sem cortar.
+
+**CPL relaxado** — mudar filtro de `c.costPerLead > 0` para `c.spend > 0`, calcular CPL inline (`c.leads > 0 ? c.spend / c.leads : c.spend`), permitindo ver campanhas que gastaram mas não geraram leads.
+
+**Objective mapping** — tratar enums reais do Facebook API (`OUTCOME_LEADS`, `OUTCOME_SALES`, `OUTCOME_TRAFFIC`, `OUTCOME_AWARENESS`) além dos termos por nome.
+
+### Arquivos afetados
+- `src/lib/format.ts`
+- `src/pages/FacebookAdsPage.tsx`
 
