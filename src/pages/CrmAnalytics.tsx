@@ -210,7 +210,7 @@ export default function CrmAnalytics() {
             for (const d of allDeals) {
               if (!d.created_at) continue
               const month = d.created_at.substring(0, 7)
-              const ch = d.canal_origem || 'Não informado'
+              const ch = normalizeChannel(d.canal_origem)
               const src = topSources.includes(ch) ? ch : 'Outros'
               if (!monthMap[month]) monthMap[month] = {}
               monthMap[month][src] = (monthMap[month][src] || 0) + 1
