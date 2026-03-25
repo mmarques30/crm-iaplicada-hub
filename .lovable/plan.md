@@ -1,104 +1,73 @@
 
 
-## Plano: Filtros no Controle Financeiro + Business Plan Editável com Dados do Anexo
+## Plano: Edição Completa de Vendas, Parcelas, Status e Estrutura Financeira
 
-### Resumo
+### Problema
 
-Adicionar filtros avançados (mês, produto, categoria) ao Controle Financeiro, tornar o Business Plan editável com inline editing, e popular a tabela `metas` com os valores projetados do anexo. Também expandir a estrutura do BP para incluir todas as subcategorias da planilha (Ticket Médio, #Vendas, subcategorias de Folha, Impostos, etc.).
+O sistema atual é essencialmente read-only nas operações críticas:
+- **Vendas**: só cria e exclui — não edita nome, valor, status, produto, dados fiscais
+- **Parcelas**: não há como visualizar parcelas por venda, marcar como paga, alterar status
+- **Fiscal**: tabela apenas exibe dados — sem edição de CPF/CNPJ, razão social, email fiscal, status NF
+- **Regularização NF**: sem alteração de status (pendente → emitida → enviada), sem edição de campos
+- **Repasses**: sem UI para gestão (ver repasses, marcar como pago)
 
-### 1. Filtros no Controle Financeiro
+### Implementação
 
-**Arquivo:** `src/pages/FinanceiroPainel.tsx`
+#### 1. Dialog de Edição de Venda (`EditVendaDialog`)
 
-Adicionar na barra de filtros (ao lado do seletor de período existente):
-- **Filtro de mês específico**: Select com os 12 meses para filtrar dados de um mês isolado
-- **Filtro de produto**: Select com Business/Skills/Academy/Todos para filtrar receitas por produto
-- **Filtro de categoria de despesa**: Select com Folha/Publicidade/Custos/Impostos/Sistemas/Todos
+Ao clicar em uma linha na tabela de vendas, abre dialog com todos os campos editáveis:
+- Nome, email, telefone, produto, valor, data_venda, forma_pagamento, parcelas
+- Status (em_andamento / concluido / cancelado)
+- CPF/CNPJ, razão social, dados fiscais (inscricao_municipal, email_fiscal, telefone_fiscal, descricao_servico)
+- Checkbox "por indicação"
+- Mutation: `UPDATE vendas SET ... WHERE id = ?`
+- Invalida queries: `gestao-vendas`, `gestao-parcelas`, `fin_vendas`
 
-Os filtros aplicam `useMemo` sobre os dados já carregados (`allVendas`, `allDespesas`), recalculando KPIs, tabelas e gráficos reativamente. Afetam as abas Painel Geral e Registros.
+#### 2. Dialog de Parcelas por Venda (`VendaParcelasDialog`)
 
-### 2. Business Plan Editável
+Botão na linha da venda abre dialog com lista de parcelas daquela venda:
+- Tabela: nº parcela, valor, data vencimento, data pagamento, status
+- Botão "Marcar como Paga" por parcela → `UPDATE parcelas SET status='pago', data_pagamento=now() WHERE id=?`
+- Botão "Marcar como Pendente" para reverter
+- Badge de status colorido (pago=verde, pendente=amarelo, vencida=vermelho)
+- KPI resumo: X de Y pagas, valor restante
 
-**Arquivo:** `src/pages/FinanceiroPainel.tsx`
+#### 3. Edição Inline na Aba Fiscal
 
-- Tornar as células "P" (Projetado) clicáveis com inline editing: ao clicar, transforma em `<Input type="number" />`, ao sair ou Enter salva no banco
-- Mutation `upsertMeta` que faz upsert na tabela `metas` (por `ano`, `mes`, `categoria`)
-- Botão "Importar Metas" no header do BP (como no anexo) para importar CSV de metas
-- Adicionar coluna **Total** no final da tabela com soma dos 12 meses (P e E)
-- Adicionar coluna **%** no início com o percentual de cada categoria
+Cada linha da tabela fiscal terá:
+- Campos editáveis ao clicar: CPF/CNPJ, razão social, email_fiscal, inscricao_municipal, descricao_servico
+- Select de status NF (pendente/emitida/enviada) editável inline
+- Campos numero_nf, valor_nf, data_envio_nf editáveis
+- Botão salvar por linha → `UPDATE vendas SET ... WHERE id=?`
+- Campo observacoes_fiscais editável
 
-### 3. Expandir estrutura do Business Plan
+#### 4. Edição na Aba Regularização NF
 
-Reestruturar o BP para refletir a planilha do anexo com todas as linhas:
+Cada linha terá:
+- Select de status editável (pendente → emitida → enviada)
+- Campos numero_nf, descricao_servico, cpf_cnpj, razao_social, endereco, cep editáveis
+- Botão salvar → `UPDATE notas_fiscais SET ... WHERE id=?`
+- Botão "Nova NF" para criar registro manual
 
-```text
-RECEITA GERAL     100%   (soma Business + Skills + Academy)
-  BUSINESS         60%
-    Ticket Medio          (meta por categoria)
-    #Vendas               (meta por categoria)
-    #SDRs                 (meta por categoria)
-    #Vendedores           (meta por categoria)
-  SKILLS           15%
-    Ticket Medio
-    #Vendas
-  ACADEMY          25%
-    Ticket Medio
-    #Vendas
-FOLHA                     (soma sub-items)
-  Diretoria
-  Marketing
-  Vendas
-  Comissão (5%)           (calculado: 5% da receita)
-  Operações
-PUBLICIDADE        10%
-CUSTOS                    (soma sub-items)
-  Impostos (6%)           (calculado: 6% da receita)
-  Sistemas
-RESULTADO                 (receita - folha - publicidade - custos)
-MARGEM %                  (resultado / receita)
-```
+#### 5. Aba Repasses (nova)
 
-Cada linha será uma `categoria` na tabela `metas`. As linhas calculadas (Comissão 5%, Impostos 6%, totais) não são editáveis.
-
-### 4. Popular tabela `metas` com dados do anexo
-
-**Migração SQL** para inserir os valores projetados de 2026:
-
-Valores extraídos do anexo (em milhares):
-- **RECEITA GERAL**: 54, 126, 91, 137, 176, 205, 216, 244, 255, 281, 323, 323
-- **BUSINESS**: 25, 75, 50, 75, 100, 125, 125, 150, 150, 175, 200, 200
-- **Business Ticket Medio**: 25k todos os meses
-- **Business #Vendas**: 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 10
-- **Business #SDRs**: -, -, -, 1, 1, 1, 2, 2, 2, 3, 3, 3
-- **Business #Vendedores**: -, -, -, 1, 1, 1, -, 2, 2, 3, 3, 3
-- **SKILLS**: 10, 21, 14, 21, 28, 28, 35, 35, 42, 42, 49, 49
-- **Skills Ticket Medio**: 3k todos os meses
-- **Skills #Vendas**: 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 25, 21
-- **ACADEMY**: 19, 30, 27, 41, 48, 52, 56, 59, 63, 64, 74, 74
-- **Academy Ticket Medio**: 1k todos os meses
-- **Academy #Vendas**: 8, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32
-- **FOLHA**: 19, 23, 21, 23, 25, 27, 27, 29, 29, 31, 33, 33
-- **Folha Diretoria**: 10k todos os meses
-- **Folha Marketing**: 3k todos os meses
-- **Folha Comissão**: 3, 6, 5, 7, 9, 10, 11, 12, 13, 14, 16, 16
-- **Folha Operações**: 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
-- **PUBLICIDADE**: 5, 13, 9, 14, 18, 20, 22, 24, 25, 28, 32, 32
-- **CUSTOS**: 13, 18, 15, 18, 21, 22, 23, 25, 25, 27, 29, 29
-- **Custos Impostos**: 3, 8, 5, 8, 11, 12, 13, 15, 15, 17, 19, 19
-- **Custos Sistemas**: 10k todos os meses
-
-INSERT com ~300 registros na tabela `metas` via migração SQL.
-
-### 5. Atualizar lógica de cálculo do bpData
-
-O `useMemo` do `bpData` precisa ser reescrito para:
-- Ler cada `categoria` individualmente da tabela `metas` (em vez de calcular percentuais fixos)
-- Calcular linhas derivadas: Comissão = 5% da receita, Impostos = 6% da receita
-- Calcular totais: FOLHA = soma sub-items, CUSTOS = soma sub-items
-- Calcular RESULTADO e MARGEM a partir dos totais
+Nova aba no GestaoVendas com:
+- Lista de vendas com `por_indicacao = true`
+- Campos: nome cliente, valor contrato, valor repasse (10%), indicador_nome, status repasse
+- Botão "Marcar como Pago" → `UPDATE repasses SET status='pago', data_pagamento=now()`
+- KPIs: total repasses, valor pendente, valor pago
+- Ao pagar repasse, cria despesa em `despesas` com categoria 'repasse_indicacao'
 
 ### Arquivos afetados
-- `supabase/migrations/` -- nova migração para popular `metas` com ~300 registros
-- `src/pages/FinanceiroPainel.tsx` -- filtros, BP editável, estrutura expandida, coluna Total
-- `src/integrations/supabase/types.ts` -- atualizar tipo da tabela metas se necessário
+
+- `src/pages/GestaoVendas.tsx` — reescrita significativa: adicionar dialogs de edição, parcelas, inline editing fiscal/regularização, aba repasses
+- Nenhuma migração necessária — todas as colunas já existem no banco
+
+### Detalhes técnicos
+
+- Mutations com `useMutation` + invalidação de queries cruzadas (gestao-vendas, gestao-parcelas, gestao-notas-fiscais, fin_vendas, fin_parcelas)
+- Dialog de edição carrega dados da venda selecionada via `useState<any>(null)` 
+- Parcelas dialog: query filtrada `parcelas.select('*').eq('venda_id', selectedVendaId)`
+- Repasses: campo `indicador_nome` na tabela `repasses` (já existe) — dialog para preencher nome do indicador
+- Toast de confirmação em todas as ações destrutivas
 
