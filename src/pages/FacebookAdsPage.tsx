@@ -49,7 +49,7 @@ function FunnelTab() {
   const { data: dealsRes } = useQuery({
     queryKey: ['deals_full_fb_funnel'],
     queryFn: async () => {
-      const { data } = await supabase.from('deals_full').select('canal_origem, stage_name, stage_order, is_won, qualification_status, created_at, motivo_perda, product')
+      const { data } = await supabase.from('deals_full').select('canal_origem, stage_name, stage_order, is_won, qualification_status, created_at, motivo_perda, product, contact_id')
       return data || []
     },
   })
