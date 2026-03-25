@@ -128,102 +128,111 @@ export function usePresencaData() {
         return res.json()
       }
 
-      // 1. Fetch "all" to get the list of known weeks
+      // 1. Fetch "all" for global total_submissions per email
       const baseData = await fetchWeek('all')
       const baseEmails: any[] = baseData.emails || []
-      const knownWeeks = new Set(baseEmails.map((e: any) => e.week_identifier).filter(Boolean))
 
-      // 2. Build list of ALL weeks from earliest known to current
+      // Build global submissions map from "all" (most accurate per-person total)
+      const globalSubs = new Map<string, number>()
+      for (const a of baseEmails) {
+        const email = (a.email || '').toLowerCase().trim()
+        if (email) {
+          globalSubs.set(email, a.total_presences || a.total_submissions || a.total_presencas || 1)
+        }
+      }
+
+      // 2. Get all known weeks from base + generate recent weeks
+      const baseWeekSet = new Set(baseEmails.map((e: any) => e.week_identifier).filter(Boolean))
+      const allKnownWeeks = new Set(baseWeekSet)
+
+      // Add recent weeks that may not be in base
       const now = new Date()
-      const allWeeksToFetch: string[] = []
       for (let i = 0; i < 30; i++) {
         const d = new Date(now.getTime() - i * 7 * 86400000)
-        const iso = getISOWeek(d)
-        allWeeksToFetch.push(iso)
+        allKnownWeeks.add(getISOWeek(d))
       }
-      // Only fetch weeks not already in base data
-      const missingWeeks = [...new Set(allWeeksToFetch)].filter(w => !knownWeeks.has(w))
 
-      // 3. Fetch missing weeks in parallel (batched to avoid overload)
-      const extraResults: Array<{ week: string; data: any }> = []
-      const batch = 5
-      for (let i = 0; i < missingWeeks.length; i += batch) {
-        const chunk = missingWeeks.slice(i, i + batch)
+      // 3. Fetch EVERY week individually for accurate per-week participation
+      const allWeeksSorted = Array.from(allKnownWeeks).sort()
+      const weekResults = new Map<string, any[]>()
+
+      const batch = 6
+      for (let i = 0; i < allWeeksSorted.length; i += batch) {
+        const chunk = allWeeksSorted.slice(i, i + batch)
         const results = await Promise.all(
-          chunk.map(w => fetchWeek(w).then(d => ({ week: w, data: d })).catch(() => ({ week: w, data: { emails: [] } })))
+          chunk.map(w => fetchWeek(w)
+            .then(d => ({ week: w, emails: d.emails || [] }))
+            .catch(() => ({ week: w, emails: [] as any[] }))
+          )
         )
-        extraResults.push(...results)
+        for (const r of results) {
+          if (r.emails.length > 0) {
+            weekResults.set(r.week, r.emails)
+          }
+        }
       }
 
-      // 4. Build per-week data for adherence chart
+      // 4. Build per-week participation & aggregate attendees
       const weekParticipants = new Map<string, Set<string>>()
       const weekTotalSubs = new Map<string, number>()
-
-      const addToWeekStats = (week: string, email: string, subs: number) => {
-        if (!week) return
-        if (!weekParticipants.has(week)) weekParticipants.set(week, new Set())
-        weekParticipants.get(week)!.add(email)
-        weekTotalSubs.set(week, (weekTotalSubs.get(week) || 0) + subs)
-      }
-
-      // 5. Aggregate attendees by email across all data
       const emailMap = new Map<string, {
         email: string; firstAttendance: string; weekIdentifier: string
         totalSubmissions: number; weeksAttended: Set<string>
       }>()
 
-      const processEntries = (entries: any[], weekOverride?: string) => {
-        for (const a of entries) {
-          const email = (a.email || '').toLowerCase().trim()
-          if (!email) return
-          const subs = a.total_presences || a.total_submissions || a.total_presencas || 1
-          const week = weekOverride || a.week_identifier || ''
+      for (const [week, emails] of weekResults) {
+        const weekSet = new Set<string>()
+        let weekSubs = 0
 
-          addToWeekStats(week, email, subs)
+        for (const a of emails) {
+          const email = (a.email || '').toLowerCase().trim()
+          if (!email) continue
+          const subs = a.total_presences || a.total_submissions || a.total_presencas || 1
+
+          weekSet.add(email)
+          weekSubs += subs
 
           const existing = emailMap.get(email)
           if (existing) {
-            // For total_submissions: the base "all" has the global count,
-            // per-week queries only have that week's count.
-            // Keep the max from "all" as the baseline.
-            if (!weekOverride) {
-              existing.totalSubmissions = Math.max(existing.totalSubmissions, subs)
-            }
-            if (week) existing.weeksAttended.add(week)
+            existing.weeksAttended.add(week)
             if (a.first_attendance && a.first_attendance < existing.firstAttendance) {
               existing.firstAttendance = a.first_attendance
-              existing.weekIdentifier = a.week_identifier || existing.weekIdentifier
+              existing.weekIdentifier = week
             }
           } else {
             emailMap.set(email, {
               email,
               firstAttendance: a.first_attendance || '',
-              weekIdentifier: a.week_identifier || '',
-              totalSubmissions: subs,
-              weeksAttended: new Set(week ? [week] : []),
+              weekIdentifier: week,
+              totalSubmissions: 0, // will set below
+              weeksAttended: new Set([week]),
             })
           }
         }
+
+        weekParticipants.set(week, weekSet)
+        weekTotalSubs.set(week, weekSubs)
       }
 
-      // Process base data (has global total_submissions)
-      processEntries(baseEmails)
+      // Also add base-only emails that might not appear in per-week queries
+      for (const a of baseEmails) {
+        const email = (a.email || '').toLowerCase().trim()
+        if (!email || emailMap.has(email)) continue
+        emailMap.set(email, {
+          email,
+          firstAttendance: a.first_attendance || '',
+          weekIdentifier: a.week_identifier || '',
+          totalSubmissions: 0,
+          weeksAttended: new Set(a.week_identifier ? [a.week_identifier] : []),
+        })
+      }
 
-      // Process extra weeks (per-week counts only - used for adherence, not total)
-      for (const { week, data } of extraResults) {
-        const emails = data.emails || []
-        if (emails.length > 0) {
-          processEntries(emails, week)
-          // For new emails not in base, total_submissions = number of weeks attended
-          for (const a of emails) {
-            const email = (a.email || '').toLowerCase().trim()
-            const entry = emailMap.get(email)
-            if (entry) {
-              // Update total to be at least the number of weeks attended
-              entry.totalSubmissions = Math.max(entry.totalSubmissions, entry.weeksAttended.size)
-            }
-          }
-        }
+      // 5. Set totalSubmissions: prefer global "all" count, fallback to weeks attended
+      for (const [email, entry] of emailMap) {
+        const global = globalSubs.get(email)
+        entry.totalSubmissions = global
+          ? Math.max(global, entry.weeksAttended.size)
+          : entry.weeksAttended.size
       }
 
       const attendees: PresencaAttendee[] = Array.from(emailMap.values()).map(e => ({
@@ -234,15 +243,14 @@ export function usePresencaData() {
         weeksAttended: Array.from(e.weeksAttended).sort(),
       }))
 
-      // 6. Build weekly adherence data
+      // 6. Build weekly adherence with retention
       const sortedWeeks = Array.from(weekParticipants.keys()).sort()
       const weeklyAdherence: WeeklyAdherence[] = sortedWeeks.map((week, i) => {
         const participants = weekParticipants.get(week)!.size
         const totalPresences = weekTotalSubs.get(week) || 0
         let retentionFromPrevious: number | null = null
         if (i > 0) {
-          const prevWeek = sortedWeeks[i - 1]
-          const prevSet = weekParticipants.get(prevWeek)!
+          const prevSet = weekParticipants.get(sortedWeeks[i - 1])!
           const currentSet = weekParticipants.get(week)!
           const overlap = [...prevSet].filter(e => currentSet.has(e)).length
           retentionFromPrevious = prevSet.size > 0 ? Math.round((overlap / prevSet.size) * 100) : null
