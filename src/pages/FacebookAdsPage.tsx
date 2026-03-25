@@ -180,7 +180,7 @@ function FunnelTab() {
         }
       })
       .sort((a, b) => b['Lead→Opp'] - a['Lead→Opp'])
-  }, [contacts, deals])
+  }, [contacts, deals, getDealChannel])
 
   // ─── Chart data: Evolução Mensal ───
   const monthlyEvolution = useMemo(() => {
