@@ -216,7 +216,7 @@ export default function FacebookAdsPage() {
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={ctrByCampaign.map(c => ({ name: shortName(c.name, 18), fullName: c.name, ctr: Math.round(c.ctr * 100) / 100 }))}>
                       <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 9, ...AXIS_TICK, angle: -30, textAnchor: 'end' }} height={60} axisLine={false} tickLine={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 9, ...AXIS_TICK }} interval={0} height={60} axisLine={false} tickLine={false} />
                       <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" domain={[0, 'auto']} />
                       <Tooltip contentStyle={TOOLTIP_STYLE} content={({ payload }) => {
                         if (!payload?.[0]) return null
