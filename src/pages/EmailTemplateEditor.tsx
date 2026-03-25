@@ -323,6 +323,37 @@ const EmailTemplateEditor = () => {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".html,.htm"
+            className="hidden"
+            onChange={handleImportHtml}
+          />
+          <Button
+            variant="outline"
+            className="gap-2"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload className="h-4 w-4" />
+            Importar HTML
+          </Button>
+
+          {form.html_body.trim() && (
+            <Button
+              variant="outline"
+              className="gap-2"
+              onClick={handleAiFix}
+              disabled={aiFixing}
+            >
+              {aiFixing ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Wand2 className="h-4 w-4" />
+              )}
+              Corrigir com IA
+            </Button>
+          )}
           <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
