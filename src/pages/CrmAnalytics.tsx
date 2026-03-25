@@ -348,7 +348,7 @@ export default function CrmAnalytics() {
                             </TableCell>
                           </TableRow>
                          ) : (
-                          leadsAula.leadsQuentes.slice(aulaPage * PAGE_SIZE, (aulaPage + 1) * PAGE_SIZE).map((lead) => (
+                          (aulaExpanded ? leadsAula.leadsQuentes : leadsAula.leadsQuentes.slice(0, INITIAL_ROWS)).map((lead) => (
                             <TableRow
                               key={lead.email}
                               className={lead.contactId ? 'cursor-pointer hover:bg-[var(--c-raised)]' : ''}
