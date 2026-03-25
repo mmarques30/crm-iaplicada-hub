@@ -102,11 +102,11 @@ function FunnelTab() {
 
   // Deal classification helper
   const classifyDeals = useMemo(() => {
-    const igOrganic = deals.filter(d => META_SOURCES.isInstagramOrganic(normalizeChannel(d.canal_origem || '')))
-    const fbAds = deals.filter(d => META_SOURCES.isFacebookAds(normalizeChannel(d.canal_origem || '')))
-    const metaCampaign = deals.filter(d => META_SOURCES.isMetaCampaign(d.canal_origem || '') && !META_SOURCES.isInstagramOrganic(normalizeChannel(d.canal_origem || '')) && !META_SOURCES.isFacebookAds(normalizeChannel(d.canal_origem || '')))
+    const igOrganic = deals.filter(d => META_SOURCES.isInstagramOrganic(getDealChannel(d)))
+    const fbAds = deals.filter(d => META_SOURCES.isFacebookAds(getDealChannel(d)))
+    const metaCampaign = deals.filter(d => META_SOURCES.isMetaCampaign(d.canal_origem || '') && !META_SOURCES.isInstagramOrganic(getDealChannel(d)) && !META_SOURCES.isFacebookAds(getDealChannel(d)))
     return { igOrganic, fbAds, metaCampaign }
-  }, [deals])
+  }, [deals, getDealChannel])
 
   // Source card builder
   const buildSourceCard = (label: string, contactList: typeof contacts, dealList: typeof deals) => {
