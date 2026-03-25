@@ -169,6 +169,24 @@ export default function EmailTemplates() {
     toast.info("Geração com IA será implementada em breve. Por enquanto, escreva o assunto manualmente.");
   };
 
+  const handleCreateFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 500 * 1024) {
+      toast.error("Arquivo muito grande (máx. 500KB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const content = ev.target?.result as string;
+      setForm({ ...form, html_body: content });
+      toast.success("HTML importado!");
+    };
+    reader.onerror = () => toast.error("Erro ao ler o arquivo.");
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
