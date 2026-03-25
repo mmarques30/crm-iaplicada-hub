@@ -505,7 +505,9 @@ const SalesPipelineDashboard = () => {
     const past = ["Jan", "Fev", "Mar"].map((m, i) => ({ month: m, actual: 15000 + i * 5000 + Math.floor(Math.random() * 3000), forecast: null as number | null, forecastLow: null as number | null, forecastHigh: null as number | null }));
     const future = ["Abr", "Mai", "Jun"].map((m, i) => {
       const base = 30000 + i * 6000;
-      return { month: m, actual: null as number | null, forecast: base, forecastLow: base * 0.8, forecastHigh: base * 1.2 };
+      const low = base * 0.8;
+      const high = base * 1.2;
+      return { month: m, actual: null as number | null, forecast: base, forecastLow: low, forecastHigh: high, band: high - low };
     });
     return [...past, ...future];
   }, []);
