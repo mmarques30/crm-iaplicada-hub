@@ -15,7 +15,7 @@ import { useInsights } from '@/hooks/useInsights'
 import { Button } from '@/components/ui/button'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, AreaChart, Area, ComposedChart, Line,
+  AreaChart, Area,
 } from 'recharts'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
