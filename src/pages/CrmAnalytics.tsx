@@ -185,6 +185,9 @@ export default function CrmAnalytics() {
               ) : <p className="text-center text-muted-foreground py-8">Sem dados de pipeline</p>}
             </CardContent>
           </Card>
+          <div className="mt-4">
+            <FunnelTab />
+          </div>
         </TabsContent>
 
 
