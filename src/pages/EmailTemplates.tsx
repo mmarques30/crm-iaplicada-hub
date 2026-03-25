@@ -105,6 +105,9 @@ export default function EmailTemplates() {
       if (payload.product) {
         insertData.product = payload.product;
       }
+      if (payload.html_body) {
+        insertData.html_body = payload.html_body;
+      }
       const { data, error } = await supabase
         .from("email_templates_v2")
         .insert([insertData] as any)
