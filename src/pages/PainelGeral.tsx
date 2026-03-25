@@ -431,24 +431,99 @@ export default function PainelGeral() {
 
         {/* ─── Crescimento ─── */}
         <TabsContent value="growth" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Alcance Diário (Instagram — últimos 28 dias)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dailyReach.length > 0 ? (
-                <ResponsiveContainer width="100%" height={350}>
-                  <AreaChart data={dailyReach}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
-                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} />
-                    <Area type="monotone" dataKey="alcance" stroke="#2CBBA6" fill="#2CBBA6" fillOpacity={0.15} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : <p className="text-center text-muted-foreground py-8">Sem dados de crescimento</p>}
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Alcance Diário (IG)</CardTitle>
+                <p className="text-xs text-muted-foreground">Últimos 28 dias</p>
+              </CardHeader>
+              <CardContent>
+                {dailyReach.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={dailyReach}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Area type="monotone" dataKey="alcance" stroke="#2CBBA6" fill="#2CBBA6" fillOpacity={0.15} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Seguidores IG</CardTitle>
+                <p className="text-xs text-muted-foreground">Evolução diária</p>
+              </CardHeader>
+              <CardContent>
+                {(ig?.dailyFollowers || []).length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={(ig?.dailyFollowers || []).map(d => ({
+                      date: new Date(d.end_time).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+                      seguidores: d.value,
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Area type="monotone" dataKey="seguidores" stroke="#AFC040" fill="#AFC040" fillOpacity={0.15} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Investimento por Campanha</CardTitle>
+                <p className="text-xs text-muted-foreground">Facebook / Meta Ads</p>
+              </CardHeader>
+              <CardContent>
+                {(fb?.campaigns || []).length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={(fb?.campaigns || []).filter(c => c.spend > 0).map(c => ({
+                      name: c.name.length > 25 ? c.name.substring(0, 25) + '…' : c.name,
+                      investimento: c.spend,
+                      leads: c.leads || 0,
+                    }))} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatCurrency(v)} />
+                      <Bar dataKey="investimento" name="Investimento" fill="#4A9FE0" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-muted-foreground py-8">Sem dados de campanhas</p>}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Engajamento IG por Post</CardTitle>
+                <p className="text-xs text-muted-foreground">Likes + Comentários (últimos posts)</p>
+              </CardHeader>
+              <CardContent>
+                {(ig?.posts || []).length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={(ig?.posts || []).slice(0, 12).reverse().map(p => ({
+                      date: new Date(p.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+                      likes: p.like_count,
+                      comments: p.comments_count,
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Bar dataKey="likes" name="Likes" fill="#AFC040" radius={[4, 4, 0, 0]} stackId="eng" />
+                      <Bar dataKey="comments" name="Comentários" fill="#4A9FE0" radius={[4, 4, 0, 0]} stackId="eng" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-muted-foreground py-8">Sem dados de posts</p>}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* ─── ROI - FIX Bug #5: no duplicate investment ─── */}
