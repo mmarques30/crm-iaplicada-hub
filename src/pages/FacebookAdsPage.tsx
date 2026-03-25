@@ -216,7 +216,7 @@ function FunnelTab() {
   const crossTabSources = useMemo(() => {
     const sourceMap: Record<string, Record<string, number>> = {}
     for (const d of deals) {
-      const source = normalizeChannel(d.canal_origem || '')
+      const source = getDealChannel(d)
       if (!sourceMap[source]) sourceMap[source] = {}
       const col = d.motivo_perda ? 'NEGÓCIO PERDIDO' : (d.stage_name || 'Desconhecido')
       sourceMap[source][col] = (sourceMap[source][col] || 0) + 1
