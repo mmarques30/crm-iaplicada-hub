@@ -12,7 +12,8 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 
 const PRODUCT_COLORS: Record<string, string> = { academy: '#4A9FE0', business: '#AFC040' }
 const PRODUCT_LABELS: Record<string, string> = { academy: 'Academy', business: 'Business', skills: 'Skills' }
-const PAY_COLORS = ['#AFC040', '#4A9FE0', '#E8A43C', '#E8684A', '#7A8460']
+const PAY_COLORS = ['#AFC040', '#4A9FE0', '#E8A43C', '#E8684A', '#7A8460', '#2CBBA6', '#9B87F5', '#D4A574']
+const PAY_LABELS: Record<string, string> = { pix_avista: 'Pix à Vista', entrada_boleto: 'Entrada + Boleto', cartao_avista: 'Cartão à Vista', parcelado_cartao: 'Parcelado Cartão', parcelado_boleto: 'Parcelado Boleto', parcelado_pix: 'Parcelado Pix', entrada_cartao: 'Entrada + Cartão' }
 const TOOLTIP_STYLE = { background: '#191D0C', border: '1px solid #2E3A18', borderRadius: 8, fontFamily: 'Sora', fontSize: 12, color: '#E8EDD8' }
 const AXIS_TICK = { fontSize: 11, fill: '#7A8460' }
 const GRID_STROKE = '#1E2610'
