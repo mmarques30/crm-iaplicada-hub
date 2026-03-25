@@ -75,21 +75,26 @@ async function collectInstagram(accessToken: string, igAccountId: string) {
 async function collectFacebookAds(adsToken: string, adAccountId: string) {
   const baseUrl = 'https://graph.facebook.com/v21.0'
 
-  // Use time_range for full historical data (last 90 days)
-  const since = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  // Use date_preset=maximum to get ALL historical data (not just 30/90 days)
+  // This ensures paused campaigns from months ago still show their spend/leads
+  const since = '2025-01-01' // Start from beginning of operations
   const until = new Date().toISOString().split('T')[0]
   const timeRange = JSON.stringify({ since, until })
 
-  // Fetch campaigns, campaign insights (all-time), daily insights, and ads-level data in PARALLEL
-  const [campaignsRes, insightsRes, dailyRes, adsRes] = await Promise.all([
+  // Fetch campaigns, campaign insights (ALL TIME), daily insights (90d), and ads-level data in PARALLEL
+  const [campaignsRes, insightsAllTimeRes, dailyRes, adsRes] = await Promise.all([
+    // 1. Campaign list with details
     fetch(`${baseUrl}/${adAccountId}/campaigns?fields=id,name,status,objective,daily_budget,lifetime_budget,start_time,stop_time&limit=50&access_token=${adsToken}`),
-    fetch(`${baseUrl}/${adAccountId}/insights?fields=campaign_name,campaign_id,spend,impressions,reach,clicks,ctr,actions,cost_per_action_type&time_range=${encodeURIComponent(timeRange)}&level=campaign&limit=50&access_token=${adsToken}`),
-    fetch(`${baseUrl}/${adAccountId}/insights?fields=spend,impressions,reach,clicks,ctr,actions&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=100&access_token=${adsToken}`),
+    // 2. Campaign-level insights — ALL TIME (date_preset=maximum) so paused campaigns show data
+    fetch(`${baseUrl}/${adAccountId}/insights?fields=campaign_name,campaign_id,spend,impressions,reach,clicks,ctr,actions,cost_per_action_type&date_preset=maximum&level=campaign&limit=50&access_token=${adsToken}`),
+    // 3. Daily insights for evolution charts (last 90 days is enough for charts)
+    fetch(`${baseUrl}/${adAccountId}/insights?fields=spend,impressions,reach,clicks,ctr,actions&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=500&access_token=${adsToken}`),
+    // 4. Ad-level data (individual creatives/posts within campaigns) — ALL TIME
     fetch(`${baseUrl}/${adAccountId}/ads?fields=id,name,status,campaign_id,adset_id,creative{id,name,thumbnail_url,effective_object_story_id},insights.fields(spend,impressions,reach,clicks,ctr,actions,cost_per_action_type).date_preset(maximum)&limit=100&access_token=${adsToken}`),
   ])
 
   const [campaignsData, insightsData, dailyData, adsData] = await Promise.all([
-    campaignsRes.json(), insightsRes.json(), dailyRes.json(), adsRes.json(),
+    campaignsRes.json(), insightsAllTimeRes.json(), dailyRes.json(), adsRes.json(),
   ])
   if (campaignsData.error) throw new Error(`FB Ads campaigns: ${campaignsData.error.message}`)
 
