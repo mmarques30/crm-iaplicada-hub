@@ -313,9 +313,29 @@ export default function PainelGeral() {
                 </div>
               ) : <p className="text-center text-muted-foreground py-8">Clique em "Atualizar Dados" para coletar dados</p>}
 
-              {/* Conversion rates summary */}
+              {/* Conversion badges between steps */}
+              {funnelSteps.length > 1 && (
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {funnelSteps.slice(1).map((step, i) => {
+                    const prev = funnelSteps[i]
+                    if ((step as any).isMultiSource || step.value > prev.value) return null
+                    const rate = (step.value / prev.value) * 100
+                    const rateColor = rate > 50 ? '#AFC040' : rate > 10 ? '#E8A43C' : '#E8684A'
+                    const shortPrev = prev.name.split(' ')[0]
+                    const shortCurr = step.name.split(' ')[0]
+                    return (
+                      <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--c-raised)] text-xs">
+                        <span className="text-muted-foreground uppercase tracking-wide">{shortPrev} → {shortCurr}</span>
+                        <span className="font-mono font-bold" style={{ color: rateColor }}>{rate.toFixed(1)}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Summary metrics */}
               {funnelSteps.length > 2 && (
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {fb?.metrics?.totalClicks && fb?.metrics?.totalImpressions ? (
                     <div className="p-3 rounded-lg bg-[var(--c-raised)] text-center">
                       <p className="text-xs text-muted-foreground">CTR (Ads)</p>
