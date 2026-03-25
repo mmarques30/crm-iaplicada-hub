@@ -74,6 +74,15 @@ function FunnelTab() {
   const contacts = contactsRes || []
   const stages = stagesRes || []
 
+  // Helper: resolve deal channel using contact source as fallback
+  const getDealChannel = useMemo(() => {
+    const contactSource: Record<string, string> = {}
+    for (const c of contacts) {
+      contactSource[c.id] = c.utm_source || c.fonte_registro || ''
+    }
+    return (d: any) => normalizeChannel(d.canal_origem || (d.contact_id ? contactSource[d.contact_id] : '') || '')
+  }, [contacts])
+
   // Classify contacts into meta categories
   const classified = useMemo(() => {
     const igOrganic: typeof contacts = []
