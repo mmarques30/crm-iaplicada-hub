@@ -77,6 +77,7 @@ export default function EmailTemplates() {
   const queryClient = useQueryClient();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(initialForm);
+  const createFileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: templates, isLoading } = useQuery({
     queryKey: ["email_templates_v2"],
