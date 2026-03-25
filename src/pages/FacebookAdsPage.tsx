@@ -116,7 +116,7 @@ export default function FacebookAdsPage() {
 
       <Tabs defaultValue="overview">
         <TabsList className="flex-wrap h-auto bg-transparent border-b border-[var(--c-border)] rounded-none p-0 gap-1">
-          {[{ v: 'overview', l: 'Visão Geral' }, { v: 'campaigns', l: 'Campanhas' }, { v: 'evolution', l: 'Evolução' }, { v: 'insights', l: 'Insights' }].map(t => (
+          {[{ v: 'overview', l: 'Visão Geral' }, { v: 'campaigns', l: 'Campanhas' }, { v: 'evolution', l: 'Evolução' }, { v: 'funnel', l: 'Funil de Vendas' }, { v: 'insights', l: 'Insights' }].map(t => (
             <TabsTrigger key={t.v} value={t.v} className="data-[state=active]:bg-[#AFC040] data-[state=active]:text-[#0D0D0D] data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">{t.l}</TabsTrigger>
           ))}
         </TabsList>
