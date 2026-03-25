@@ -99,11 +99,16 @@ function calcVisitanteScore(v: VisitanteEngajamento, maxScore: number): number {
   return maxScore > 0 ? Math.round((raw / maxScore) * 100) : 0
 }
 
+/* ─── Query Keys ─── */
+
+export const PRESENCA_QUERY_KEY = ['external_presenca']
+export const VISITANTES_QUERY_KEY = ['external_visitantes']
+
 /* ─── Hooks ─── */
 
 export function usePresencaData() {
   return useQuery<PresencaData>({
-    queryKey: ['external_presenca'],
+    queryKey: PRESENCA_QUERY_KEY,
     queryFn: async () => {
       const res = await fetch(`${PRESENCA_URL}?week=all`, {
         headers: { 'x-api-token': PRESENCA_TOKEN },
@@ -124,14 +129,15 @@ export function usePresencaData() {
         totalUnique: data.count || attendees.length,
       }
     },
-    staleTime: 5 * 60_000, // 5 min
+    staleTime: 2 * 60_000,
     refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
   })
 }
 
 export function useVisitantesData() {
   return useQuery<VisitantesData>({
-    queryKey: ['external_visitantes'],
+    queryKey: VISITANTES_QUERY_KEY,
     queryFn: async () => {
       const res = await fetch(VISITANTES_URL, {
         headers: { 'x-api-key': VISITANTES_KEY },
@@ -164,8 +170,9 @@ export function useVisitantesData() {
 
       return { resumo, topConteudos, engajamento }
     },
-    staleTime: 5 * 60_000,
+    staleTime: 2 * 60_000,
     refetchOnWindowFocus: false,
+    refetchOnMount: 'always',
   })
 }
 
