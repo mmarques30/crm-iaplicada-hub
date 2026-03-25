@@ -407,14 +407,25 @@ export default function GestaoVendas() {
   const jaRegularizados = allNFs.filter((n: any) => n.status_nf === 'emitida' || n.status_nf === 'enviada').length
 
   /* ─── Filtered Regularizacao ─── */
+  const MES_NAMES: Record<string, string> = {
+    '01': 'Janeiro', '02': 'Fevereiro', '03': 'Março', '04': 'Abril',
+    '05': 'Maio', '06': 'Junho', '07': 'Julho', '08': 'Agosto',
+    '09': 'Setembro', '10': 'Outubro', '11': 'Novembro', '12': 'Dezembro',
+  }
   const filteredReg = useMemo(() => {
     let result = [...allNFs]
     if (regAno !== 'todos') result = result.filter((n: any) => {
-      const y = (n.mes_ref || n.data_emissao || n.created_at || '').substring(0, 4)
+      const ref = n.mes_referencia || ''
+      const match = ref.match(/(\d{4})/)
+      if (match) return match[1] === regAno
+      const y = (n.data_emissao || n.created_at || '').substring(0, 4)
       return y === regAno
     })
     if (regMes !== 'todos') result = result.filter((n: any) => {
-      const m = (n.mes_ref || n.data_emissao || n.created_at || '').substring(5, 7)
+      const ref = n.mes_referencia || ''
+      const mesName = MES_NAMES[regMes] || ''
+      if (mesName && ref.toLowerCase().includes(mesName.toLowerCase())) return true
+      const m = (n.data_emissao || n.created_at || '').substring(5, 7)
       return m === regMes
     })
     if (!regMostrarRegularizados) {
