@@ -73,9 +73,14 @@ const SalesPipelineDashboard = () => {
     queryFn: async () => { const { data } = await (supabase as any).from("stage_conversion").select("*").order("display_order"); return (data || []) as StageRow[]; },
   });
 
+  const { data: allStages } = useQuery({
+    queryKey: ["all_stages"],
+    queryFn: async () => { const { data } = await supabase.from("stages").select("id, name, display_order, pipeline_id, is_won, is_lost"); return (data || []) as any[]; },
+  });
+
   const { data: deals } = useQuery({
     queryKey: ["deals_dashboard"],
-    queryFn: async () => { const { data } = await supabase.from("deals").select("id, name, amount, product, is_won, canal_origem, created_at, stage_id"); return (data || []) as any[]; },
+    queryFn: async () => { const { data } = await supabase.from("deals").select("id, name, amount, product, is_won, canal_origem, created_at, stage_id, stage_entered_at"); return (data || []) as any[]; },
   });
 
   const { data: contacts } = useQuery({
