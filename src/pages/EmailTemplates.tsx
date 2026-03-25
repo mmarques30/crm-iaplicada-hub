@@ -331,7 +331,53 @@ export default function EmailTemplates() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>HTML do Email (opcional)</Label>
+                <input
+                  ref={createFileInputRef}
+                  type="file"
+                  accept=".html,.htm"
+                  className="hidden"
+                  onChange={handleCreateFileImport}
+                />
+                <div
+                  className="border-2 border-dashed rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 hover:bg-accent/30 transition-colors"
+                  onClick={() => createFileInputRef.current?.click()}
+                  onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const file = e.dataTransfer.files[0];
+                    if (file && (file.name.endsWith('.html') || file.name.endsWith('.htm'))) {
+                      if (file.size > 500 * 1024) {
+                        toast.error("Arquivo muito grande (máx. 500KB).");
+                        return;
+                      }
+                      const reader = new FileReader();
+                      reader.onload = (ev) => {
+                        setForm({ ...form, html_body: ev.target?.result as string });
+                        toast.success("HTML importado!");
+                      };
+                      reader.readAsText(file);
+                    } else {
+                      toast.error("Apenas arquivos .html ou .htm são aceitos.");
+                    }
+                  }}
+                >
+                  <Upload className="h-5 w-5 mx-auto mb-1 text-muted-foreground" />
+                  {form.html_body ? (
+                    <p className="text-sm text-green-600 font-medium">
+                      ✓ HTML importado ({Math.round(form.html_body.length / 1024)}KB)
+                    </p>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Arraste um arquivo .html ou clique para importar
+                    </p>
+                  )}
+                </div>
+              </div>
 
             <DialogFooter>
               <Button
