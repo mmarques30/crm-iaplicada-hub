@@ -883,18 +883,18 @@ export default function GestaoVendas() {
           </Card>
         </TabsContent>
 
-        {/* ════════════════ Tab: Fiscal ════════════════ */}
+        {/* ════════════════ Tab: Fiscal (from vendas - client profile) ════════════════ */}
         <TabsContent value="fiscal" className="space-y-4 mt-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <KPICard label="Total Clientes" value={fiscalClientes} icon={Users} accentColor="#2CBBA6" />
-            <KPICard label="NFs Pendentes" value={nfPendentes} icon={AlertCircle} accentColor="#E8A43C" />
-            <KPICard label="NFs Emitidas" value={nfEmitidas} icon={CheckCircle} accentColor="#AFC040" />
-            <KPICard label="NFs Enviadas" value={nfEnviadas} icon={Send} accentColor="#4A9FE0" />
+            <KPICard label="NFs Pendentes" value={nfPendentesVendas} icon={AlertCircle} accentColor="#E8A43C" />
+            <KPICard label="NFs Emitidas" value={nfEmitidasVendas} icon={CheckCircle} accentColor="#AFC040" />
+            <KPICard label="NFs Enviadas" value={nfEnviadasVendas} icon={Send} accentColor="#4A9FE0" />
           </div>
 
           <Card>
             <CardHeader>
-              <CardTitle className="text-base">Controle Fiscal</CardTitle>
+              <CardTitle className="text-base">Controle Fiscal — Perfil do Cliente</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Filters */}
@@ -913,36 +913,13 @@ export default function GestaoVendas() {
                 </Select>
                 <Select value={fiscalStatus} onValueChange={setFiscalStatus}>
                   <SelectTrigger className="w-[150px] h-9 text-xs">
-                    <SelectValue placeholder="Status" />
+                    <SelectValue placeholder="Status NF" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="todos">Todos</SelectItem>
                     <SelectItem value="pendente">Pendente</SelectItem>
                     <SelectItem value="emitida">Emitida</SelectItem>
                     <SelectItem value="enviada">Enviada</SelectItem>
-                    <SelectItem value="erro">Erro</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={fiscalMes} onValueChange={setFiscalMes}>
-                  <SelectTrigger className="w-[140px] h-9 text-xs">
-                    <SelectValue placeholder="Mes" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos os meses</SelectItem>
-                    {MONTHS.map(m => (
-                      <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={fiscalAno} onValueChange={setFiscalAno}>
-                  <SelectTrigger className="w-[120px] h-9 text-xs">
-                    <SelectValue placeholder="Ano" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="todos">Todos</SelectItem>
-                    {availableYears.map(y => (
-                      <SelectItem key={y} value={y}>{y}</SelectItem>
-                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -953,44 +930,58 @@ export default function GestaoVendas() {
                   <TableHeader>
                     <TableRow className="bg-[var(--c-raised)]">
                       <TableHead className="font-medium">Cliente</TableHead>
+                      <TableHead className="font-medium">Produto</TableHead>
+                      <TableHead className="font-medium text-right">Valor Contrato</TableHead>
                       <TableHead className="font-medium">CPF/CNPJ</TableHead>
-                      <TableHead className="font-medium">Razao Social</TableHead>
+                      <TableHead className="font-medium">Razão Social</TableHead>
+                      <TableHead className="font-medium">Email Fiscal</TableHead>
                       <TableHead className="font-medium">Status NF</TableHead>
-                      <TableHead className="font-medium">Ultimo Envio</TableHead>
+                      <TableHead className="font-medium">Nº NF</TableHead>
+                      <TableHead className="font-medium">Data Envio</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {nfLoading ? (
+                    {vendasLoading ? (
                       Array.from({ length: 5 }).map((_, i) => (
                         <TableRow key={i}>
-                          {Array.from({ length: 5 }).map((_, j) => (
+                          {Array.from({ length: 9 }).map((_, j) => (
                             <TableCell key={j}><div className="h-4 w-full bg-muted animate-pulse rounded" /></TableCell>
                           ))}
                         </TableRow>
                       ))
-                    ) : filteredNFs.length === 0 ? (
+                    ) : filteredFiscal.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
-                          Nenhuma nota fiscal encontrada
+                        <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
+                          Nenhum cliente encontrado
                         </TableCell>
                       </TableRow>
                     ) : (
-                      filteredNFs.map((n: any) => (
-                        <TableRow key={n.id} className="hover:bg-[var(--c-raised)]">
+                      filteredFiscal.map((v: any) => (
+                        <TableRow key={v.id} className="hover:bg-[var(--c-raised)]">
                           <TableCell>
                             <div>
-                              <span className="font-medium">{n.nome || n.cliente_nome || '—'}</span>
-                              <p className="text-xs text-muted-foreground">{n.email || n.cliente_email || ''}</p>
+                              <span className="font-medium">{v.nome || '—'}</span>
+                              <p className="text-xs text-muted-foreground">{v.email || ''}</p>
                             </div>
                           </TableCell>
-                          <TableCell className="text-muted-foreground font-mono text-xs">{n.cpf_cnpj || '—'}</TableCell>
-                          <TableCell className="text-muted-foreground">{n.razao_social || '—'}</TableCell>
                           <TableCell>
-                            <Badge className={`text-xs ${nfStatusBadgeClass(n.status)}`}>
-                              {nfStatusLabel(n.status)}
+                            <Badge className={`text-xs ${productBadgeClass(v.produto)}`}>
+                              {PRODUCT_LABELS[v.produto] || v.produto || '—'}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{formatDate(n.ultimo_envio || n.data_envio || n.updated_at)}</TableCell>
+                          <TableCell className="text-right font-medium font-mono" style={{ color: '#E8A43C' }}>
+                            {formatCurrency(Number(v.valor || 0))}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground font-mono text-xs">{v.cpf_cnpj || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs max-w-[180px] truncate">{v.razao_social || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground text-xs">{v.email_fiscal || '—'}</TableCell>
+                          <TableCell>
+                            <Badge className={`text-xs ${nfStatusBadgeClass(v.status_nf || 'pendente')}`}>
+                              {nfStatusLabel(v.status_nf || 'pendente')}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground font-mono text-xs">{v.numero_nf || '—'}</TableCell>
+                          <TableCell className="text-muted-foreground">{formatDate(v.data_envio_nf)}</TableCell>
                         </TableRow>
                       ))
                     )}
@@ -1007,7 +998,7 @@ export default function GestaoVendas() {
             error={fiscalInsightsError?.message}
             onRetry={() => refetchFiscalInsights()}
             title="Insights Fiscais"
-            subtitle="Análise de compliance, NFs pendentes e regularização"
+            subtitle="Análise de compliance e NFs pendentes"
             context="fiscal"
           />
         </TabsContent>
