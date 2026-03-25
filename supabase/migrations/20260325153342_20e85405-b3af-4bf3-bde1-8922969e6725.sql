@@ -1,0 +1,2 @@
+ALTER TABLE vendas DROP CONSTRAINT vendas_produto_check;
+ALTER TABLE vendas ADD CONSTRAINT vendas_produto_check CHECK (produto = ANY (ARRAY['business', 'skills', 'academy', 'ferramentas', 'hora_trabalho']));
