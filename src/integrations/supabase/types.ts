@@ -406,6 +406,45 @@ export type Database = {
           },
         ]
       }
+      despesas: {
+        Row: {
+          categoria: string
+          created_at: string | null
+          data: string
+          descricao: string
+          forma_pgto: string | null
+          id: string
+          pagamento: string | null
+          status: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          categoria?: string
+          created_at?: string | null
+          data: string
+          descricao: string
+          forma_pgto?: string | null
+          id?: string
+          pagamento?: string | null
+          status?: string
+          tipo?: string
+          valor?: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string | null
+          data?: string
+          descricao?: string
+          forma_pgto?: string | null
+          id?: string
+          pagamento?: string | null
+          status?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: []
+      }
       email_campaigns: {
         Row: {
           created_at: string | null
@@ -1128,6 +1167,92 @@ export type Database = {
           },
         ]
       }
+      metas: {
+        Row: {
+          ano: number
+          categoria: string
+          created_at: string | null
+          id: string
+          mes: number
+          valor_projetado: number
+        }
+        Insert: {
+          ano: number
+          categoria: string
+          created_at?: string | null
+          id?: string
+          mes: number
+          valor_projetado?: number
+        }
+        Update: {
+          ano?: number
+          categoria?: string
+          created_at?: string | null
+          id?: string
+          mes?: number
+          valor_projetado?: number
+        }
+        Relationships: []
+      }
+      notas_fiscais: {
+        Row: {
+          cep: string | null
+          cpf_cnpj: string | null
+          created_at: string | null
+          data_emissao: string | null
+          data_envio: string | null
+          descricao_servico: string | null
+          endereco: string | null
+          id: string
+          mes_referencia: string | null
+          numero_nf: number | null
+          razao_social: string | null
+          status_nf: string
+          valor: number
+          venda_id: string | null
+        }
+        Insert: {
+          cep?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          data_envio?: string | null
+          descricao_servico?: string | null
+          endereco?: string | null
+          id?: string
+          mes_referencia?: string | null
+          numero_nf?: number | null
+          razao_social?: string | null
+          status_nf?: string
+          valor?: number
+          venda_id?: string | null
+        }
+        Update: {
+          cep?: string | null
+          cpf_cnpj?: string | null
+          created_at?: string | null
+          data_emissao?: string | null
+          data_envio?: string | null
+          descricao_servico?: string | null
+          endereco?: string | null
+          id?: string
+          mes_referencia?: string | null
+          numero_nf?: number | null
+          razao_social?: string | null
+          status_nf?: string
+          valor?: number
+          venda_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_fiscais_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -1193,6 +1318,50 @@ export type Database = {
           },
         ]
       }
+      parcelas: {
+        Row: {
+          created_at: string | null
+          data_pagamento: string | null
+          data_vencimento: string
+          id: string
+          numero: number
+          status: string
+          tipo: string
+          valor: number
+          venda_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          data_vencimento: string
+          id?: string
+          numero?: number
+          status?: string
+          tipo?: string
+          valor?: number
+          venda_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          data_vencimento?: string
+          id?: string
+          numero?: number
+          status?: string
+          tipo?: string
+          valor?: number
+          venda_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "parcelas_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pipelines: {
         Row: {
           created_at: string | null
@@ -1252,6 +1421,44 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      repasses: {
+        Row: {
+          created_at: string | null
+          data_pagamento: string | null
+          id: string
+          indicador_nome: string
+          status: string
+          valor: number
+          venda_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          id?: string
+          indicador_nome: string
+          status?: string
+          valor?: number
+          venda_id: string
+        }
+        Update: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          id?: string
+          indicador_nome?: string
+          status?: string
+          valor?: number
+          venda_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "repasses_venda_id_fkey"
+            columns: ["venda_id"]
+            isOneToOne: false
+            referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stages: {
         Row: {
@@ -1335,45 +1542,66 @@ export type Database = {
       }
       vendas: {
         Row: {
+          cep: string | null
           contact_id: string | null
+          cpf_cnpj: string | null
           created_at: string | null
           data_venda: string
           email: string | null
+          endereco: string | null
           forma_pagamento: string | null
           hubspot_stage: string | null
           id: string
           nome: string
           parcelas: number | null
+          por_indicacao: boolean | null
           produto: string
+          razao_social: string | null
           status: string
+          telefone: string | null
+          total_parcelas: number | null
           valor: number
         }
         Insert: {
+          cep?: string | null
           contact_id?: string | null
+          cpf_cnpj?: string | null
           created_at?: string | null
           data_venda: string
           email?: string | null
+          endereco?: string | null
           forma_pagamento?: string | null
           hubspot_stage?: string | null
           id?: string
           nome: string
           parcelas?: number | null
+          por_indicacao?: boolean | null
           produto: string
+          razao_social?: string | null
           status?: string
+          telefone?: string | null
+          total_parcelas?: number | null
           valor?: number
         }
         Update: {
+          cep?: string | null
           contact_id?: string | null
+          cpf_cnpj?: string | null
           created_at?: string | null
           data_venda?: string
           email?: string | null
+          endereco?: string | null
           forma_pagamento?: string | null
           hubspot_stage?: string | null
           id?: string
           nome?: string
           parcelas?: number | null
+          por_indicacao?: boolean | null
           produto?: string
+          razao_social?: string | null
           status?: string
+          telefone?: string | null
+          total_parcelas?: number | null
           valor?: number
         }
         Relationships: [
@@ -1585,6 +1813,15 @@ export type Database = {
           },
         ]
       }
+      despesas_mensal: {
+        Row: {
+          categoria: string | null
+          mes: string | null
+          quantidade: number | null
+          total: number | null
+        }
+        Relationships: []
+      }
       email_campaign_metrics: {
         Row: {
           bounced: number | null
@@ -1602,6 +1839,14 @@ export type Database = {
           subject: string | null
           total_sends: number | null
           unsubscribed: number | null
+        }
+        Relationships: []
+      }
+      fluxo_caixa_mensal: {
+        Row: {
+          mes: string | null
+          parcelas_pagas: number | null
+          total_recebido: number | null
         }
         Relationships: []
       }

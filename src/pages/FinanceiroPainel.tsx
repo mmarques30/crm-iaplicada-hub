@@ -226,6 +226,7 @@ export default function FinanceiroPainel() {
       if (error) throw error
       return (data || []) as any[]
     },
+    retry: 1,
   })
 
   const { data: parcelasPendentes } = useQuery({
@@ -240,6 +241,7 @@ export default function FinanceiroPainel() {
       if (error) throw error
       return (data || []) as any[]
     },
+    retry: 1,
   })
 
   const { data: despesas, isLoading: despesasLoading } = useQuery({
@@ -254,6 +256,7 @@ export default function FinanceiroPainel() {
       if (error) throw error
       return (data || []) as any[]
     },
+    retry: 1,
   })
 
   const { data: metas } = useQuery({
@@ -266,6 +269,7 @@ export default function FinanceiroPainel() {
       if (error) throw error
       return (data || []) as any[]
     },
+    retry: 1,
   })
 
   const { data: allVendasYear } = useQuery({
@@ -292,6 +296,7 @@ export default function FinanceiroPainel() {
       if (error) throw error
       return (data || []) as any[]
     },
+    retry: 1,
   })
 
   /* ─── Derived metrics ─── */
