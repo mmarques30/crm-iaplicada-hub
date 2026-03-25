@@ -6,15 +6,8 @@ import { Users, Filter } from 'lucide-react'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
 import { normalizeChannel, humanizeCampaignName } from '@/lib/format'
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Cell,
-} from 'recharts'
 
-const SEMANTIC_COLORS = ['#AFC040', '#4A9FE0', '#2CBBA6', '#E8A43C', '#E8684A', '#7A8460']
-const TOOLTIP_STYLE = { background: '#191D0C', border: '1px solid #2E3A18', borderRadius: 8, fontFamily: 'Sora', fontSize: 12, color: '#E8EDD8' }
-const AXIS_TICK = { fontSize: 11, fill: '#7A8460' }
-const GRID_STROKE = '#1E2610'
+
 
 const META_SOURCES = {
   isInstagramOrganic: (ch: string) => ch === 'Instagram Orgânico',
