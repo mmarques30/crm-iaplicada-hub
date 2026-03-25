@@ -518,8 +518,8 @@ export default function CrmAnalytics() {
                               Nenhum visitante com engajamento encontrado
                             </TableCell>
                           </TableRow>
-                        ) : (
-                          leadsVisitantes.leads.slice(0, 50).map((lead) => (
+                         ) : (
+                          leadsVisitantes.leads.slice(visitantePage * PAGE_SIZE, (visitantePage + 1) * PAGE_SIZE).map((lead) => (
                             <TableRow
                               key={lead.email}
                               className={lead.contactId ? 'cursor-pointer hover:bg-[var(--c-raised)]' : ''}
