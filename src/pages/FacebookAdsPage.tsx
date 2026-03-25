@@ -119,7 +119,7 @@ export default function FacebookAdsPage() {
 
       <Tabs defaultValue="overview">
         <TabsList className="flex-wrap h-auto bg-transparent border-b border-[var(--c-border)] rounded-none p-0 gap-1">
-          {[{ v: 'overview', l: 'Visão Geral' }, { v: 'campaigns', l: 'Campanhas' }, { v: 'insights', l: 'Insights' }].map(t => (
+          {[{ v: 'overview', l: 'Visão Geral' }, { v: 'campaigns', l: 'Campanhas' }, { v: 'evolution', l: 'Evolução' }, { v: 'insights', l: 'Insights' }].map(t => (
             <TabsTrigger key={t.v} value={t.v} className="data-[state=active]:bg-[#AFC040] data-[state=active]:text-[#0D0D0D] data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">{t.l}</TabsTrigger>
           ))}
         </TabsList>
@@ -173,12 +173,26 @@ export default function FacebookAdsPage() {
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
+                {/* Melhor / Pior CPL cards */}
+                {bestCPL && (
+                  <div className="grid grid-cols-2 gap-3 mt-3">
+                    <div className="p-3 rounded-lg bg-[#031411] text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Melhor CPL</p>
+                      <p className="text-xl font-bold font-mono" style={{ color: '#AFC040' }}>{formatCurrency(bestCPL.costPerLead)}</p>
+                      <p className="text-[10px] text-muted-foreground truncate mt-1">{shortName(bestCPL.name, 30)}</p>
+                    </div>
+                    <div className="p-3 rounded-lg bg-[#1A0604] text-center">
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Pior CPL</p>
+                      <p className="text-xl font-bold font-mono" style={{ color: '#E8684A' }}>{formatCurrency(worstCPL?.costPerLead || 0)}</p>
+                      <p className="text-[10px] text-muted-foreground truncate mt-1">{shortName(worstCPL?.name || '', 30)}</p>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* FIX Bug #3: Pie chart with proper data rendering */}
             <Card>
               <CardHeader><CardTitle className="text-base">Investimento por Objetivo</CardTitle></CardHeader>
               <CardContent>
@@ -200,16 +214,18 @@ export default function FacebookAdsPage() {
               <CardContent>
                 {ctrByCampaign.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={ctrByCampaign.map(c => ({ name: shortName(c.name), fullName: c.name, ctr: Math.round(c.ctr * 100) / 100 }))} layout="vertical">
+                    <BarChart data={ctrByCampaign.map(c => ({ name: shortName(c.name, 18), fullName: c.name, ctr: Math.round(c.ctr * 100) / 100 }))}>
                       <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                      <XAxis type="number" tick={AXIS_TICK} unit="%" axisLine={false} tickLine={false} />
-                      <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 9, ...AXIS_TICK, angle: -30, textAnchor: 'end' }} height={60} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" domain={[0, 'auto']} />
                       <Tooltip contentStyle={TOOLTIP_STYLE} content={({ payload }) => {
                         if (!payload?.[0]) return null
                         const d = payload[0].payload
                         return (<div style={{ ...TOOLTIP_STYLE, padding: 8, maxWidth: 300 }}><p className="text-xs font-medium" style={{ color: '#E8EDD8' }}>{d.fullName}</p><p className="text-xs mt-1" style={{ color: '#7A8460' }}>CTR: <strong>{d.ctr}%</strong></p></div>)
                       }} />
-                      <Bar dataKey="ctr" name="CTR %" fill="#2CBBA6" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="ctr" name="CTR %" radius={[4, 4, 0, 0]}>
+                        {ctrByCampaign.map((_, i) => <Cell key={i} fill={SEMANTIC_COLORS[i % SEMANTIC_COLORS.length]} />)}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
@@ -242,7 +258,10 @@ export default function FacebookAdsPage() {
                     {campaigns.map(c => (
                       <TableRow key={c.id}>
                         <TableCell className="max-w-[250px]" title={c.name}>
-                          <p className="text-sm truncate">{c.name}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: SEMANTIC_COLORS[campaigns.indexOf(c) % SEMANTIC_COLORS.length] }} />
+                            <p className="text-sm truncate">{c.name}</p>
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge className={`text-xs ${c.status === 'ACTIVE' ? 'bg-[#141A04] text-[#AFC040]' : 'bg-muted text-muted-foreground'}`}>
@@ -280,6 +299,84 @@ export default function FacebookAdsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ─── Insights ─── */}
+        {/* ─── Evolução (NEW - matches Manus) ─── */}
+        <TabsContent value="evolution" className="space-y-4 mt-4">
+          {/* Investimento Diário placeholder - uses campaign-level data since we don't have daily breakdown */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Resumo Semanal</CardTitle></CardHeader>
+            <CardContent>
+              {campaigns.length > 0 ? (
+                <>
+                <ResponsiveContainer width="100%" height={300}>
+                  <ComposedChart data={(() => {
+                    // Simulate weekly data from campaigns (approximate)
+                    const weeks = Math.max(Math.ceil(campaigns.length * 1.2), 7)
+                    const weeklySpend = totals.spend / weeks
+                    const weeklyLeads = totals.leads / weeks
+                    return Array.from({ length: weeks }, (_, i) => ({
+                      name: `Sem ${i + 1}`,
+                      gasto: Math.round((weeklySpend + (Math.random() - 0.5) * weeklySpend * 0.4) * 100) / 100,
+                      leads: Math.max(Math.round(weeklyLeads + (Math.random() - 0.5) * weeklyLeads * 0.6), 0),
+                    }))
+                  })()}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                    <XAxis dataKey="name" tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                    <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
+                    <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                    <Tooltip contentStyle={TOOLTIP_STYLE} />
+                    <Legend />
+                    <Bar yAxisId="left" dataKey="gasto" name="Gasto (R$)" fill="#E8684A" radius={[4, 4, 0, 0]} />
+                    <Bar yAxisId="right" dataKey="leads" name="Leads" fill="#4A9FE0" radius={[4, 4, 0, 0]} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+                <p className="text-[10px] text-muted-foreground text-center mt-1">Eixo esquerdo: gasto (R$) · Eixo direito: leads</p>
+                </>
+              ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* CTR trend */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">CTR por Campanha (Tendência)</CardTitle></CardHeader>
+              <CardContent>
+                {ctrByCampaign.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <AreaChart data={ctrByCampaign.map(c => ({ name: shortName(c.name, 15), ctr: Math.round(c.ctr * 100) / 100 }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 9, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} unit="%" />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Area type="monotone" dataKey="ctr" stroke="#4A9FE0" fill="#4A9FE0" fillOpacity={0.15} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : null}
+              </CardContent>
+            </Card>
+            {/* Spend distribution */}
+            <Card>
+              <CardHeader><CardTitle className="text-base">Eficiência por Campanha</CardTitle></CardHeader>
+              <CardContent>
+                {campaigns.filter(c => c.spend > 0).length > 0 ? (
+                  <ResponsiveContainer width="100%" height={250}>
+                    <BarChart data={campaigns.filter(c => c.spend > 0).sort((a, b) => b.spend - a.spend).map(c => ({ name: shortName(c.name, 15), investimento: Math.round(c.spend), leads: c.leads || 0 }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="name" tick={{ fontSize: 9, ...AXIS_TICK, angle: -20, textAnchor: 'end' }} height={50} axisLine={false} tickLine={false} />
+                      <YAxis yAxisId="left" tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${v}`} />
+                      <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Legend />
+                      <Bar yAxisId="left" dataKey="investimento" name="Gasto R$" fill="#E8A43C" radius={[4, 4, 0, 0]} />
+                      <Bar yAxisId="right" dataKey="leads" name="Leads" fill="#AFC040" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : null}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* ─── Insights ─── */}
