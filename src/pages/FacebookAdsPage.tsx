@@ -1099,8 +1099,8 @@ export default function FacebookAdsPage() {
                         <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                         <Tooltip contentStyle={TOOLTIP_STYLE} />
                         <Legend />
-                        <Bar yAxisId="left" dataKey="gasto" name="Gasto (R$)" fill="#E8684A" radius={[4, 4, 0, 0]} />
-                        <Bar yAxisId="right" dataKey="leads" name="Leads" fill="#1E3A5F" radius={[4, 4, 0, 0]} />
+                        <Bar yAxisId="left" dataKey="gasto" name="Gasto (R$)" fill="#E8446E" radius={[4, 4, 0, 0]} />
+                        <Bar yAxisId="right" dataKey="leads" name="Leads" fill="#1E2A3F" radius={[4, 4, 0, 0]} />
                       </ComposedChart>
                     </ResponsiveContainer>
                     <p className="text-[10px] text-muted-foreground text-center mt-1">Eixo esquerdo: gasto (R$) · Eixo direito: leads</p>
