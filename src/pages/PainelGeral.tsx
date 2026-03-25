@@ -454,13 +454,17 @@ export default function PainelGeral() {
               <CardHeader><CardTitle className="text-base">Deals por Canal</CardTitle></CardHeader>
               <CardContent>
                 {(dealsByChannel || []).length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
+                  <ResponsiveContainer width="100%" height={Math.max(280, (dealsByChannel || []).length * 40)}>
                     <BarChart data={dealsByChannel} layout="vertical">
                       <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
                       <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                      <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="name" type="category" width={150} tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
                       <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Bar dataKey="value" name="Deals" fill="#2CBBA6" radius={[0, 4, 4, 0]} />
+                      <Bar dataKey="value" name="Deals" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#E8EDD8', fontSize: 11 }}>
+                        {(dealsByChannel || []).map((_, i) => (
+                          <Cell key={i} fill={CHANNEL_COLORS[i % CHANNEL_COLORS.length]} />
+                        ))}
+                      </Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
