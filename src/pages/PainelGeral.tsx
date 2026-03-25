@@ -15,7 +15,7 @@ import { useInsights } from '@/hooks/useInsights'
 import { Button } from '@/components/ui/button'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  PieChart, Pie, Cell, Legend, AreaChart, Area, ComposedChart, Line,
+  AreaChart, Area,
 } from 'recharts'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/integrations/supabase/client'
@@ -313,9 +313,29 @@ export default function PainelGeral() {
                 </div>
               ) : <p className="text-center text-muted-foreground py-8">Clique em "Atualizar Dados" para coletar dados</p>}
 
-              {/* Conversion rates summary */}
+              {/* Conversion badges between steps */}
+              {funnelSteps.length > 1 && (
+                <div className="mt-6 flex flex-wrap gap-2">
+                  {funnelSteps.slice(1).map((step, i) => {
+                    const prev = funnelSteps[i]
+                    if ((step as any).isMultiSource || step.value > prev.value) return null
+                    const rate = (step.value / prev.value) * 100
+                    const rateColor = rate > 50 ? '#AFC040' : rate > 10 ? '#E8A43C' : '#E8684A'
+                    const shortPrev = prev.name.split(' ')[0]
+                    const shortCurr = step.name.split(' ')[0]
+                    return (
+                      <div key={i} className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[var(--c-raised)] text-xs">
+                        <span className="text-muted-foreground uppercase tracking-wide">{shortPrev} → {shortCurr}</span>
+                        <span className="font-mono font-bold" style={{ color: rateColor }}>{rate.toFixed(1)}%</span>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* Summary metrics */}
               {funnelSteps.length > 2 && (
-                <div className="mt-6 grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
                   {fb?.metrics?.totalClicks && fb?.metrics?.totalImpressions ? (
                     <div className="p-3 rounded-lg bg-[var(--c-raised)] text-center">
                       <p className="text-xs text-muted-foreground">CTR (Ads)</p>
@@ -398,15 +418,35 @@ export default function PainelGeral() {
               <CardHeader><CardTitle className="text-base">Distribuição de Contatos</CardTitle></CardHeader>
               <CardContent>
                 {channelDistribution.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={300}>
-                    <PieChart>
-                      <Pie data={channelDistribution.map((ch, i) => ({ name: ch.name, value: ch.contatos, fill: CHANNEL_COLORS[i % CHANNEL_COLORS.length] }))} cx="50%" cy="50%" innerRadius={50} outerRadius={90} dataKey="value" label>
-                        {channelDistribution.map((_, i) => <Cell key={i} fill={CHANNEL_COLORS[i % CHANNEL_COLORS.length]} />)}
-                      </Pie>
-                      <Tooltip contentStyle={TOOLTIP_STYLE} />
-                      <Legend />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <div className="space-y-3">
+                    {channelDistribution.map((ch, i) => {
+                      const pct = totalContacts > 0 ? (ch.contatos / totalContacts) * 100 : 0
+                      return (
+                        <div key={ch.name} className="space-y-1.5">
+                          <div className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: CHANNEL_COLORS[i % CHANNEL_COLORS.length] }} />
+                              <span className="font-medium truncate">{ch.name}</span>
+                            </div>
+                            <span className="font-mono font-bold tabular-nums shrink-0 ml-2">{ch.contatos}</span>
+                          </div>
+                          <div className="h-6 bg-[var(--c-raised)] rounded-md overflow-hidden relative">
+                            <div
+                              className="h-full rounded-md transition-all duration-700 ease-out"
+                              style={{ width: `${Math.max(pct, 2)}%`, backgroundColor: CHANNEL_COLORS[i % CHANNEL_COLORS.length], opacity: 0.85 }}
+                            />
+                            <span className="absolute inset-0 flex items-center justify-end pr-2 text-[10px] font-mono font-semibold text-foreground">
+                              {pct.toFixed(1)}%
+                            </span>
+                          </div>
+                        </div>
+                      )
+                    })}
+                    <div className="pt-2 border-t border-[var(--c-border)] flex justify-between text-xs text-muted-foreground">
+                      <span>Total</span>
+                      <span className="font-mono font-bold text-foreground">{totalContacts}</span>
+                    </div>
+                  </div>
                 ) : null}
               </CardContent>
             </Card>
@@ -431,24 +471,99 @@ export default function PainelGeral() {
 
         {/* ─── Crescimento ─── */}
         <TabsContent value="growth" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">Alcance Diário (Instagram — últimos 28 dias)</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {dailyReach.length > 0 ? (
-                <ResponsiveContainer width="100%" height={350}>
-                  <AreaChart data={dailyReach}>
-                    <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
-                    <XAxis dataKey="date" tick={{ fontSize: 11, ...AXIS_TICK }} axisLine={false} tickLine={false} />
-                    <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={TOOLTIP_STYLE} />
-                    <Area type="monotone" dataKey="alcance" stroke="#2CBBA6" fill="#2CBBA6" fillOpacity={0.15} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              ) : <p className="text-center text-muted-foreground py-8">Sem dados de crescimento</p>}
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Alcance Diário (IG)</CardTitle>
+                <p className="text-xs text-muted-foreground">Últimos 28 dias</p>
+              </CardHeader>
+              <CardContent>
+                {dailyReach.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={dailyReach}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Area type="monotone" dataKey="alcance" stroke="#2CBBA6" fill="#2CBBA6" fillOpacity={0.15} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Seguidores IG</CardTitle>
+                <p className="text-xs text-muted-foreground">Evolução diária</p>
+              </CardHeader>
+              <CardContent>
+                {(ig?.dailyFollowers || []).length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <AreaChart data={(ig?.dailyFollowers || []).map(d => ({
+                      date: new Date(d.end_time).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+                      seguidores: d.value,
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Area type="monotone" dataKey="seguidores" stroke="#AFC040" fill="#AFC040" fillOpacity={0.15} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Investimento por Campanha</CardTitle>
+                <p className="text-xs text-muted-foreground">Facebook / Meta Ads</p>
+              </CardHeader>
+              <CardContent>
+                {(fb?.campaigns || []).length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={(fb?.campaigns || []).filter(c => c.spend > 0).map(c => ({
+                      name: c.name.length > 25 ? c.name.substring(0, 25) + '…' : c.name,
+                      investimento: c.spend,
+                      leads: c.leads || 0,
+                    }))} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <YAxis dataKey="name" type="category" width={140} tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => formatCurrency(v)} />
+                      <Bar dataKey="investimento" name="Investimento" fill="#4A9FE0" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-muted-foreground py-8">Sem dados de campanhas</p>}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Engajamento IG por Post</CardTitle>
+                <p className="text-xs text-muted-foreground">Likes + Comentários (últimos posts)</p>
+              </CardHeader>
+              <CardContent>
+                {(ig?.posts || []).length > 0 ? (
+                  <ResponsiveContainer width="100%" height={280}>
+                    <BarChart data={(ig?.posts || []).slice(0, 12).reverse().map(p => ({
+                      date: new Date(p.timestamp).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }),
+                      likes: p.like_count,
+                      comments: p.comments_count,
+                    }))}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={GRID_STROKE} vertical={false} />
+                      <XAxis dataKey="date" tick={{ fontSize: 10, ...AXIS_TICK }} axisLine={false} tickLine={false} />
+                      <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} />
+                      <Tooltip contentStyle={TOOLTIP_STYLE} />
+                      <Bar dataKey="likes" name="Likes" fill="#AFC040" radius={[4, 4, 0, 0]} stackId="eng" />
+                      <Bar dataKey="comments" name="Comentários" fill="#4A9FE0" radius={[4, 4, 0, 0]} stackId="eng" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : <p className="text-center text-muted-foreground py-8">Sem dados de posts</p>}
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* ─── ROI - FIX Bug #5: no duplicate investment ─── */}
