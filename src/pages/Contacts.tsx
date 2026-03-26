@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe, Plus, Loader2 } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe, Plus, Loader2, Download } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
