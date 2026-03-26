@@ -1,21 +1,44 @@
 
+## Plano: corrigir de verdade o gráfico "Previsão Próximos 90 Dias"
 
-## Plano: Forçar apenas 6 canais na aba Origem
+### O problema real
+O gráfico não está mais com artefato de máscara, mas continua visualmente quebrado porque a **projeção começa só em "Abr"**. Isso deixa:
+- a banda roxa “flutuando” separada do ponto atual em **Mar**
+- a linha de forecast sem transição natural a partir do valor realizado
+- a sensação de que o gráfico está incompleto/desalinhado
 
-### Problema
-Valores como `Fb`, `OTHER_CAMPAIGNS`, `ActiveCampaign` não são capturados pelo `normalizeChannel` e aparecem como cards extras. O fallback atual retorna o valor bruto capitalizado em vez de agrupá-lo num dos 6 canais permitidos.
+Pelo anexo, o erro agora é de **continuidade da série**, não mais de cor/fill.
 
-### Alterações
+### O que ajustar
 
-#### 1. `src/lib/format.ts` — `normalizeChannel`
-- Adicionar mapeamentos faltantes: `fb` → Ads, `other_campaigns` / `email_marketing` / `activecampaign` → Ads
-- **Remover o fallback** que retorna o valor capitalizado — qualquer valor não reconhecido deve ir para "Offline" (contato sem rastreio digital claro)
+#### 1. `src/pages/Index.tsx` — reconstruir `forecastData`
+- Manter os meses históricos (`Jan`, `Fev`, `Mar`) com `actual`
+- Adicionar um **ponto de transição em `Mar`** para a projeção:
+  - `forecast = actual de Mar`
+  - `forecastLow = actual de Mar`
+  - `forecastHigh = actual de Mar`
+  - `band = 0`
+- Depois disso, manter os meses futuros (`Abr`, `Mai`, `Jun`) com forecast normal
 
-#### 2. `src/components/dashboard/OrigemTab.tsx`
-- Filtrar `channelData` para mostrar **apenas** os 6 canais definidos: Offline, Instagram, Tráfego Direto, Ads, TikTok, YouTube
-- Remover "Não rastreado" dos cards visíveis (agrupar esses contatos em "Offline")
+Isso faz a projeção nascer do ponto atual, em vez de aparecer solta.
 
-### Arquivos afetados
-- `src/lib/format.ts`
-- `src/components/dashboard/OrigemTab.tsx`
+#### 2. Ajustar a renderização do intervalo
+- Continuar usando a abordagem correta com `stackId`
+- Mas garantir que a banda use o ponto de transição em `Mar`, para formar um cone contínuo a partir do “Hoje”
+- Se necessário, trocar `type="monotone"` por `type="linear"` nessa banda/projeção para evitar curvatura artificial entre poucos pontos
 
+#### 3. Manter o que já está certo
+- Área amarela de `actual`
+- Linha de projeção
+- `ReferenceLine` em `Mar`
+- Tooltip com rótulos “Realizado” e “Projeção”
+
+### Resultado esperado
+O gráfico ficará assim:
+- histórico termina em `Mar`
+- projeção começa exatamente em `Mar`
+- a banda de confiança abre gradualmente a partir desse ponto
+- sem bloco roxo “solto” entre `Mar` e `Abr`
+
+### Arquivo afetado
+- `src/pages/Index.tsx`
