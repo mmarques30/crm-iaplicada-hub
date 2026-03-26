@@ -239,14 +239,27 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/settings" activeClassName={ACTIVE_CLASS}>
-                    <Settings className="h-4 w-4" />
-                    {!collapsed && <span>Configurações</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {hasAccess('settings') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/settings" activeClassName={ACTIVE_CLASS}>
+                      <Settings className="h-4 w-4" />
+                      {!collapsed && <span>Configurações</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/admin" activeClassName={ACTIVE_CLASS}>
+                      <ShieldCheck className="h-4 w-4" />
+                      {!collapsed && <span>Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
