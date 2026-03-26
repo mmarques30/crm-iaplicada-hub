@@ -71,6 +71,7 @@ export default function EmailCampaigns() {
   const [scheduledAt, setScheduledAt] = useState("");
   const [selectedIncludeLists, setSelectedIncludeLists] = useState<string[]>([]);
   const [selectedExcludeLists, setSelectedExcludeLists] = useState<string[]>([]);
+  const [includeAllContacts, setIncludeAllContacts] = useState(false);
 
   // ── Queries ─────────────────────────────────────────────────────────────
 
@@ -182,6 +183,7 @@ export default function EmailCampaigns() {
     setScheduledAt("");
     setSelectedIncludeLists([]);
     setSelectedExcludeLists([]);
+    setIncludeAllContacts(false);
   }
 
   function toggleList(
@@ -267,10 +269,22 @@ export default function EmailCampaigns() {
                 />
               </div>
 
+              {/* All contacts toggle */}
+              <label className="flex items-center gap-2 text-sm cursor-pointer font-medium">
+                <Checkbox
+                  checked={includeAllContacts}
+                  onCheckedChange={(checked) => {
+                    setIncludeAllContacts(!!checked);
+                    if (checked) setSelectedIncludeLists([]);
+                  }}
+                />
+                Incluir todos os contatos (ignora listas)
+              </label>
+
               {/* Include lists */}
               <div className="space-y-2">
                 <Label>Listas de Envio</Label>
-                <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border p-3">
+                <div className={`max-h-40 space-y-2 overflow-y-auto rounded-md border p-3 ${includeAllContacts ? 'opacity-50 pointer-events-none' : ''}`}>
                   {(contactLists ?? []).length === 0 && (
                     <p className="text-sm text-muted-foreground">Nenhuma lista encontrada.</p>
                   )}
@@ -441,7 +455,52 @@ export default function EmailCampaigns() {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2 pt-1">
+                  <div className="flex items-center gap-2 pt-1 flex-wrap">
+                    {(c.status === "draft" || c.status === "scheduled") && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-xs gap-1"
+                        onClick={async () => {
+                          // Fetch contacts and open Gmail
+                          try {
+                            let emails: string[] = [];
+                            if (c.include_list_ids?.length) {
+                              const { data: memberships } = await (supabase as any)
+                                .from("contact_list_memberships")
+                                .select("contact_id, contacts(email)")
+                                .in("list_id", c.include_list_ids);
+                              emails = (memberships || [])
+                                .map((m: any) => m.contacts?.email)
+                                .filter(Boolean);
+                            } else {
+                              const { data: allContacts } = await supabase
+                                .from("contacts")
+                                .select("email")
+                                .not("email", "is", null)
+                                .limit(1000);
+                              emails = (allContacts || []).map((ct: any) => ct.email).filter(Boolean);
+                            }
+                            if (!emails.length) {
+                              toast.error("Nenhum contato com email encontrado.");
+                              return;
+                            }
+                            const subject = encodeURIComponent(c.template?.subject || c.name);
+                            const bcc = encodeURIComponent([...new Set(emails)].join(","));
+                            window.open(
+                              `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&bcc=${bcc}`,
+                              "_blank"
+                            );
+                            toast.success(`Gmail aberto com ${[...new Set(emails)].length} contatos.`);
+                          } catch {
+                            toast.error("Erro ao buscar contatos.");
+                          }
+                        }}
+                      >
+                        <Mail className="h-3.5 w-3.5" />
+                        Enviar via Gmail
+                      </Button>
+                    )}
                     {c.status === "scheduled" && (
                       <Button
                         variant="outline"

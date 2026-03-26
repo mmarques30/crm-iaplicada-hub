@@ -165,8 +165,33 @@ export default function EmailTemplates() {
     window.open(gmailUrl, "_blank");
   };
 
-  const handleGenerateAI = () => {
-    toast.info("Geração com IA será implementada em breve. Por enquanto, escreva o assunto manualmente.");
+  const [aiGeneratingSubject, setAiGeneratingSubject] = useState(false);
+
+  const handleGenerateAI = async () => {
+    if (!form.name.trim()) {
+      toast.error("Preencha o nome do template primeiro.");
+      return;
+    }
+    setAiGeneratingSubject(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("fix-email-html", {
+        body: {
+          html: "<html><body><p>placeholder</p></body></html>",
+          instruction: `Gere APENAS uma linha de assunto de email (subject line) criativa e envolvente para um template chamado "${form.name}". Retorne SOMENTE o texto do assunto, sem HTML, sem tags, sem explicações. Máximo 80 caracteres.`,
+        },
+      });
+      if (error) throw error;
+      if (data?.html) {
+        // The AI returns HTML, extract just text
+        const text = data.html.replace(/<[^>]*>/g, "").trim().split("\n")[0].trim();
+        setForm({ ...form, subject: text });
+        toast.success("Assunto gerado com IA!");
+      }
+    } catch (err: any) {
+      toast.error("Erro ao gerar assunto: " + (err.message || "Erro desconhecido"));
+    } finally {
+      setAiGeneratingSubject(false);
+    }
   };
 
   const handleCreateFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -238,9 +263,14 @@ export default function EmailTemplates() {
                     variant="outline"
                     size="icon"
                     onClick={handleGenerateAI}
-                    title="Gerar com IA"
+                    disabled={aiGeneratingSubject}
+                    title="Gerar assunto com IA"
                   >
-                    <Sparkles className="h-4 w-4" />
+                    {aiGeneratingSubject ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
