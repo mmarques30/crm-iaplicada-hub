@@ -121,6 +121,7 @@ export default function Contacts() {
   const [page, setPage] = useState(0);
   const [filters, setFilters] = useState<Filters>(emptyFilters);
   const [showFilters, setShowFilters] = useState(false);
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
   const [leadOrigin, setLeadOrigin] = useState<LeadOrigin>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [contactForm, setContactForm] = useState<NewContactForm>(emptyContactForm);
@@ -161,6 +162,7 @@ export default function Contacts() {
         let q = supabase
           .from("contacts")
           .select("first_name, last_name, email, phone, company, cargo, produto_interesse, utm_source, lifecycle_stage, created_at")
+          .is("deleted_at", null)
           .order("created_at", { ascending: false })
           .range(from, from + batchSize - 1);
 
@@ -257,15 +259,23 @@ export default function Contacts() {
 
   const deleteContact = useMutation({
     mutationFn: async (contactId: string) => {
-      // Delete related deals, activities first
-      await supabase.from("activities").delete().eq("contact_id", contactId);
-      await supabase.from("deals").delete().eq("contact_id", contactId);
-      const { error } = await supabase.from("contacts").delete().eq("id", contactId);
+      // Soft-delete: mark as deleted instead of removing from database
+      // This preserves audit trail and prevents re-import from HubSpot
+      const { error } = await supabase
+        .from("contacts")
+        .update({ deleted_at: new Date().toISOString() } as any)
+        .eq("id", contactId);
       if (error) throw error;
+      // Also soft-hide deals (mark as lost)
+      await supabase
+        .from("deals")
+        .update({ is_won: false, closed_at: new Date().toISOString(), motivo_perda: 'contato_excluido' } as any)
+        .eq("contact_id", contactId);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
-      toast.success("Contato excluído");
+      queryClient.invalidateQueries({ queryKey: ["deals"] });
+      toast.success("Contato removido do CRM (mantido no HubSpot)");
     },
     onError: (err: any) => toast.error("Erro ao excluir: " + err.message),
   });
@@ -281,12 +291,13 @@ export default function Contacts() {
 
   // Build Supabase query with origin-based filtering
   const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["contacts", search, page, filters, leadOrigin],
+    queryKey: ["contacts", search, page, filters, leadOrigin, sortOrder],
     queryFn: async () => {
       let q = supabase
         .from("contacts")
         .select("*", { count: "exact" })
-        .order("created_at", { ascending: false })
+        .is("deleted_at", null)
+        .order("created_at", { ascending: sortOrder === "asc" })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       q = buildFilteredQuery(q);
@@ -576,6 +587,15 @@ export default function Contacts() {
             <X className="h-3.5 w-3.5" /> Limpar
           </Button>
         )}
+        <Select value={sortOrder} onValueChange={(v) => { setSortOrder(v as "desc" | "asc"); setPage(0); }}>
+          <SelectTrigger className="w-[150px] h-9 text-xs">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="desc">Mais recente</SelectItem>
+            <SelectItem value="asc">Mais antigo</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Filter bar */}

@@ -305,8 +305,8 @@ async function collectAndImportHubspot(supabase: any, accessToken: string) {
   }
   console.log(`Imported ${contactBatch.length} contacts`)
 
-  // === BUILD HUBSPOT_ID -> LOCAL_ID MAP ===
-  const { data: contactMap } = await supabase.from('contacts').select('id, hubspot_id')
+  // === BUILD HUBSPOT_ID -> LOCAL_ID MAP (exclude soft-deleted) ===
+  const { data: contactMap } = await supabase.from('contacts').select('id, hubspot_id').is('deleted_at', null)
   const hsToLocal: Record<number, string> = {}
   if (contactMap) {
     for (const c of contactMap) {
