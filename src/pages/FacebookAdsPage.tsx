@@ -117,7 +117,7 @@ export default function FacebookAdsPage() {
 
       <Tabs defaultValue="overview">
         <TabsList className="flex-wrap h-auto bg-transparent border-b border-[var(--c-border)] rounded-none p-0 gap-1">
-          {[{ v: 'overview', l: 'Visão Geral' }, { v: 'campaigns', l: 'Campanhas' }, { v: 'evolution', l: 'Evolução' }, { v: 'insights', l: 'Insights' }].map(t => (
+          {[{ v: 'overview', l: 'Visão Geral' }, { v: 'campaigns', l: 'Campanhas' }, { v: 'anuncios', l: 'Anúncios' }, { v: 'evolution', l: 'Evolução' }, { v: 'insights', l: 'Insights' }].map(t => (
             <TabsTrigger key={t.v} value={t.v} className="data-[state=active]:bg-[#AFC040] data-[state=active]:text-[#0D0D0D] data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">{t.l}</TabsTrigger>
           ))}
         </TabsList>
@@ -297,6 +297,119 @@ export default function FacebookAdsPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* ─── Anúncios (Campanha → Conjunto → Anúncio) ─── */}
+        <TabsContent value="anuncios" className="space-y-4 mt-4">
+          {campaigns.length > 0 ? (
+            campaigns.filter(c => c.spend > 0).map((campaign) => {
+              const campaignAds = (fb?.ads || []).filter((ad: any) => ad.campaign_id === campaign.id)
+              const campaignAdsets = (fb?.adsets || []).filter((as: any) => as.campaign_id === campaign.id)
+              if (campaignAds.length === 0 && campaignAdsets.length === 0) return null
+              return (
+                <Card key={campaign.id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="text-base">{campaign.name}</CardTitle>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {formatCurrency(campaign.spend)} investido · {campaign.leads} leads · CTR {campaign.ctr.toFixed(2)}%
+                        </p>
+                      </div>
+                      <Badge className={`text-xs ${campaign.status === 'ACTIVE' ? 'bg-[#141A04] text-[#AFC040]' : 'bg-muted text-muted-foreground'}`}>
+                        {campaign.status === 'ACTIVE' ? 'Ativa' : 'Pausada'}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    {/* Adsets (Conjuntos de Anúncio) */}
+                    {campaignAdsets.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Conjuntos de Anúncio ({campaignAdsets.length})</p>
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-[var(--c-raised)]">
+                                <TableHead className="text-xs">Conjunto</TableHead>
+                                <TableHead className="text-xs">Status</TableHead>
+                                <TableHead className="text-xs text-right">Gasto</TableHead>
+                                <TableHead className="text-xs text-right">Impressões</TableHead>
+                                <TableHead className="text-xs text-right">Cliques</TableHead>
+                                <TableHead className="text-xs text-right">CTR</TableHead>
+                                <TableHead className="text-xs text-right">Leads</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {campaignAdsets.map((as: any) => (
+                                <TableRow key={as.id}>
+                                  <TableCell className="text-sm">{as.name}</TableCell>
+                                  <TableCell><Badge variant="secondary" className="text-[10px]">{as.status === 'ACTIVE' ? 'Ativo' : 'Pausado'}</Badge></TableCell>
+                                  <TableCell className="text-right font-mono text-sm">{formatCurrency(as.spend || 0)}</TableCell>
+                                  <TableCell className="text-right font-mono text-sm">{(as.impressions || 0).toLocaleString('pt-BR')}</TableCell>
+                                  <TableCell className="text-right font-mono text-sm">{(as.clicks || 0).toLocaleString('pt-BR')}</TableCell>
+                                  <TableCell className="text-right font-mono text-sm">{(as.ctr || 0).toFixed(2)}%</TableCell>
+                                  <TableCell className="text-right font-mono text-sm font-bold" style={{ color: as.leads > 0 ? '#AFC040' : '#7A8460' }}>{as.leads || 0}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Ads (Anúncios / Criativos) */}
+                    {campaignAds.length > 0 && (
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">Anúncios / Criativos ({campaignAds.length})</p>
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-[var(--c-raised)]">
+                                <TableHead className="text-xs">Anúncio</TableHead>
+                                <TableHead className="text-xs">Status</TableHead>
+                                <TableHead className="text-xs text-right">Gasto</TableHead>
+                                <TableHead className="text-xs text-right">Impressões</TableHead>
+                                <TableHead className="text-xs text-right">Alcance</TableHead>
+                                <TableHead className="text-xs text-right">Cliques</TableHead>
+                                <TableHead className="text-xs text-right">CTR</TableHead>
+                                <TableHead className="text-xs text-right">Leads</TableHead>
+                                <TableHead className="text-xs text-right">CPL</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {campaignAds.sort((a: any, b: any) => (b.spend || 0) - (a.spend || 0)).map((ad: any) => {
+                                const adCpl = ad.leads > 0 ? ad.spend / ad.leads : 0
+                                return (
+                                  <TableRow key={ad.id}>
+                                    <TableCell className="text-sm max-w-[200px]">
+                                      <div className="flex items-center gap-2">
+                                        {ad.thumbnail_url && <img src={ad.thumbnail_url} alt="" className="w-8 h-8 rounded object-cover shrink-0" />}
+                                        <span className="truncate">{ad.name}</span>
+                                      </div>
+                                    </TableCell>
+                                    <TableCell><Badge variant="secondary" className="text-[10px]">{ad.status === 'ACTIVE' ? 'Ativo' : 'Pausado'}</Badge></TableCell>
+                                    <TableCell className="text-right font-mono text-sm">{formatCurrency(ad.spend || 0)}</TableCell>
+                                    <TableCell className="text-right font-mono text-sm">{(ad.impressions || 0).toLocaleString('pt-BR')}</TableCell>
+                                    <TableCell className="text-right font-mono text-sm">{(ad.reach || 0).toLocaleString('pt-BR')}</TableCell>
+                                    <TableCell className="text-right font-mono text-sm">{(ad.clicks || 0).toLocaleString('pt-BR')}</TableCell>
+                                    <TableCell className="text-right font-mono text-sm">{(ad.ctr || 0).toFixed(2)}%</TableCell>
+                                    <TableCell className="text-right font-mono text-sm font-bold" style={{ color: ad.leads > 0 ? '#AFC040' : '#7A8460' }}>{ad.leads || 0}</TableCell>
+                                    <TableCell className="text-right font-mono text-sm" style={{ color: adCpl > 0 && adCpl <= totals.cpl ? '#AFC040' : adCpl > totals.cpl ? '#E8684A' : '#7A8460' }}>
+                                      {adCpl > 0 ? formatCurrency(adCpl) : '—'}
+                                    </TableCell>
+                                  </TableRow>
+                                )
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )
+            })
+          ) : <p className="text-center text-muted-foreground py-8">Sem dados de anúncios</p>}
         </TabsContent>
 
         {/* ─── Evolução (dados diários reais) ─── */}

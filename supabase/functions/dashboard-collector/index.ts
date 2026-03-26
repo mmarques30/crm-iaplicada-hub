@@ -95,9 +95,10 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
     return all
   }
 
-  // Fetch all data with pagination (campaigns, insights, ads) + daily in parallel
-  const [campaigns, insights, dailyRes, ads] = await Promise.all([
+  // Fetch all data with pagination (campaigns, adsets, insights, ads) + daily in parallel
+  const [campaigns, adsets, insights, dailyRes, ads] = await Promise.all([
     fetchAllPages(`${baseUrl}/${adAccountId}/campaigns?fields=id,name,status,objective,daily_budget,lifetime_budget,start_time,stop_time&limit=100&access_token=${adsToken}`),
+    fetchAllPages(`${baseUrl}/${adAccountId}/adsets?fields=id,name,status,campaign_id,targeting,daily_budget,lifetime_budget,start_time,end_time,insights.fields(spend,impressions,reach,clicks,ctr,actions,cost_per_action_type).date_preset(maximum)&limit=100&access_token=${adsToken}`),
     fetchAllPages(`${baseUrl}/${adAccountId}/insights?fields=campaign_name,campaign_id,spend,impressions,reach,clicks,ctr,actions,cost_per_action_type&date_preset=maximum&level=campaign&limit=100&access_token=${adsToken}`),
     fetch(`${baseUrl}/${adAccountId}/insights?fields=spend,impressions,reach,clicks,ctr,actions&time_range=${encodeURIComponent(timeRange)}&time_increment=1&limit=500&access_token=${adsToken}`),
     fetchAllPages(`${baseUrl}/${adAccountId}/ads?fields=id,name,status,campaign_id,adset_id,creative{id,name,thumbnail_url,effective_object_story_id},insights.fields(spend,impressions,reach,clicks,ctr,actions,cost_per_action_type).date_preset(maximum)&limit=100&access_token=${adsToken}`),
@@ -120,6 +121,18 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
       spend: parseFloat(insight.spend || '0'), impressions: parseInt(insight.impressions || '0'),
       reach: parseInt(insight.reach || '0'), clicks: parseInt(insight.clicks || '0'),
       ctr: parseFloat(insight.ctr || '0'), leads: parseInt(leads), costPerLead: parseFloat(costPerLead),
+    }
+  })
+
+  // Parse adsets (Conjuntos de Anúncio) — already paginated from fetchAllPages
+  const parsedAdsets = adsets.map((as: any) => {
+    const asInsight = as.insights?.data?.[0] || {}
+    const leads = (asInsight.actions || []).find((a: any) => a.action_type === 'lead')?.value || 0
+    return {
+      id: as.id, name: as.name, status: as.status, campaign_id: as.campaign_id,
+      spend: parseFloat(asInsight.spend || '0'), impressions: parseInt(asInsight.impressions || '0'),
+      reach: parseInt(asInsight.reach || '0'), clicks: parseInt(asInsight.clicks || '0'),
+      ctr: parseFloat(asInsight.ctr || '0'), leads: parseInt(leads),
     }
   })
 
@@ -168,10 +181,11 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
   // Sort daily data chronologically
   daily.sort((a: any, b: any) => (a.date || '').localeCompare(b.date || ''))
 
-  console.log(`FB Ads: ${campaigns.length} campaigns, ${daily.length} daily points, ${parsedAds.length} ads`)
+  console.log(`FB Ads: ${campaigns.length} campaigns, ${parsedAdsets.length} adsets, ${daily.length} daily points, ${parsedAds.length} ads`)
 
   return {
     campaigns: campaignsWithInsights,
+    adsets: parsedAdsets,
     dailyInsights: daily,
     daily,
     ads: parsedAds,
