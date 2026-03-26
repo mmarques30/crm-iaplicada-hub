@@ -502,7 +502,11 @@ const SalesPipelineDashboard = () => {
 
   /* ── MOCK: Forecast (Tab 4) ──────────────────────────────── */
   const forecastData = useMemo(() => {
-    const past = ["Jan", "Fev", "Mar"].map((m, i) => ({ month: m, actual: 15000 + i * 5000 + Math.floor(Math.random() * 3000), forecast: null as number | null, forecastLow: null as number | null, forecastHigh: null as number | null, band: null as number | null }));
+    const actuals = [15000 + Math.floor(Math.random() * 3000), 20000 + Math.floor(Math.random() * 3000), 25000 + Math.floor(Math.random() * 3000)];
+    const past = ["Jan", "Fev", "Mar"].map((m, i) => ({ month: m, actual: actuals[i], forecast: null as number | null, forecastLow: null as number | null, forecastHigh: null as number | null, band: null as number | null }));
+    // Transition point: Mar gets forecast values equal to actual (band = 0) so the projection starts from the current value
+    const marActual = actuals[2];
+    past[2] = { ...past[2], forecast: marActual, forecastLow: marActual, forecastHigh: marActual, band: 0 };
     const future = ["Abr", "Mai", "Jun"].map((m, i) => {
       const base = 30000 + i * 6000;
       const low = base * 0.8;
@@ -1006,10 +1010,10 @@ const SalesPipelineDashboard = () => {
                   <XAxis dataKey="month" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                   <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v: number | null, name: string) => [v ? formatCurrency(v) : "—", name === "actual" ? "Realizado" : name === "forecast" ? "Projeção" : name]} />
-                  <Area type="monotone" dataKey="forecastLow" stackId="confidence" fill="none" stroke="none" />
-                  <Area type="monotone" dataKey="band" stackId="confidence" fill={C.purple} fillOpacity={0.12} stroke="none" />
+                  <Area type="linear" dataKey="forecastLow" stackId="confidence" fill="none" stroke="none" />
+                  <Area type="linear" dataKey="band" stackId="confidence" fill={C.purple} fillOpacity={0.12} stroke="none" />
                   <Area type="monotone" dataKey="actual" fill="url(#actualGrad)" stroke={C.amber} strokeWidth={2} connectNulls={false} />
-                  <Line type="monotone" dataKey="forecast" stroke={C.purple} strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: C.purple }} connectNulls={false} />
+                  <Line type="linear" dataKey="forecast" stroke={C.purple} strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: C.purple }} connectNulls={false} />
                   <ReferenceLine x="Mar" stroke={C.textS} strokeDasharray="3 3" label={{ value: "Hoje", fill: C.textS, fontSize: 10, position: "top" }} />
                 </AreaChart>
               </ResponsiveContainer>
