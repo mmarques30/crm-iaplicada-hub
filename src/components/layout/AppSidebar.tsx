@@ -45,6 +45,7 @@ const financeiroItems = [
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const { hasAccess, isAdmin } = useAuth();
   const location = useLocation();
   const isPipelineActive = location.pathname.startsWith("/pipeline");
   const isAnalyticsActive = location.pathname.startsWith("/painel") || location.pathname.startsWith("/analytics");
