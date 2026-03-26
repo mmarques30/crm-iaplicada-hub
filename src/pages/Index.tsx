@@ -1010,10 +1010,10 @@ const SalesPipelineDashboard = () => {
                   <XAxis dataKey="month" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                   <YAxis tick={AXIS_TICK} axisLine={false} tickLine={false} tickFormatter={v => `R$${(v / 1000).toFixed(0)}k`} />
                   <Tooltip {...TOOLTIP_STYLE} formatter={(v: number | null, name: string) => [v ? formatCurrency(v) : "—", name === "actual" ? "Realizado" : name === "forecast" ? "Projeção" : name]} />
-                  <Area type="monotone" dataKey="forecastLow" stackId="confidence" fill="none" stroke="none" />
-                  <Area type="monotone" dataKey="band" stackId="confidence" fill={C.purple} fillOpacity={0.12} stroke="none" />
+                  <Area type="linear" dataKey="forecastLow" stackId="confidence" fill="none" stroke="none" />
+                  <Area type="linear" dataKey="band" stackId="confidence" fill={C.purple} fillOpacity={0.12} stroke="none" />
                   <Area type="monotone" dataKey="actual" fill="url(#actualGrad)" stroke={C.amber} strokeWidth={2} connectNulls={false} />
-                  <Line type="monotone" dataKey="forecast" stroke={C.purple} strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: C.purple }} connectNulls={false} />
+                  <Line type="linear" dataKey="forecast" stroke={C.purple} strokeWidth={2} strokeDasharray="6 3" dot={{ r: 3, fill: C.purple }} connectNulls={false} />
                   <ReferenceLine x="Mar" stroke={C.textS} strokeDasharray="3 3" label={{ value: "Hoje", fill: C.textS, fontSize: 10, position: "top" }} />
                 </AreaChart>
               </ResponsiveContainer>
