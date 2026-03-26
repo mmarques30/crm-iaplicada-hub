@@ -1,119 +1,56 @@
 
 
-## Plano: Autenticação + Painel Admin com Permissões Granulares
+## Plano: Corrigir Templates e Campanhas de Email
 
-### Resumo
-Criar sistema completo de autenticação (email/senha + Google), proteção de rotas, e painel administrativo para gerenciar usuários e permissões por módulo.
+### Problemas identificados
 
-### Modelo de Permissões
+1. **Geração com IA é falsa** — `handleAiGenerate` no editor usa `setTimeout` com HTML fixo em vez de chamar a IA de verdade
+2. **Não personaliza ao colar texto** — o editor só tem a aba "Editor" (HTML bruto) e "Visualizar". Não existe uma aba para colar texto simples e gerar HTML formatado automaticamente
+3. **Não associa contatos para enviar** — campanhas dependem de listas de contatos, mas falta opção "Todos os Contatos" e não há mecanismo real de envio via email do usuário
 
-Módulos controlados:
-- `dashboard`, `pipeline`, `contacts`, `comercial`, `financeiro`, `analytics`, `email`, `forms`, `tasks`, `instagram`, `settings`, `admin`
+### Alterações
 
-Cada usuário terá permissões por módulo: `view`, `edit`, ou `none`.
+#### 1. `src/pages/EmailTemplateEditor.tsx` — Geração com IA real
 
-### Migrações SQL
+- Substituir `handleAiGenerate` (fake setTimeout) por chamada real à Edge Function `fix-email-html`, usando o campo `instruction` com o prompt do usuário, tom e tipo selecionados
+- Se `html_body` estiver vazio, gerar do zero usando uma instrução como "Crie um email HTML completo sobre: [descrição do usuário], tom: [tom], tipo: [tipo]"
+- Se `html_body` já tiver conteúdo, reescrever baseado na instrução
 
-#### 1. Tabela `profiles`
-```sql
-create table public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  email text,
-  full_name text,
-  avatar_url text,
-  is_admin boolean default false,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
-);
-alter table public.profiles enable row level security;
--- Trigger para criar profile automaticamente no signup
-```
+#### 2. `src/pages/EmailTemplateEditor.tsx` — Aba "Texto" para colar conteúdo
 
-#### 2. Tabela `user_roles` (roles por módulo)
-```sql
-create type public.app_module as enum (
-  'dashboard','pipeline','contacts','comercial','financeiro',
-  'analytics','email','forms','tasks','instagram','settings','admin'
-);
-create type public.module_permission as enum ('view','edit','none');
+- Adicionar terceira aba no editor: "Texto" (entre "Editor" e "Visualizar")
+- Nesta aba, um `<Textarea>` onde o usuário cola texto simples
+- Ao colar/editar, o texto é convertido automaticamente em HTML básico (parágrafos `<p>`, quebras de linha, preservando tokens `{{contact.*}}`)
+- Botão "Aplicar como HTML" que gera o HTML formatado a partir do texto e coloca no `html_body`
+- O botão "Corrigir com IA" já existente pode ser usado em seguida para otimizar
 
-create table public.user_permissions (
-  id uuid primary key default gen_random_uuid(),
-  user_id uuid references auth.users(id) on delete cascade not null,
-  module app_module not null,
-  permission module_permission not null default 'none',
-  unique(user_id, module)
-);
-alter table public.user_permissions enable row level security;
-```
+#### 3. `src/pages/EmailTemplateEditor.tsx` — Botão "Enviar para Contatos"
 
-#### 3. Security definer functions
-- `has_module_access(user_id, module, min_permission)` — verifica permissão sem recursão RLS
-- `is_admin(user_id)` — verifica se é admin
-- Trigger `on_auth_user_created` — cria profile + permissões default (`view` para todos os módulos)
+- Adicionar botão "Enviar para Contatos" no header do editor
+- Ao clicar, abre dialog que:
+  - Carrega todos os contatos do Supabase (com email)
+  - Permite selecionar contatos individualmente ou "Selecionar Todos"
+  - Botão "Abrir no Gmail" que abre Gmail compose com:
+    - `to` = email do remetente (from_email do template)
+    - `bcc` = todos os emails selecionados
+    - `su` = subject do template
+    - `body` = text_body ou HTML stripped
 
-#### 4. RLS policies
-- Profiles: usuário lê/edita o próprio; admin lê/edita todos
-- Permissions: admin pode CRUD; usuário lê as próprias
+#### 4. `src/pages/EmailCampaigns.tsx` — Opção "Todos os Contatos"
 
-### Arquivos novos
+- Na criação de campanha, adicionar checkbox "Incluir todos os contatos" como alternativa às listas
+- Quando marcado, desabilitar a seleção de listas
+- Adicionar botão "Enviar via Gmail" nos cards de campanha (status draft/scheduled) que:
+  - Busca os contatos das listas selecionadas (ou todos)
+  - Busca o template associado
+  - Abre Gmail com BCC de todos os emails
 
-#### `src/pages/Auth.tsx`
-- Tela de login/signup com email+senha
-- Botão "Entrar com Google"
-- Toggle entre login e cadastro
-- Visual consistente com tema escuro do app
-- Redirecionamento pós-login para `/`
+#### 5. `src/pages/EmailTemplates.tsx` — Fix do botão IA na criação
 
-#### `src/hooks/useAuth.ts`
-- Hook com `user`, `profile`, `permissions`, `loading`, `signIn`, `signUp`, `signOut`, `signInWithGoogle`
-- `hasAccess(module, minPermission)` helper
-- Listener `onAuthStateChange`
-
-#### `src/contexts/AuthContext.tsx`
-- Context provider que envolve toda a app
-- Disponibiliza `useAuth` globalmente
-
-#### `src/pages/Admin.tsx`
-- Painel administrativo (acessível apenas para admins)
-- Lista de usuários com nome, email, data de cadastro
-- Para cada usuário: grid de módulos com select (none/view/edit)
-- Botão para promover/remover admin
-- Busca por nome/email
-
-#### `src/components/auth/ProtectedRoute.tsx`
-- Wrapper que verifica autenticação
-- Redireciona para `/auth` se não logado
-- Opcionalmente verifica permissão de módulo
-
-### Alterações em arquivos existentes
-
-#### `src/App.tsx`
-- Envolver com `AuthProvider`
-- Rota `/auth` (pública, fora do AppLayout)
-- Rota `/admin` dentro do AppLayout + proteção admin
-- Todas as rotas do AppLayout protegidas por `ProtectedRoute`
-
-#### `src/components/layout/AppLayout.tsx`
-- Substituir avatar fixo "IA" por avatar do usuário logado
-- Dropdown com "Perfil", "Admin" (se admin), "Sair"
-
-#### `src/components/layout/AppSidebar.tsx`
-- Filtrar itens do menu baseado nas permissões do usuário
-- Adicionar item "Admin" visível apenas para admins
-
-### Configuração Google OAuth
-O usuário precisará configurar o provider Google no Supabase Dashboard (Authentication > Providers) com Client ID e Secret do Google Cloud Console.
-
-### Fluxo
-1. Usuário acessa qualquer rota → redirecionado para `/auth` se não logado
-2. Faz login/signup → profile criado automaticamente via trigger
-3. Admin acessa `/admin` → gerencia permissões por módulo
-4. Sidebar mostra apenas módulos permitidos
-5. Primeiro usuário cadastrado deve ser promovido a admin manualmente via SQL ou Supabase Dashboard
+- Substituir `handleGenerateAI` (que só mostra toast "será implementada em breve") por lógica real que chama a Edge Function para gerar o assunto baseado no nome do template
 
 ### Arquivos afetados
-- **Novos**: `src/pages/Auth.tsx`, `src/pages/Admin.tsx`, `src/hooks/useAuth.ts`, `src/contexts/AuthContext.tsx`, `src/components/auth/ProtectedRoute.tsx`
-- **Alterados**: `src/App.tsx`, `src/components/layout/AppLayout.tsx`, `src/components/layout/AppSidebar.tsx`
-- **Migração SQL**: 1 migration com profiles, user_permissions, functions, triggers, RLS
+- `src/pages/EmailTemplateEditor.tsx`
+- `src/pages/EmailCampaigns.tsx`
+- `src/pages/EmailTemplates.tsx`
 
