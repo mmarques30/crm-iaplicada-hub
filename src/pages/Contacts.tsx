@@ -274,42 +274,7 @@ export default function Contacts() {
         .order("created_at", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-      if (search) {
-        q = q.or(
-          `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%,phone.ilike.%${search}%`
-        );
-      }
-
-      if (leadOrigin === "social") {
-        q = q.or(
-          `instagram_opt_in.eq.true,whatsapp_opt_in.eq.true,manychat_id.not.is.null`
-        );
-        q = q.is("hubspot_id", null);
-        q = q.is("first_conversion", null);
-      } else if (leadOrigin === "pipeline") {
-        q = q.or("hubspot_id.not.is.null,first_conversion.not.is.null");
-      }
-
-      if (filters.produto) {
-        q = q.contains("produto_interesse", [filters.produto]);
-      }
-      if (filters.cargo) {
-        q = q.eq("cargo", filters.cargo);
-      }
-      if (filters.faturamento) {
-        q = q.eq("faixa_de_faturamento", filters.faturamento);
-      }
-      if (filters.renda) {
-        q = q.eq("renda_mensal", filters.renda);
-      }
-      if (filters.utmSource) {
-        q = q.ilike("utm_source", `%${filters.utmSource}%`);
-      }
-      if (filters.whatsappOptIn === "true") {
-        q = q.eq("whatsapp_opt_in", true);
-      } else if (filters.whatsappOptIn === "false") {
-        q = q.eq("whatsapp_opt_in", false);
-      }
+      q = buildFilteredQuery(q);
 
       const { data, count } = await q;
       return { contacts: data || [], total: count || 0 };
