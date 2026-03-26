@@ -293,7 +293,7 @@ export default function Contacts() {
     queryFn: async () => {
       const { data } = await supabase
         .from("deals")
-        .select("contact_id, qualification_status")
+        .select("contact_id, qualification_status, product")
         .in("contact_id", contactIds);
       return data || [];
     },
@@ -308,6 +308,16 @@ export default function Contacts() {
       if (!current || (priority[d.qualification_status] || 0) > (priority[current] || 0)) {
         map[d.contact_id] = d.qualification_status;
       }
+    });
+    return map;
+  }, [dealsData]);
+
+  // Derive product from deal when produto_interesse is NULL
+  const productByContact = useMemo(() => {
+    const map: Record<string, string> = {};
+    (dealsData || []).forEach((d: any) => {
+      if (!d.contact_id || !d.product) return;
+      if (!map[d.contact_id]) map[d.contact_id] = d.product;
     });
     return map;
   }, [dealsData]);
@@ -671,11 +681,11 @@ export default function Contacts() {
                 <TableHead>Email</TableHead>
                 <TableHead>Telefone</TableHead>
                 <TableHead>Empresa</TableHead>
-                <TableHead>Cargo</TableHead>
                 <TableHead>Origem</TableHead>
-                <TableHead>Produto Interesse</TableHead>
+                <TableHead>Produto</TableHead>
+                <TableHead>Lifecycle</TableHead>
                 <TableHead>Qualificação</TableHead>
-                <TableHead>Faturamento</TableHead>
+                <TableHead>UTM Source</TableHead>
                 <TableHead>Criado em</TableHead>
               </TableRow>
             </TableHeader>
@@ -690,7 +700,7 @@ export default function Contacts() {
                 ))
               ) : filteredContacts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={10} className="text-center py-12">
+                  <TableCell colSpan={11} className="text-center py-12">
                     <div className="flex flex-col items-center gap-3 text-muted-foreground">
                       <Users className="h-12 w-12 opacity-30" />
                       <p className="text-sm font-medium">Nenhum contato encontrado</p>
@@ -711,21 +721,53 @@ export default function Contacts() {
                     <TableCell className="text-muted-foreground max-w-[200px] truncate">{c.email || "—"}</TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{c.phone || "—"}</TableCell>
                     <TableCell className="whitespace-nowrap">{c.company || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs whitespace-nowrap">{c.cargo || "—"}</TableCell>
                     <TableCell>{originBadge(c)}</TableCell>
                     <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {c.produto_interesse?.map((p: string) => (
-                          <Badge key={p} variant="secondary" className="text-[10px]">{productLabel[p] || p}</Badge>
-                        ))}
-                        {(!c.produto_interesse || c.produto_interesse.length === 0) && (
-                          <span className="text-muted-foreground text-xs">—</span>
-                        )}
-                      </div>
+                      {(() => {
+                        const prod = c.produto_interesse?.length > 0
+                          ? c.produto_interesse
+                          : productByContact[c.id] ? [productByContact[c.id]] : null;
+                        if (!prod) return <span className="text-muted-foreground text-xs">—</span>;
+                        return (
+                          <div className="flex flex-wrap gap-1">
+                            {prod.map((p: string) => (
+                              <Badge key={p} className={`text-[10px] ${
+                                p === 'business' ? 'bg-[#141A04] text-[#AFC040]' :
+                                p === 'academy' ? 'bg-[#040E1A] text-[#4A9FE0]' :
+                                p === 'skills' ? 'bg-[#031411] text-[#2CBBA6]' :
+                                'bg-muted text-muted-foreground'
+                              }`}>{productLabel[p] || p.charAt(0).toUpperCase() + p.slice(1)}</Badge>
+                            ))}
+                          </div>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const ls = c.lifecycle_stage;
+                        if (!ls) return <span className="text-muted-foreground text-xs">—</span>;
+                        const styles: Record<string, string> = {
+                          subscriber: 'bg-muted text-muted-foreground',
+                          lead: 'bg-[#031411] text-[#2CBBA6]',
+                          marketingqualifiedlead: 'bg-[#1A1206] text-[#E8A43C]',
+                          salesqualifiedlead: 'bg-[#141A04] text-[#AFC040]',
+                          opportunity: 'bg-[#1A1206] text-[#E8A43C]',
+                          customer: 'bg-[#141A04] text-[#AFC040]',
+                        };
+                        const labels: Record<string, string> = {
+                          subscriber: 'Subscriber',
+                          lead: 'Lead',
+                          marketingqualifiedlead: 'MQL',
+                          salesqualifiedlead: 'SQL',
+                          opportunity: 'Opportunity',
+                          customer: 'Customer',
+                        };
+                        return <Badge className={`text-[10px] ${styles[ls] || 'bg-muted text-muted-foreground'}`}>{labels[ls] || ls}</Badge>;
+                      })()}
                     </TableCell>
                     <TableCell>{qualificationBadge(qualificationByContact[c.id])}</TableCell>
                     <TableCell className="text-muted-foreground text-xs whitespace-nowrap">
-                      {c.faixa_de_faturamento || "—"}
+                      {c.utm_source || c.fonte_registro || "—"}
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{formatDate(c.created_at)}</TableCell>
                   </TableRow>
