@@ -265,7 +265,7 @@ async function collectAndImportHubspot(supabase: any, accessToken: string) {
     .filter((c: any) => c.properties?.email || c.properties?.firstname)
     .map((c: any) => ({
       hubspot_id: parseInt(c.id),
-      first_name: c.properties?.firstname || c.properties?.email || 'Sem nome',
+      first_name: c.properties?.firstname || (c.properties?.email ? c.properties.email.split('@')[0].replace(/[._]/g, ' ') : 'Sem nome'),
       last_name: c.properties?.lastname || null,
       email: c.properties?.email || null,
       phone: c.properties?.phone || c.properties?.mobilephone || c.properties?.hs_whatsapp_phone_number || null,

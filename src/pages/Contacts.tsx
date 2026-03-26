@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe, Plus, Loader2, Download } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe, Plus, Loader2, Download, Trash2 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -253,6 +253,21 @@ export default function Contacts() {
     onError: (err: any) => {
       toast.error(err.message || "Erro ao criar contato");
     },
+  });
+
+  const deleteContact = useMutation({
+    mutationFn: async (contactId: string) => {
+      // Delete related deals, activities first
+      await supabase.from("activities").delete().eq("contact_id", contactId);
+      await supabase.from("deals").delete().eq("contact_id", contactId);
+      const { error } = await supabase.from("contacts").delete().eq("id", contactId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] });
+      toast.success("Contato excluído");
+    },
+    onError: (err: any) => toast.error("Erro ao excluir: " + err.message),
   });
 
   const toggleProduto = (value: string) => {
@@ -687,6 +702,7 @@ export default function Contacts() {
                 <TableHead>Qualificação</TableHead>
                 <TableHead>UTM Source</TableHead>
                 <TableHead>Criado em</TableHead>
+                <TableHead className="w-10"></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -700,7 +716,7 @@ export default function Contacts() {
                 ))
               ) : filteredContacts.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={11} className="text-center py-12">
+                  <TableCell colSpan={12} className="text-center py-12">
                     <div className="flex flex-col items-center gap-3 text-muted-foreground">
                       <Users className="h-12 w-12 opacity-30" />
                       <p className="text-sm font-medium">Nenhum contato encontrado</p>
@@ -770,6 +786,21 @@ export default function Contacts() {
                       {c.utm_source || c.fonte_registro || "—"}
                     </TableCell>
                     <TableCell className="text-muted-foreground whitespace-nowrap">{formatDate(c.created_at)}</TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (window.confirm(`Excluir contato "${c.first_name} ${c.last_name || ''}"? Isso também removerá deals e atividades associados.`)) {
+                            deleteContact.mutate(c.id);
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))
               )}

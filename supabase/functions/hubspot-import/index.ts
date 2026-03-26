@@ -89,7 +89,7 @@ async function importContacts(supabase: any, token: string) {
 
     const contacts = data.results.map((c) => ({
       hubspot_id: parseInt(c.id),
-      first_name: c.properties.firstname || 'Sem nome',
+      first_name: c.properties.firstname || (c.properties.email ? c.properties.email.split('@')[0].replace(/[._]/g, ' ') : 'Sem nome'),
       last_name: c.properties.lastname || null,
       email: c.properties.email || null,
       phone: c.properties.phone || null,
