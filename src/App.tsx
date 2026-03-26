@@ -3,6 +3,8 @@ import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Dashboard from "./pages/Index";
 import Pipeline from "./pages/Pipeline";
@@ -27,6 +29,8 @@ import EmailTemplateEditor from "./pages/EmailTemplateEditor";
 import EmailCampaigns from "./pages/EmailCampaigns";
 import EmailWorkflows from "./pages/EmailWorkflows";
 import ContactLists from "./pages/ContactLists";
+import Auth from "./pages/Auth";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -37,37 +41,44 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route element={<AppLayout />}>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/pipeline" element={<Navigate to="/pipeline/business" replace />} />
-            <Route path="/pipeline/:product" element={<Pipeline />} />
-            <Route path="/contacts" element={<Contacts />} />
-            <Route path="/contacts/:id" element={<ContactDetail />} />
-            <Route path="/deals/:id" element={<DealDetail />} />
-            <Route path="/instagram" element={<InstagramAutomations />} />
-            <Route path="/painel" element={<PainelGeral />} />
-            <Route path="/analytics/instagram" element={<InstagramAnalytics />} />
-            <Route path="/analytics/facebook-ads" element={<FacebookAdsPage />} />
-            <Route path="/analytics/crm" element={<CrmAnalytics />} />
-            <Route path="/comercial/vendas" element={<GestaoVendas />} />
-            <Route path="/financeiro" element={<FinanceiroPainel />} />
-            <Route path="/financeiro/painel" element={<FinanceiroPainel />} />
-            <Route path="/financeiro/receita" element={<Financeiro />} />
-            <Route path="/tarefas" element={<ReceitaTasks />} />
-            <Route path="/formularios" element={<Forms />} />
-            <Route path="/email" element={<EmailMarketing />} />
-            <Route path="/email/templates" element={<EmailTemplates />} />
-            <Route path="/email/templates/:id" element={<EmailTemplateEditor />} />
-            <Route path="/email/campaigns" element={<EmailCampaigns />} />
-            <Route path="/email/workflows" element={<EmailWorkflows />} />
-            <Route path="/email/lists" element={<ContactLists />} />
-            <Route path="/settings" element={<Settings />} />
-          </Route>
-          {/* Public form page (outside layout) */}
-          <Route path="/form/:slug" element={<FormEmbed />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <AuthProvider>
+          <Routes>
+            {/* Public */}
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/form/:slug" element={<FormEmbed />} />
+
+            {/* Protected */}
+            <Route element={<ProtectedRoute><AppLayout /></ProtectedRoute>}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/pipeline" element={<Navigate to="/pipeline/business" replace />} />
+              <Route path="/pipeline/:product" element={<Pipeline />} />
+              <Route path="/contacts" element={<Contacts />} />
+              <Route path="/contacts/:id" element={<ContactDetail />} />
+              <Route path="/deals/:id" element={<DealDetail />} />
+              <Route path="/instagram" element={<InstagramAutomations />} />
+              <Route path="/painel" element={<PainelGeral />} />
+              <Route path="/analytics/instagram" element={<InstagramAnalytics />} />
+              <Route path="/analytics/facebook-ads" element={<FacebookAdsPage />} />
+              <Route path="/analytics/crm" element={<CrmAnalytics />} />
+              <Route path="/comercial/vendas" element={<GestaoVendas />} />
+              <Route path="/financeiro" element={<FinanceiroPainel />} />
+              <Route path="/financeiro/painel" element={<FinanceiroPainel />} />
+              <Route path="/financeiro/receita" element={<Financeiro />} />
+              <Route path="/tarefas" element={<ReceitaTasks />} />
+              <Route path="/formularios" element={<Forms />} />
+              <Route path="/email" element={<EmailMarketing />} />
+              <Route path="/email/templates" element={<EmailTemplates />} />
+              <Route path="/email/templates/:id" element={<EmailTemplateEditor />} />
+              <Route path="/email/campaigns" element={<EmailCampaigns />} />
+              <Route path="/email/workflows" element={<EmailWorkflows />} />
+              <Route path="/email/lists" element={<ContactLists />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/admin" element={<ProtectedRoute requireAdmin><Admin /></ProtectedRoute>} />
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
