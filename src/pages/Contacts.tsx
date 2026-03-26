@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe, Plus, Loader2 } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, Users, Filter, X, Building2, Share2, Globe, Plus, Loader2, Download } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -124,6 +124,93 @@ export default function Contacts() {
   const [leadOrigin, setLeadOrigin] = useState<LeadOrigin>("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [contactForm, setContactForm] = useState<NewContactForm>(emptyContactForm);
+  const [exporting, setExporting] = useState(false);
+
+  const buildFilteredQuery = (q: any) => {
+    if (search) {
+      q = q.or(
+        `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%,phone.ilike.%${search}%`
+      );
+    }
+    if (leadOrigin === "social") {
+      q = q.or(`instagram_opt_in.eq.true,whatsapp_opt_in.eq.true,manychat_id.not.is.null`);
+      q = q.is("hubspot_id", null);
+      q = q.is("first_conversion", null);
+    } else if (leadOrigin === "pipeline") {
+      q = q.or("hubspot_id.not.is.null,first_conversion.not.is.null");
+    }
+    if (filters.produto) q = q.contains("produto_interesse", [filters.produto]);
+    if (filters.cargo) q = q.eq("cargo", filters.cargo);
+    if (filters.faturamento) q = q.eq("faixa_de_faturamento", filters.faturamento);
+    if (filters.renda) q = q.eq("renda_mensal", filters.renda);
+    if (filters.utmSource) q = q.ilike("utm_source", `%${filters.utmSource}%`);
+    if (filters.whatsappOptIn === "true") q = q.eq("whatsapp_opt_in", true);
+    else if (filters.whatsappOptIn === "false") q = q.eq("whatsapp_opt_in", false);
+    return q;
+  };
+
+  const handleExportCSV = async () => {
+    setExporting(true);
+    try {
+      const allContacts: any[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      let hasMore = true;
+
+      while (hasMore) {
+        let q = supabase
+          .from("contacts")
+          .select("first_name, last_name, email, phone, company, cargo, produto_interesse, utm_source, lifecycle_stage, created_at")
+          .order("created_at", { ascending: false })
+          .range(from, from + batchSize - 1);
+
+        q = buildFilteredQuery(q);
+        const { data: batch, error } = await q;
+        if (error) throw error;
+        allContacts.push(...(batch || []));
+        hasMore = (batch?.length || 0) === batchSize;
+        from += batchSize;
+      }
+
+      if (allContacts.length === 0) {
+        toast.info("Nenhum contato encontrado para exportar");
+        return;
+      }
+
+      const headers = ["Nome", "Sobrenome", "Email", "Telefone", "Empresa", "Cargo", "Produto Interesse", "UTM Source", "Lifecycle Stage", "Criado em"];
+      const escape = (v: any) => {
+        if (v == null) return "";
+        const s = String(v);
+        return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
+      };
+      const rows = allContacts.map((c: any) => [
+        escape(c.first_name),
+        escape(c.last_name),
+        escape(c.email),
+        escape(c.phone),
+        escape(c.company),
+        escape(c.cargo),
+        escape(Array.isArray(c.produto_interesse) ? c.produto_interesse.join("; ") : c.produto_interesse),
+        escape(c.utm_source),
+        escape(c.lifecycle_stage),
+        escape(c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : ""),
+      ].join(","));
+
+      const csv = [headers.join(","), ...rows].join("\n");
+      const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `contatos_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`${allContacts.length} contatos exportados`);
+    } catch (err: any) {
+      toast.error("Erro ao exportar: " + (err.message || "erro desconhecido"));
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const activeFilterCount = useMemo(
     () => Object.values(filters).filter(Boolean).length,
@@ -187,42 +274,7 @@ export default function Contacts() {
         .order("created_at", { ascending: false })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
-      if (search) {
-        q = q.or(
-          `first_name.ilike.%${search}%,last_name.ilike.%${search}%,email.ilike.%${search}%,company.ilike.%${search}%,phone.ilike.%${search}%`
-        );
-      }
-
-      if (leadOrigin === "social") {
-        q = q.or(
-          `instagram_opt_in.eq.true,whatsapp_opt_in.eq.true,manychat_id.not.is.null`
-        );
-        q = q.is("hubspot_id", null);
-        q = q.is("first_conversion", null);
-      } else if (leadOrigin === "pipeline") {
-        q = q.or("hubspot_id.not.is.null,first_conversion.not.is.null");
-      }
-
-      if (filters.produto) {
-        q = q.contains("produto_interesse", [filters.produto]);
-      }
-      if (filters.cargo) {
-        q = q.eq("cargo", filters.cargo);
-      }
-      if (filters.faturamento) {
-        q = q.eq("faixa_de_faturamento", filters.faturamento);
-      }
-      if (filters.renda) {
-        q = q.eq("renda_mensal", filters.renda);
-      }
-      if (filters.utmSource) {
-        q = q.ilike("utm_source", `%${filters.utmSource}%`);
-      }
-      if (filters.whatsappOptIn === "true") {
-        q = q.eq("whatsapp_opt_in", true);
-      } else if (filters.whatsappOptIn === "false") {
-        q = q.eq("whatsapp_opt_in", false);
-      }
+      q = buildFilteredQuery(q);
 
       const { data, count } = await q;
       return { contacts: data || [], total: count || 0 };
@@ -322,13 +374,24 @@ export default function Contacts() {
           <p className="text-sm text-muted-foreground">{displayTotal} contatos</p>
         </div>
 
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" className="gap-1.5">
-              <Plus className="h-4 w-4" />
-              Novo Contato
-            </Button>
-          </DialogTrigger>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5"
+            onClick={handleExportCSV}
+            disabled={exporting}
+          >
+            {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            Exportar CSV
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" />
+                Novo Contato
+              </Button>
+            </DialogTrigger>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Novo Contato</DialogTitle>
@@ -437,6 +500,7 @@ export default function Contacts() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Lead Origin Tabs */}
