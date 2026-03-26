@@ -15,6 +15,9 @@ import {
   ExternalLink,
   Upload,
   Wand2,
+  FileText,
+  Users,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,34 +48,7 @@ import {
   TabsContent,
 } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-
-const AI_SAMPLE_HTML = `<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<style>body{margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f4f4f4}
-.container{max-width:600px;margin:0 auto;background:#ffffff}
-.header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:40px 30px;text-align:center}
-.header h1{color:#ffffff;margin:0;font-size:24px;font-weight:600}
-.header p{color:#a0a0b0;margin:8px 0 0;font-size:14px}
-.content{padding:30px}
-.content h2{color:#1a1a2e;font-size:20px;margin:0 0 16px}
-.content p{color:#4a4a5a;font-size:15px;line-height:1.6;margin:0 0 16px}
-.cta{display:inline-block;background:#6366f1;color:#ffffff;padding:14px 32px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px;margin:16px 0}
-.footer{background:#f8f8fa;padding:20px 30px;text-align:center;font-size:12px;color:#888}
-</style></head>
-<body><div class="container">
-<div class="header"><h1>IAplicada</h1><p>Inteligência Artificial Aplicada</p></div>
-<div class="content">
-<h2>Olá, {{contact.first_name}}!</h2>
-<p>[Conteúdo do email aqui - gerado pela IA baseado na sua descrição]</p>
-<p>Estamos animados em ter você conosco. Este é o primeiro passo para transformar sua empresa com inteligência artificial.</p>
-<a href="#" class="cta">Agendar Diagnóstico</a>
-<p>Se tiver qualquer dúvida, responda este email ou entre em contato pelo WhatsApp.</p>
-<p>Um abraço,<br><strong>Mariana Marques</strong><br>IAplicada</p>
-</div>
-<div class="footer">
-<p>IAplicada - Inteligência Artificial para Negócios</p>
-<p>Você recebeu este email porque se inscreveu em nosso programa.</p>
-</div></div></body></html>`;
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface TemplateForm {
   name: string;
@@ -119,8 +95,14 @@ const EmailTemplateEditor = () => {
   const [aiTone, setAiTone] = useState("Profissional");
   const [aiType, setAiType] = useState("Confirmação");
   const [aiGenerating, setAiGenerating] = useState(false);
-
   const [aiFixing, setAiFixing] = useState(false);
+  const [plainText, setPlainText] = useState("");
+
+  // Send to contacts dialog
+  const [sendDialogOpen, setSendDialogOpen] = useState(false);
+  const [contactSearch, setContactSearch] = useState("");
+  const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
 
   const bodyRef = useRef<HTMLTextAreaElement>(null);
   const subjectRef = useRef<HTMLInputElement>(null);
@@ -138,6 +120,26 @@ const EmailTemplateEditor = () => {
       return data;
     },
     enabled: !!id,
+  });
+
+  // Contacts query for send dialog
+  const { data: contacts, isLoading: contactsLoading } = useQuery({
+    queryKey: ["contacts-with-email", contactSearch],
+    queryFn: async () => {
+      let query = supabase
+        .from("contacts")
+        .select("id, first_name, last_name, email, company")
+        .not("email", "is", null)
+        .order("first_name");
+      if (contactSearch.trim()) {
+        const term = `%${contactSearch.trim()}%`;
+        query = query.or(`first_name.ilike.${term},last_name.ilike.${term},email.ilike.${term},company.ilike.${term}`);
+      }
+      const { data, error } = await query.limit(500);
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: sendDialogOpen,
   });
 
   useEffect(() => {
@@ -221,15 +223,36 @@ const EmailTemplateEditor = () => {
     }
   };
 
-  const handleAiGenerate = () => {
+  // Real AI generation via Edge Function
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      toast.error("Descreva o email que deseja gerar.");
+      return;
+    }
     setAiGenerating(true);
     toast.info("Gerando email com IA...");
-    setTimeout(() => {
-      updateField("html_body", AI_SAMPLE_HTML);
+    try {
+      const instruction = form.html_body.trim()
+        ? `Reescreva o email HTML abaixo seguindo esta instrução: ${aiPrompt}. Tom: ${aiTone}. Tipo: ${aiType}. Mantenha os tokens {{contact.*}} intactos.`
+        : `Crie um email HTML completo e profissional sobre: ${aiPrompt}. Tom: ${aiTone}. Tipo de email: ${aiType}. Use tokens de personalização como {{contact.first_name}} e {{contact.email}}. Inclua header com logo/nome "IAplicada", conteúdo principal, CTA e footer. Use cores escuras (#1a1a2e, #16213e) no header e estilo moderno.`;
+
+      const baseHtml = form.html_body.trim() || `<html><body><p>${aiPrompt}</p></body></html>`;
+
+      const { data, error } = await supabase.functions.invoke("fix-email-html", {
+        body: { html: baseHtml, instruction },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      if (data?.html) {
+        updateField("html_body", data.html);
+        setAiDialogOpen(false);
+        toast.success("Email gerado com IA!");
+      }
+    } catch (err: any) {
+      toast.error("Erro ao gerar: " + (err.message || "Erro desconhecido"));
+    } finally {
       setAiGenerating(false);
-      setAiDialogOpen(false);
-      toast.success("Email gerado com sucesso!");
-    }, 1500);
+    }
   };
 
   const openInGmail = () => {
@@ -293,6 +316,82 @@ const EmailTemplateEditor = () => {
     }
   };
 
+  // Convert plain text to basic HTML
+  const applyPlainTextAsHtml = () => {
+    if (!plainText.trim()) {
+      toast.error("Cole algum texto primeiro.");
+      return;
+    }
+    const paragraphs = plainText
+      .split(/\n\n+/)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    const htmlParagraphs = paragraphs
+      .map((p) => {
+        const lines = p.split(/\n/).join("<br>");
+        return `<p style="font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;font-size:15px;line-height:1.6;color:#4a4a5a;margin:0 0 16px;">${lines}</p>`;
+      })
+      .join("\n");
+
+    const fullHtml = `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background:#f4f4f4}
+.container{max-width:600px;margin:0 auto;background:#ffffff}
+.header{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);padding:40px 30px;text-align:center}
+.header h1{color:#ffffff;margin:0;font-size:24px;font-weight:600}
+.content{padding:30px}
+.footer{background:#f8f8fa;padding:20px 30px;text-align:center;font-size:12px;color:#888}
+</style></head>
+<body><div class="container">
+<div class="header"><h1>${form.from_name || "IAplicada"}</h1></div>
+<div class="content">
+${htmlParagraphs}
+</div>
+<div class="footer">
+<p>${form.from_name || "IAplicada"}</p>
+</div></div></body></html>`;
+
+    updateField("html_body", fullHtml);
+    setEditorTab("preview");
+    toast.success("Texto convertido em HTML! Veja na aba Visualizar.");
+  };
+
+  // Send to contacts via Gmail
+  const handleSendViaGmail = () => {
+    const emailsToSend = selectAll
+      ? (contacts || []).map((c: any) => c.email).filter(Boolean)
+      : (contacts || [])
+          .filter((c: any) => selectedContactIds.includes(c.id))
+          .map((c: any) => c.email)
+          .filter(Boolean);
+
+    if (emailsToSend.length === 0) {
+      toast.error("Selecione pelo menos um contato.");
+      return;
+    }
+
+    const subject = encodeURIComponent(form.subject);
+    const body = encodeURIComponent(
+      form.text_body || form.html_body.replace(/<[^>]*>/g, "").substring(0, 5000)
+    );
+    const bcc = encodeURIComponent(emailsToSend.join(","));
+
+    window.open(
+      `https://mail.google.com/mail/?view=cm&fs=1&su=${subject}&body=${body}&bcc=${bcc}`,
+      "_blank"
+    );
+    setSendDialogOpen(false);
+    toast.success(`Gmail aberto com ${emailsToSend.length} contatos em BCC.`);
+  };
+
+  const toggleContact = (contactId: string) => {
+    setSelectedContactIds((prev) =>
+      prev.includes(contactId)
+        ? prev.filter((id) => id !== contactId)
+        : [...prev, contactId]
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-4">
@@ -308,7 +407,7 @@ const EmailTemplateEditor = () => {
   return (
     <div className="p-6 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-3">
           <Button
             variant="ghost"
@@ -322,7 +421,7 @@ const EmailTemplateEditor = () => {
             <p className="text-sm text-muted-foreground">{form.name || "Sem nome"}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <input
             ref={fileInputRef}
             type="file"
@@ -354,11 +453,12 @@ const EmailTemplateEditor = () => {
               Corrigir com IA
             </Button>
           )}
+
           <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Sparkles className="h-4 w-4" />
-                Gerar Email com IA
+                Gerar com IA
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
@@ -374,7 +474,7 @@ const EmailTemplateEditor = () => {
                   <Textarea
                     value={aiPrompt}
                     onChange={(e) => setAiPrompt(e.target.value)}
-                    placeholder="Ex: Email de confirmação de inscrição no programa Business, tom profissional, com CTA para agendar diagnóstico"
+                    placeholder="Ex: Email de confirmação de inscrição no programa Business, com CTA para agendar diagnóstico"
                     rows={4}
                   />
                 </div>
@@ -409,6 +509,11 @@ const EmailTemplateEditor = () => {
                     </Select>
                   </div>
                 </div>
+                {form.html_body.trim() && (
+                  <p className="text-xs text-muted-foreground">
+                    ⚡ O HTML atual será reescrito com base na sua descrição.
+                  </p>
+                )}
               </div>
               <DialogFooter>
                 <Button
@@ -434,9 +539,101 @@ const EmailTemplateEditor = () => {
 
           <Button variant="outline" className="gap-2" onClick={openInGmail}>
             <Mail className="h-4 w-4" />
-            Abrir no Gmail
+            Gmail
             <ExternalLink className="h-3 w-3" />
           </Button>
+
+          {/* Send to contacts */}
+          <Dialog open={sendDialogOpen} onOpenChange={(open) => {
+            setSendDialogOpen(open);
+            if (!open) {
+              setSelectedContactIds([]);
+              setSelectAll(false);
+              setContactSearch("");
+            }
+          }}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Users className="h-4 w-4" />
+                Enviar para Contatos
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Enviar para Contatos</DialogTitle>
+                <DialogDescription>
+                  Selecione os contatos e abra o Gmail com todos em BCC.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3 py-2">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Buscar por nome, email ou empresa..."
+                    value={contactSearch}
+                    onChange={(e) => setContactSearch(e.target.value)}
+                    className="pl-9"
+                  />
+                </div>
+                <label className="flex items-center gap-2 text-sm font-medium cursor-pointer px-1">
+                  <Checkbox
+                    checked={selectAll}
+                    onCheckedChange={(checked) => {
+                      setSelectAll(!!checked);
+                      if (checked) setSelectedContactIds([]);
+                    }}
+                  />
+                  Selecionar todos ({contacts?.length ?? 0} contatos com email)
+                </label>
+                <div className="max-h-60 overflow-y-auto space-y-1 rounded-md border p-2">
+                  {contactsLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : !contacts?.length ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      Nenhum contato com email encontrado.
+                    </p>
+                  ) : (
+                    contacts.map((c: any) => (
+                      <label
+                        key={c.id}
+                        className="flex items-center gap-2 text-sm cursor-pointer hover:bg-accent/50 rounded px-2 py-1"
+                      >
+                        <Checkbox
+                          checked={selectAll || selectedContactIds.includes(c.id)}
+                          disabled={selectAll}
+                          onCheckedChange={() => toggleContact(c.id)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <span className="font-medium">
+                            {c.first_name} {c.last_name || ""}
+                          </span>
+                          <span className="text-muted-foreground ml-2 text-xs truncate">
+                            {c.email}
+                          </span>
+                        </div>
+                      </label>
+                    ))
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  {selectAll
+                    ? `${contacts?.length ?? 0} contatos serão incluídos em BCC`
+                    : `${selectedContactIds.length} contato(s) selecionado(s)`}
+                </p>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setSendDialogOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleSendViaGmail} className="gap-2">
+                  <Mail className="h-4 w-4" />
+                  Abrir no Gmail
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <Button
             onClick={() => saveMutation.mutate()}
@@ -455,7 +652,7 @@ const EmailTemplateEditor = () => {
 
       {/* Split Panel */}
       <div className="flex gap-4" style={{ minHeight: "calc(100vh - 180px)" }}>
-        {/* LEFT - Editor / Preview (60%) */}
+        {/* LEFT - Editor / Text / Preview (60%) */}
         <div className="w-[60%] flex flex-col gap-3">
           {/* Token Buttons for Body */}
           <div className="flex items-center gap-2 flex-wrap">
@@ -480,6 +677,10 @@ const EmailTemplateEditor = () => {
                 <Code className="h-4 w-4" />
                 Editor
               </TabsTrigger>
+              <TabsTrigger value="text" className="gap-2">
+                <FileText className="h-4 w-4" />
+                Texto
+              </TabsTrigger>
               <TabsTrigger value="preview" className="gap-2">
                 <Eye className="h-4 w-4" />
                 Visualizar
@@ -493,6 +694,23 @@ const EmailTemplateEditor = () => {
                 className="w-full h-full min-h-[500px] font-mono text-sm resize-none"
                 placeholder="Cole ou edite o HTML do email aqui..."
               />
+            </TabsContent>
+            <TabsContent value="text" className="flex-1 mt-2">
+              <div className="space-y-3 h-full">
+                <p className="text-sm text-muted-foreground">
+                  Cole seu texto aqui. Use {"{{contact.first_name}}"} e outros tokens para personalização. O texto será convertido em HTML formatado.
+                </p>
+                <Textarea
+                  value={plainText}
+                  onChange={(e) => setPlainText(e.target.value)}
+                  className="w-full min-h-[420px] text-sm resize-none"
+                  placeholder={`Olá {{contact.first_name}},\n\nEscreva o conteúdo do seu email aqui...\n\nParágrafos são separados por linhas em branco.\n\nAtenciosamente,\nSua equipe`}
+                />
+                <Button onClick={applyPlainTextAsHtml} className="gap-2">
+                  <FileText className="h-4 w-4" />
+                  Aplicar como HTML
+                </Button>
+              </div>
             </TabsContent>
             <TabsContent value="preview" className="flex-1 mt-2">
               <div className="w-full h-full min-h-[500px] border rounded-lg bg-white">
@@ -592,6 +810,8 @@ const EmailTemplateEditor = () => {
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="broadcast">Broadcast</SelectItem>
+                      <SelectItem value="automated">Automatizado</SelectItem>
                       <SelectItem value="transactional">Transacional</SelectItem>
                       <SelectItem value="marketing">Marketing</SelectItem>
                       <SelectItem value="nurturing">Nurturing</SelectItem>
