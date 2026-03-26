@@ -1383,6 +1383,36 @@ export type Database = {
         }
         Relationships: []
       }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          is_admin: boolean | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          is_admin?: boolean | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          is_admin?: boolean | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       receita_tasks: {
         Row: {
           completed_at: string | null
@@ -1539,6 +1569,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      user_permissions: {
+        Row: {
+          created_at: string | null
+          id: string
+          module: Database["public"]["Enums"]["app_module"]
+          permission: Database["public"]["Enums"]["module_permission"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          module: Database["public"]["Enums"]["app_module"]
+          permission?: Database["public"]["Enums"]["module_permission"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          module?: Database["public"]["Enums"]["app_module"]
+          permission?: Database["public"]["Enums"]["module_permission"]
+          user_id?: string
+        }
+        Relationships: []
       }
       vendas: {
         Row: {
@@ -1936,12 +1990,21 @@ export type Database = {
           secret: string
         }[]
       }
+      has_module_access: {
+        Args: {
+          _min_permission?: Database["public"]["Enums"]["module_permission"]
+          _module: Database["public"]["Enums"]["app_module"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       ig_poll_phase1: { Args: never; Returns: number }
       ig_poll_phase2: { Args: never; Returns: Json }
       increment_replies_count: {
         Args: { automation_uuid: string }
         Returns: undefined
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
       poll_ig_comments: { Args: never; Returns: Json }
       process_ig_comment: {
         Args: {
@@ -1966,7 +2029,20 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      app_module:
+        | "dashboard"
+        | "pipeline"
+        | "contacts"
+        | "comercial"
+        | "financeiro"
+        | "analytics"
+        | "email"
+        | "forms"
+        | "tasks"
+        | "instagram"
+        | "settings"
+        | "admin"
+      module_permission: "view" | "edit" | "none"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2093,6 +2169,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_module: [
+        "dashboard",
+        "pipeline",
+        "contacts",
+        "comercial",
+        "financeiro",
+        "analytics",
+        "email",
+        "forms",
+        "tasks",
+        "instagram",
+        "settings",
+        "admin",
+      ],
+      module_permission: ["view", "edit", "none"],
+    },
   },
 } as const
