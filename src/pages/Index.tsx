@@ -502,7 +502,11 @@ const SalesPipelineDashboard = () => {
 
   /* ── MOCK: Forecast (Tab 4) ──────────────────────────────── */
   const forecastData = useMemo(() => {
-    const past = ["Jan", "Fev", "Mar"].map((m, i) => ({ month: m, actual: 15000 + i * 5000 + Math.floor(Math.random() * 3000), forecast: null as number | null, forecastLow: null as number | null, forecastHigh: null as number | null, band: null as number | null }));
+    const actuals = [15000 + Math.floor(Math.random() * 3000), 20000 + Math.floor(Math.random() * 3000), 25000 + Math.floor(Math.random() * 3000)];
+    const past = ["Jan", "Fev", "Mar"].map((m, i) => ({ month: m, actual: actuals[i], forecast: null as number | null, forecastLow: null as number | null, forecastHigh: null as number | null, band: null as number | null }));
+    // Transition point: Mar gets forecast values equal to actual (band = 0) so the projection starts from the current value
+    const marActual = actuals[2];
+    past[2] = { ...past[2], forecast: marActual, forecastLow: marActual, forecastHigh: marActual, band: 0 };
     const future = ["Abr", "Mai", "Jun"].map((m, i) => {
       const base = 30000 + i * 6000;
       const low = base * 0.8;
