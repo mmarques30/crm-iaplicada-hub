@@ -71,6 +71,7 @@ export default function EmailCampaigns() {
   const [scheduledAt, setScheduledAt] = useState("");
   const [selectedIncludeLists, setSelectedIncludeLists] = useState<string[]>([]);
   const [selectedExcludeLists, setSelectedExcludeLists] = useState<string[]>([]);
+  const [includeAllContacts, setIncludeAllContacts] = useState(false);
 
   // ── Queries ─────────────────────────────────────────────────────────────
 
