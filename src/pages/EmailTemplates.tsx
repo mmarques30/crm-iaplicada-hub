@@ -263,9 +263,14 @@ export default function EmailTemplates() {
                     variant="outline"
                     size="icon"
                     onClick={handleGenerateAI}
-                    title="Gerar com IA"
+                    disabled={aiGeneratingSubject}
+                    title="Gerar assunto com IA"
                   >
-                    <Sparkles className="h-4 w-4" />
+                    {aiGeneratingSubject ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="h-4 w-4" />
+                    )}
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">

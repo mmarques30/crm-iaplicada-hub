@@ -183,6 +183,7 @@ export default function EmailCampaigns() {
     setScheduledAt("");
     setSelectedIncludeLists([]);
     setSelectedExcludeLists([]);
+    setIncludeAllContacts(false);
   }
 
   function toggleList(
