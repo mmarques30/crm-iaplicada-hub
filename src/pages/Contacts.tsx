@@ -500,6 +500,7 @@ export default function Contacts() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Lead Origin Tabs */}
