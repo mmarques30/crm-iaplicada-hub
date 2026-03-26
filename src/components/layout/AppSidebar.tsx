@@ -144,100 +144,107 @@ export function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/" end activeClassName={ACTIVE_CLASS}>
-                    <LayoutDashboard className="h-4 w-4" />
-                    {!collapsed && <span>Dashboard</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {hasAccess('dashboard') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/" end activeClassName={ACTIVE_CLASS}>
+                      <LayoutDashboard className="h-4 w-4" />
+                      {!collapsed && <span>Dashboard</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
-              {/* Pipeline */}
-              {renderCollapsible("Pipeline", Kanban, pipelineItems, isPipelineActive, pipelineOpen, setPipelineOpen)}
+              {hasAccess('pipeline') && renderCollapsible("Pipeline", Kanban, pipelineItems, isPipelineActive, pipelineOpen, setPipelineOpen)}
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/contacts" activeClassName={ACTIVE_CLASS}>
-                    <Users className="h-4 w-4" />
-                    {!collapsed && <span>Contatos</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {hasAccess('contacts') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/contacts" activeClassName={ACTIVE_CLASS}>
+                      <Users className="h-4 w-4" />
+                      {!collapsed && <span>Contatos</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
-              {/* Comercial (Vendas & Fiscal) */}
-              {renderCollapsible("Comercial", ShoppingCart, comercialItems, isComercialActive, comercialOpen, setComercialOpen)}
+              {hasAccess('comercial') && renderCollapsible("Comercial", ShoppingCart, comercialItems, isComercialActive, comercialOpen, setComercialOpen)}
 
-              {/* Financeiro */}
-              {renderCollapsible("Financeiro", Wallet, financeiroItems, isFinanceiroActive, financeiroOpen, setFinanceiroOpen)}
+              {hasAccess('financeiro') && renderCollapsible("Financeiro", Wallet, financeiroItems, isFinanceiroActive, financeiroOpen, setFinanceiroOpen)}
 
-              {/* Analytics */}
-              {renderCollapsible("Analytics", BarChart3, analyticsItems, isAnalyticsActive, analyticsOpen, setAnalyticsOpen)}
+              {hasAccess('analytics') && renderCollapsible("Analytics", BarChart3, analyticsItems, isAnalyticsActive, analyticsOpen, setAnalyticsOpen)}
 
-              {/* Email Marketing */}
-              <SidebarMenuItem>
-                <Collapsible open={emailOpen || isEmailActive} onOpenChange={setEmailOpen}>
-                  <CollapsibleTrigger asChild>
-                    <SidebarMenuButton className={`w-full ${isEmailActive ? ACTIVE_CLASS : ''}`}>
-                      <Mail className="h-4 w-4" />
-                      {!collapsed && (
-                        <>
-                          <span className="flex-1 text-left">Email Marketing</span>
-                          <ChevronDown className={`h-3 w-3 transition-transform ${emailOpen || isEmailActive ? 'rotate-180' : ''}`} />
-                        </>
-                      )}
-                    </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  {!collapsed && (
-                    <CollapsibleContent>
-                      <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                        <NavLink to="/email" end className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <BarChart3 className="h-3.5 w-3.5" /><span>Visão Geral</span>
-                        </NavLink>
-                        <NavLink to="/email/templates" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <FileText className="h-3.5 w-3.5" /><span>Templates</span>
-                        </NavLink>
-                        <NavLink to="/email/campaigns" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <Send className="h-3.5 w-3.5" /><span>Campanhas</span>
-                        </NavLink>
-                        <NavLink to="/email/workflows" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <Workflow className="h-3.5 w-3.5" /><span>Automações</span>
-                        </NavLink>
-                        <NavLink to="/email/lists" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
-                          <Users className="h-3.5 w-3.5" /><span>Listas</span>
-                        </NavLink>
-                      </div>
-                    </CollapsibleContent>
-                  )}
-                </Collapsible>
-              </SidebarMenuItem>
+              {hasAccess('email') && (
+                <SidebarMenuItem>
+                  <Collapsible open={emailOpen || isEmailActive} onOpenChange={setEmailOpen}>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton className={`w-full ${isEmailActive ? ACTIVE_CLASS : ''}`}>
+                        <Mail className="h-4 w-4" />
+                        {!collapsed && (
+                          <>
+                            <span className="flex-1 text-left">Email Marketing</span>
+                            <ChevronDown className={`h-3 w-3 transition-transform ${emailOpen || isEmailActive ? 'rotate-180' : ''}`} />
+                          </>
+                        )}
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    {!collapsed && (
+                      <CollapsibleContent>
+                        <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
+                          <NavLink to="/email" end className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                            <BarChart3 className="h-3.5 w-3.5" /><span>Visão Geral</span>
+                          </NavLink>
+                          <NavLink to="/email/templates" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                            <FileText className="h-3.5 w-3.5" /><span>Templates</span>
+                          </NavLink>
+                          <NavLink to="/email/campaigns" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                            <Send className="h-3.5 w-3.5" /><span>Campanhas</span>
+                          </NavLink>
+                          <NavLink to="/email/workflows" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                            <Workflow className="h-3.5 w-3.5" /><span>Automações</span>
+                          </NavLink>
+                          <NavLink to="/email/lists" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                            <Users className="h-3.5 w-3.5" /><span>Listas</span>
+                          </NavLink>
+                        </div>
+                      </CollapsibleContent>
+                    )}
+                  </Collapsible>
+                </SidebarMenuItem>
+              )}
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/formularios" activeClassName={ACTIVE_CLASS}>
-                    <FileText className="h-4 w-4" />
-                    {!collapsed && <span>Formulários</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {hasAccess('forms') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/formularios" activeClassName={ACTIVE_CLASS}>
+                      <FileText className="h-4 w-4" />
+                      {!collapsed && <span>Formulários</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/tarefas" activeClassName={ACTIVE_CLASS}>
-                    <ListTodo className="h-4 w-4" />
-                    {!collapsed && <span>Tarefas</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {hasAccess('tasks') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/tarefas" activeClassName={ACTIVE_CLASS}>
+                      <ListTodo className="h-4 w-4" />
+                      {!collapsed && <span>Tarefas</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/instagram" activeClassName={ACTIVE_CLASS}>
-                    <Instagram className="h-4 w-4" />
-                    {!collapsed && <span>Automações IG</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {hasAccess('instagram') && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink to="/instagram" activeClassName={ACTIVE_CLASS}>
+                      <Instagram className="h-4 w-4" />
+                      {!collapsed && <span>Automações IG</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
               {hasAccess('settings') && (
                 <SidebarMenuItem>
