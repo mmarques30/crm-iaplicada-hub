@@ -268,10 +268,22 @@ export default function EmailCampaigns() {
                 />
               </div>
 
+              {/* All contacts toggle */}
+              <label className="flex items-center gap-2 text-sm cursor-pointer font-medium">
+                <Checkbox
+                  checked={includeAllContacts}
+                  onCheckedChange={(checked) => {
+                    setIncludeAllContacts(!!checked);
+                    if (checked) setSelectedIncludeLists([]);
+                  }}
+                />
+                Incluir todos os contatos (ignora listas)
+              </label>
+
               {/* Include lists */}
               <div className="space-y-2">
                 <Label>Listas de Envio</Label>
-                <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border p-3">
+                <div className={`max-h-40 space-y-2 overflow-y-auto rounded-md border p-3 ${includeAllContacts ? 'opacity-50 pointer-events-none' : ''}`}>
                   {(contactLists ?? []).length === 0 && (
                     <p className="text-sm text-muted-foreground">Nenhuma lista encontrada.</p>
                   )}
