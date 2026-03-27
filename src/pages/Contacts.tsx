@@ -162,7 +162,6 @@ export default function Contacts() {
         let q = supabase
           .from("contacts")
           .select("first_name, last_name, email, phone, company, cargo, produto_interesse, utm_source, lifecycle_stage, created_at")
-          .is("deleted_at", null)
           .order("created_at", { ascending: false })
           .range(from, from + batchSize - 1);
 
@@ -259,18 +258,27 @@ export default function Contacts() {
 
   const deleteContact = useMutation({
     mutationFn: async (contactId: string) => {
-      // Soft-delete: mark as deleted instead of removing from database
-      // This preserves audit trail and prevents re-import from HubSpot
-      const { error } = await supabase
+      // Try soft-delete first (if deleted_at column exists)
+      const { error: softErr } = await supabase
         .from("contacts")
         .update({ deleted_at: new Date().toISOString() } as any)
         .eq("id", contactId);
-      if (error) throw error;
-      // Also soft-hide deals (mark as lost)
-      await supabase
-        .from("deals")
-        .update({ is_won: false, closed_at: new Date().toISOString(), motivo_perda: 'contato_excluido' } as any)
-        .eq("contact_id", contactId);
+
+      if (softErr && softErr.code === '42703') {
+        // Column doesn't exist — hard delete as fallback
+        await supabase.from("activities").delete().eq("contact_id", contactId);
+        await supabase.from("deals").delete().eq("contact_id", contactId);
+        const { error } = await supabase.from("contacts").delete().eq("id", contactId);
+        if (error) throw error;
+      } else if (softErr) {
+        throw softErr;
+      } else {
+        // Soft-delete worked — mark deals as lost
+        await supabase
+          .from("deals")
+          .update({ is_won: false, closed_at: new Date().toISOString(), motivo_perda: 'contato_excluido' } as any)
+          .eq("contact_id", contactId);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] });
@@ -296,14 +304,25 @@ export default function Contacts() {
       let q = supabase
         .from("contacts")
         .select("*", { count: "exact" })
-        .is("deleted_at", null)
         .order("created_at", { ascending: sortOrder === "asc" })
         .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
       q = buildFilteredQuery(q);
 
-      const { data, count } = await q;
-      return { contacts: data || [], total: count || 0 };
+      // Try with soft-delete filter first; if column doesn't exist, retry without
+      const { data: d1, count: c1, error: e1 } = await q.is("deleted_at", null);
+      if (e1 && e1.code === '42703') {
+        // Column doesn't exist yet — query without it
+        let q2 = supabase
+          .from("contacts")
+          .select("*", { count: "exact" })
+          .order("created_at", { ascending: sortOrder === "asc" })
+          .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
+        q2 = buildFilteredQuery(q2);
+        const { data, count } = await q2;
+        return { contacts: data || [], total: count || 0 };
+      }
+      return { contacts: d1 || [], total: c1 || 0 };
     },
   });
 
