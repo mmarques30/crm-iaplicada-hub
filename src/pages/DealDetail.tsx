@@ -223,27 +223,25 @@ export default function DealDetail() {
             </Card>
           )}
 
-          {/* Cadência de Mensagens */}
-          {deal.contact_id && (
-            <MessageCadence
-              contact={{
-                id: deal.contact_id,
-                first_name: deal.contact_first_name || deal.name,
-                last_name: deal.contact_last_name,
-                email: deal.contact_email,
-                phone: deal.contact_phone,
-                company: deal.contact_company,
-              }}
-              deal={{
-                id: deal.id,
-                name: deal.name,
-                product: deal.product,
-                stage_name: deal.stage_name,
-                amount: deal.amount,
-              }}
-              product={deal.product}
-            />
-          )}
+          {/* Cadência de Mensagens — sempre visível, mesmo sem contact_id */}
+          <MessageCadence
+            contact={{
+              id: deal.contact_id || deal.id,
+              first_name: deal.contact_first_name || deal.name?.split(' ')[0] || 'Lead',
+              last_name: deal.contact_last_name || (deal.name?.split(' ').slice(1).join(' ')) || null,
+              email: deal.contact_email || null,
+              phone: deal.contact_phone || null,
+              company: deal.contact_company || null,
+            }}
+            deal={{
+              id: deal.id,
+              name: deal.name,
+              product: deal.product,
+              stage_name: deal.stage_name,
+              amount: deal.amount,
+            }}
+            product={deal.product}
+          />
 
           {/* Atividades */}
           <Card>
