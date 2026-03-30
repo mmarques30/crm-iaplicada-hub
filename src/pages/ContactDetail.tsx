@@ -21,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { MessageCadence } from '@/components/crm/MessageCadence';
 
 const activityIcons: Record<string, any> = {
   email: Mail, whatsapp: MessageSquare, instagram: Instagram,
@@ -306,6 +307,31 @@ export default function ContactDetail() {
           </Card>
         </div>
       </div>
+
+      {/* Cadência de Mensagens */}
+      <MessageCadence
+        contact={{
+          id: c.id,
+          first_name: c.first_name,
+          last_name: c.last_name,
+          email: c.email,
+          phone: c.phone,
+          company: c.company,
+          cargo: c.cargo,
+          faixa_de_faturamento: c.faixa_de_faturamento,
+          numero_de_liderados: c.numero_de_liderados,
+          motivo_para_aprender_ia: c.motivo_para_aprender_ia,
+          objetivo_com_a_comunidade: c.objetivo_com_a_comunidade,
+        }}
+        deal={deals?.[0] ? {
+          id: deals[0].id,
+          name: deals[0].name,
+          product: deals[0].product || 'business',
+          stage_name: deals[0].stage_name,
+          amount: deals[0].amount,
+        } : null}
+        product={deals?.[0]?.product || 'business'}
+      />
 
       {/* Deals */}
       {deals && deals.length > 0 && (
