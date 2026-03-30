@@ -222,59 +222,60 @@ export default function DealDetail() {
               </CardContent>
             </Card>
           )}
+
+          {/* Cadência de Mensagens */}
+          {deal.contact_id && (
+            <MessageCadence
+              contact={{
+                id: deal.contact_id,
+                first_name: deal.contact_first_name || deal.name,
+                last_name: deal.contact_last_name,
+                email: deal.contact_email,
+                phone: deal.contact_phone,
+                company: deal.contact_company,
+              }}
+              deal={{
+                id: deal.id,
+                name: deal.name,
+                product: deal.product,
+                stage_name: deal.stage_name,
+                amount: deal.amount,
+              }}
+              product={deal.product}
+            />
+          )}
+
+          {/* Atividades */}
+          <Card>
+            <CardHeader><CardTitle className="text-base">Atividades</CardTitle></CardHeader>
+            <CardContent>
+              {activities?.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-4">Nenhuma atividade registrada</p>
+              ) : (
+                <div className="space-y-4">
+                  {activities?.map((a) => {
+                    const Icon = activityIcons[a.type] || FileText;
+                    return (
+                      <div key={a.id} className="flex gap-3">
+                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <p className="text-sm font-medium">{a.subject || a.type}</p>
+                            <span className="text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
+                          </div>
+                          {a.body && <p className="text-sm text-muted-foreground mt-0.5">{a.body}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {/* Cadência de Mensagens */}
-      {deal.contact_id && (
-        <MessageCadence
-          contact={{
-            id: deal.contact_id,
-            first_name: deal.contact_first_name || deal.name,
-            last_name: deal.contact_last_name,
-            email: deal.contact_email,
-            phone: deal.contact_phone,
-            company: deal.contact_company,
-          }}
-          deal={{
-            id: deal.id,
-            name: deal.name,
-            product: deal.product,
-            stage_name: deal.stage_name,
-            amount: deal.amount,
-          }}
-          product={deal.product}
-        />
-      )}
-
-      <Card>
-        <CardHeader><CardTitle className="text-base">Atividades</CardTitle></CardHeader>
-        <CardContent>
-          {activities?.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">Nenhuma atividade registrada</p>
-          ) : (
-            <div className="space-y-4">
-              {activities?.map((a) => {
-                const Icon = activityIcons[a.type] || FileText;
-                return (
-                  <div key={a.id} className="flex gap-3">
-                    <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                      <Icon className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-medium">{a.subject || a.type}</p>
-                        <span className="text-xs text-muted-foreground">{formatDate(a.created_at)}</span>
-                      </div>
-                      {a.body && <p className="text-sm text-muted-foreground mt-0.5">{a.body}</p>}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {/* ─── Edit Deal Dialog ─── */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
