@@ -15,9 +15,11 @@ import {
 import {
   ArrowLeft, Mail, Phone, Building2, FileText, MessageSquare, Video,
   StickyNote, ArrowRightLeft, Clock, FileX, Instagram, Edit2, Save, Loader2,
+  Briefcase, Globe, GraduationCap, Target, MapPin, HelpCircle, Separator as SeparatorIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { MessageCadence } from '@/components/crm/MessageCadence';
 
@@ -45,6 +47,16 @@ export default function DealDetail() {
     queryFn: async () => {
       const { data } = await supabase.from("stages").select("*").eq("pipeline_id", deal!.pipeline_id!).order("display_order");
       return data || [];
+    },
+  });
+
+  // Fetch full contact data for enriched view
+  const { data: contactFull } = useQuery({
+    queryKey: ["deal_contact_full", deal?.contact_id],
+    enabled: !!deal?.contact_id,
+    queryFn: async () => {
+      const { data } = await supabase.from("contacts").select("*").eq("id", deal!.contact_id!).single();
+      return data as any;
     },
   });
 
@@ -150,88 +162,117 @@ export default function DealDetail() {
         </Button>
       </div>
 
+      {/* Deal Stage Progress */}
+      <Card>
+        <CardHeader><CardTitle className="text-base">Progresso no Pipeline</CardTitle></CardHeader>
+        <CardContent>
+          <Progress value={progress} className="h-3 mb-3" />
+          <div className="flex justify-between text-xs text-muted-foreground overflow-x-auto gap-1">
+            {stages?.filter(s => !s.is_won && !s.is_lost).map((s) => (
+              <span key={s.id} className={`shrink-0 ${s.id === deal.stage_id ? 'text-[#AFC040] font-semibold' : ''}`}>
+                {s.name}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center gap-4 mt-3 text-sm">
+            <div className="flex items-center gap-1 text-muted-foreground"><Clock className="h-3 w-3" />{deal.days_in_stage || 0} dias no estágio</div>
+            <Badge className={qualificationBadgeVariant(deal.qualification_status || 'lead')}>{(deal.qualification_status || 'lead').toUpperCase()}</Badge>
+            <span className="text-xl font-bold font-mono" style={{ color: '#E8A43C' }}>{formatCurrency(Number(deal.amount))}</span>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Informações do Deal</CardTitle></CardHeader>
+        {/* Left: Contact Info (same as ContactDetail) */}
+        <Card className="lg:col-span-1">
+          <CardHeader><CardTitle className="text-base">Informações</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <div>
-              <p className="text-xs text-muted-foreground">Valor</p>
-              <p className="text-xl font-bold" style={{ color: '#E8A43C' }}>{formatCurrency(Number(deal.amount))}</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Estágio Atual</p>
-              <Badge variant="secondary">{deal.stage_name}</Badge>
-            </div>
-            <div className="flex items-center gap-1">
-              <Clock className="h-3 w-3 text-muted-foreground" />
-              <p className="text-sm">{deal.days_in_stage || 0} dias no estágio</p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Qualificação</p>
-              <Badge className={qualificationBadgeVariant(deal.qualification_status || 'lead')}>
-                {(deal.qualification_status || 'lead').toUpperCase()}
-              </Badge>
-            </div>
-            {deal.canal_origem && (
-              <div>
-                <p className="text-xs text-muted-foreground">Canal de Origem</p>
-                <p className="text-sm">{deal.canal_origem}</p>
+            {[
+              { icon: Mail, label: "Email", value: contactFull?.email || deal.contact_email },
+              { icon: Phone, label: "Telefone", value: contactFull?.phone || deal.contact_phone },
+              { icon: MessageSquare, label: "WhatsApp", value: contactFull?.whatsapp },
+              { icon: Building2, label: "Empresa", value: contactFull?.company || deal.contact_company },
+              { icon: Briefcase, label: "Cargo", value: contactFull?.cargo },
+              { icon: Globe, label: "Faturamento", value: contactFull?.faixa_de_faturamento },
+              { icon: Globe, label: "Renda Mensal", value: contactFull?.renda_mensal },
+              { icon: GraduationCap, label: "Nº Liderados", value: contactFull?.numero_de_liderados },
+              { icon: Target, label: "Área de Atuação", value: contactFull?.area_atuacao },
+            ].map((item) => (
+              <div key={item.label} className="flex items-center gap-3">
+                <item.icon className="h-4 w-4 text-muted-foreground shrink-0" />
+                <div>
+                  <p className="text-xs text-muted-foreground">{item.label}</p>
+                  <p className="text-sm">{item.value || "—"}</p>
+                </div>
               </div>
+            ))}
+            {deal.canal_origem && (
+              <>
+                <Separator />
+                <div className="flex items-center gap-3">
+                  <Target className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Canal de Origem</p>
+                    <p className="text-sm">{deal.canal_origem}</p>
+                  </div>
+                </div>
+              </>
             )}
+            <Separator />
             <div>
               <p className="text-xs text-muted-foreground">Criado em</p>
               <p className="text-sm">{formatDate(deal.created_at)}</p>
             </div>
+            {deal.contact_id && (
+              <Button variant="outline" size="sm" asChild className="w-full mt-2">
+                <Link to={`/contacts/${deal.contact_id}`}>Ver perfil completo do contato</Link>
+              </Button>
+            )}
           </CardContent>
         </Card>
 
+        {/* Right: Cadence + Activities */}
         <div className="lg:col-span-2 space-y-6">
-          <Card>
-            <CardHeader><CardTitle className="text-base">Progresso no Pipeline</CardTitle></CardHeader>
-            <CardContent>
-              <Progress value={progress} className="h-3 mb-3" />
-              <div className="flex justify-between text-xs text-muted-foreground overflow-x-auto gap-1">
-                {stages?.filter(s => !s.is_won && !s.is_lost).map((s) => (
-                  <span key={s.id} className={`shrink-0 ${s.id === deal.stage_id ? 'text-[#AFC040] font-semibold' : ''}`}>
-                    {s.name}
-                  </span>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          {deal.contact_id && (
+          {/* Respostas da Inscrição */}
+          {(contactFull?.motivo_para_aprender_ia || contactFull?.objetivo_com_a_comunidade) && (
             <Card>
-              <CardHeader><CardTitle className="text-base">Contato</CardTitle></CardHeader>
-              <CardContent>
-                <Link to={`/contacts/${deal.contact_id}`} className="flex items-center gap-4 p-3 rounded-lg border hover:bg-muted/30 transition-colors">
-                  <div className="w-10 h-10 rounded-full bg-[#141A04] flex items-center justify-center">
-                    <span className="text-sm font-bold text-[#AFC040]">
-                      {(deal.contact_first_name || "?")[0]}
-                    </span>
-                  </div>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <HelpCircle className="h-4 w-4 text-[#E8A43C]" />
+                  Respostas da Inscrição
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {contactFull.motivo_para_aprender_ia && (
                   <div>
-                    <p className="text-sm font-medium">{deal.contact_first_name} {deal.contact_last_name || ""}</p>
-                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                      {deal.contact_email && <span className="flex items-center gap-1"><Mail className="h-3 w-3" />{deal.contact_email}</span>}
-                      {deal.contact_phone && <span className="flex items-center gap-1"><Phone className="h-3 w-3" />{deal.contact_phone}</span>}
-                      {deal.contact_company && <span className="flex items-center gap-1"><Building2 className="h-3 w-3" />{deal.contact_company}</span>}
-                    </div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Por que quer aprender IA?</p>
+                    <p className="text-sm bg-[var(--c-raised)] p-3 rounded-lg">{contactFull.motivo_para_aprender_ia}</p>
                   </div>
-                </Link>
+                )}
+                {contactFull.objetivo_com_a_comunidade && (
+                  <div>
+                    <p className="text-xs font-medium text-muted-foreground mb-1">Objetivo com a comunidade</p>
+                    <p className="text-sm bg-[var(--c-raised)] p-3 rounded-lg">{contactFull.objetivo_com_a_comunidade}</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
 
-          {/* Cadência de Mensagens — sempre visível, mesmo sem contact_id */}
+          {/* Cadência de Mensagens */}
           <MessageCadence
             contact={{
               id: deal.contact_id || deal.id,
-              first_name: deal.contact_first_name || deal.name?.split(' ')[0] || 'Lead',
-              last_name: deal.contact_last_name || (deal.name?.split(' ').slice(1).join(' ')) || null,
-              email: deal.contact_email || null,
-              phone: deal.contact_phone || null,
-              company: deal.contact_company || null,
+              first_name: contactFull?.first_name || deal.contact_first_name || deal.name?.split(' ')[0] || 'Lead',
+              last_name: contactFull?.last_name || deal.contact_last_name || null,
+              email: contactFull?.email || deal.contact_email || null,
+              phone: contactFull?.phone || deal.contact_phone || null,
+              company: contactFull?.company || deal.contact_company || null,
+              cargo: contactFull?.cargo || null,
+              faixa_de_faturamento: contactFull?.faixa_de_faturamento || null,
+              numero_de_liderados: contactFull?.numero_de_liderados || null,
+              motivo_para_aprender_ia: contactFull?.motivo_para_aprender_ia || null,
+              objetivo_com_a_comunidade: contactFull?.objetivo_com_a_comunidade || null,
             }}
             deal={{
               id: deal.id,
