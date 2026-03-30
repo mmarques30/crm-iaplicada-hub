@@ -185,13 +185,16 @@ REGRAS:
   }
 
   const openWhatsApp = (text: string) => {
-    const phone = (contact.phone || '').replace(/\D/g, '')
+    let phone = (contact.phone || '').replace(/\D/g, '')
     if (!phone) {
-      toast.error('Telefone não cadastrado')
+      toast.error('Telefone do lead não cadastrado')
       return
     }
+    // Ensure Brazilian format: if starts with local number, add 55
+    if (phone.length === 10 || phone.length === 11) phone = '55' + phone
+    if (!phone.startsWith('55')) phone = '55' + phone
     const encoded = encodeURIComponent(text)
-    window.open(`https://wa.me/55${phone}?text=${encoded}`, '_blank')
+    window.open(`https://wa.me/${phone}?text=${encoded}`, '_blank')
   }
 
   const wasSent = (stepId: string) => {
