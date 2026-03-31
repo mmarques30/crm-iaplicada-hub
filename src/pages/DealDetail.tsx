@@ -15,7 +15,7 @@ import {
 import {
   ArrowLeft, Mail, Phone, Building2, FileText, MessageSquare, Video,
   StickyNote, ArrowRightLeft, Clock, FileX, Instagram, Edit2, Save, Loader2,
-  Briefcase, Globe, GraduationCap, Target, MapPin, HelpCircle, Separator as SeparatorIcon,
+  Briefcase, Globe, GraduationCap, Target, MapPin, HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

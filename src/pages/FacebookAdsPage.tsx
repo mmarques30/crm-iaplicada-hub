@@ -303,8 +303,8 @@ export default function FacebookAdsPage() {
         <TabsContent value="anuncios" className="space-y-4 mt-4">
           {campaigns.length > 0 ? (
             campaigns.filter(c => c.spend > 0).map((campaign) => {
-              const campaignAds = (fb?.ads || []).filter((ad: any) => ad.campaign_id === campaign.id)
-              const campaignAdsets = (fb?.adsets || []).filter((as: any) => as.campaign_id === campaign.id)
+              const campaignAds = ((fb as any)?.ads || []).filter((ad: any) => ad.campaign_id === campaign.id)
+              const campaignAdsets = ((fb as any)?.adsets || []).filter((as: any) => as.campaign_id === campaign.id)
               if (campaignAds.length === 0 && campaignAdsets.length === 0) return null
               return (
                 <Card key={campaign.id}>
