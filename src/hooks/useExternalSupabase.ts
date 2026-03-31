@@ -141,16 +141,19 @@ export function usePresencaData() {
         }
       }
 
-      // 2. Get all known weeks from base + generate recent weeks
+      // 2. Get known weeks from base + only recent weeks that might be missing
       const baseWeekSet = new Set(baseEmails.map((e: any) => e.week_identifier).filter(Boolean))
-      const allKnownWeeks = new Set(baseWeekSet)
 
-      // Add recent weeks that may not be in base
+      // Only add last 8 recent weeks (not 30) to check for missing data
       const now = new Date()
-      for (let i = 0; i < 30; i++) {
+      const recentWeeks = new Set<string>()
+      for (let i = 0; i < 8; i++) {
         const d = new Date(now.getTime() - i * 7 * 86400000)
-        allKnownWeeks.add(getISOWeek(d))
+        recentWeeks.add(getISOWeek(d))
       }
+
+      // Combine: all known weeks from base + recent weeks not in base
+      const allKnownWeeks = new Set([...baseWeekSet, ...recentWeeks])
 
       // 3. Fetch EVERY week individually for accurate per-week participation
       const allWeeksSorted = Array.from(allKnownWeeks).sort()

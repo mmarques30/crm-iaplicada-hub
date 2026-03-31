@@ -302,8 +302,8 @@ export default function CrmAnalytics() {
         {/* ─── Leads Aula (Supabase Presença) ─── */}
         <TabsContent value="leads-aula" className="mt-4 space-y-4">
           <div className="flex justify-end">
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.invalidateQueries({ queryKey: PRESENCA_QUERY_KEY }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'presenca'] }); }}>
-              <RefreshCw className="h-3.5 w-3.5" /> Atualizar dados
+            <Button variant="outline" size="sm" className="gap-2" disabled={leadsAula.isLoading} onClick={() => { queryClient.invalidateQueries({ queryKey: PRESENCA_QUERY_KEY, refetchType: 'all' }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'presenca'], refetchType: 'all' }); }}>
+              {leadsAula.isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} {leadsAula.isLoading ? 'Atualizando...' : 'Atualizar dados'}
             </Button>
           </div>
           {leadsAula.isLoading ? (
@@ -512,8 +512,8 @@ export default function CrmAnalytics() {
         {/* ─── Leads Visitantes (Supabase Visitantes) ─── */}
         <TabsContent value="leads-visitantes" className="mt-4 space-y-4">
           <div className="flex justify-end">
-            <Button variant="outline" size="sm" className="gap-2" onClick={() => { queryClient.invalidateQueries({ queryKey: VISITANTES_QUERY_KEY }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'visitantes'] }); }}>
-              <RefreshCw className="h-3.5 w-3.5" /> Atualizar dados
+            <Button variant="outline" size="sm" className="gap-2" disabled={leadsVisitantes.isLoading} onClick={() => { queryClient.invalidateQueries({ queryKey: VISITANTES_QUERY_KEY, refetchType: 'all' }); queryClient.invalidateQueries({ queryKey: ['contacts_for_crossing', 'visitantes'], refetchType: 'all' }); }}>
+              {leadsVisitantes.isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />} {leadsVisitantes.isLoading ? 'Atualizando...' : 'Atualizar dados'}
             </Button>
           </div>
           {leadsVisitantes.isLoading ? (
