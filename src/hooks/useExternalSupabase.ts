@@ -351,7 +351,7 @@ export function useLeadsAula() {
         phone: string | null; company: string | null
       }>
     },
-    staleTime: 60_000,
+    staleTime: 30_000,
   })
 
   // Fetch deals to get qualification
