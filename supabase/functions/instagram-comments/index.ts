@@ -76,6 +76,23 @@ Deno.serve(async (req) => {
       console.warn('Failed to get token from vault, using env var:', err)
     }
 
+    // Also try the secret name used by dashboard-collector
+    if (!accessToken) {
+      try {
+        const { data } = await supabase.rpc('get_secret', { secret_name: 'INSTAGRAM_ACCESS_TOKEN' })
+        if (data) accessToken = data
+      } catch {}
+    }
+
+    // Get IG Account ID for DM endpoint
+    let igAccountId = Deno.env.get('META_IG_ACCOUNT_ID') || null
+    if (!igAccountId) {
+      try {
+        const { data } = await supabase.rpc('get_secret', { secret_name: 'META_IG_ACCOUNT_ID' })
+        if (data) igAccountId = data
+      } catch {}
+    }
+
     if (!accessToken) {
       console.error('INSTAGRAM_ACCESS_TOKEN not configured (neither vault nor env)')
       return new Response(JSON.stringify({ error: 'Token not configured' }), {
@@ -191,8 +208,13 @@ Deno.serve(async (req) => {
             dmText += `\n\n${matchedAutomation.dm_link}`
           }
 
+          // Use IG Account ID for Instagram DM (not /me/messages which is Facebook Messenger)
+          const dmEndpoint = igAccountId
+            ? `https://graph.instagram.com/v21.0/${igAccountId}/messages`
+            : `https://graph.instagram.com/v21.0/me/messages`
+
           const dmResponse = await fetch(
-            `https://graph.instagram.com/v21.0/me/messages`,
+            dmEndpoint,
             {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },

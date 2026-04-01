@@ -43,27 +43,57 @@ async function suggestTools(category: string, excludeTools: string[]): Promise<a
     headers: { 'Authorization': `Bearer ${PERPLEXITY_KEY}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'sonar',
-      messages: [{
-        role: 'user',
-        content: `Sugira 5 ferramentas de IA de NICHO na categoria "${category}" para ensinar em aula de 60 minutos.
-Critérios: ferramentas pouco conhecidas (NÃO ChatGPT, Canva, Midjourney, DALL-E), com resultado prático imediato, acessíveis para brasileiros.
+      messages: [
+        {
+          role: 'system',
+          content: 'Você é um assistente que retorna APENAS JSON válido, sem markdown, sem explicações, sem texto adicional. Apenas o array JSON.'
+        },
+        {
+          role: 'user',
+          content: `Liste 5 ferramentas de IA de NICHO na categoria "${category}" para ensinar em aula de 60 minutos para profissionais brasileiros.
+Critérios: ferramentas POUCO CONHECIDAS (NÃO ChatGPT, NÃO Canva, NÃO Midjourney, NÃO DALL-E, NÃO Gemini, NÃO Copilot), com resultado prático imediato.
 ${exclude}
-Para cada ferramenta, retorne em formato JSON array:
-[{"name":"...", "tagline":"frase curta", "category":"${category}", "wow":"fator uau", "pricing":"gratuito/pago", "useCase":"caso de uso prático"}]
-Retorne APENAS o JSON array, sem texto adicional.`
-      }],
-      max_tokens: 600,
+Responda SOMENTE com um JSON array neste formato exato, sem nenhum outro texto:
+[{"name":"NomeFerramenta","tagline":"o que faz em 1 frase","category":"${category}","wow":"fator wow em 1 frase","pricing":"Gratuito / Pago US$X/mês","useCase":"caso de uso prático para brasileiro"}]`
+        }
+      ],
+      max_tokens: 1000,
     }),
   })
-  if (!res.ok) throw new Error(`Perplexity suggest error: ${res.status}`)
-  const data = await res.json()
-  const content = data.choices?.[0]?.message?.content || '[]'
-  try {
-    const jsonMatch = content.match(/\[[\s\S]*\]/)
-    return jsonMatch ? JSON.parse(jsonMatch[0]) : []
-  } catch {
-    return []
+  if (!res.ok) {
+    const errText = await res.text()
+    console.error('Perplexity suggest error:', res.status, errText)
+    throw new Error(`Perplexity suggest error: ${res.status}`)
   }
+  const data = await res.json()
+  const content = (data.choices?.[0]?.message?.content || '').trim()
+  console.log('Perplexity raw response:', content.substring(0, 300))
+
+  // Try multiple parsing strategies
+  try {
+    // Strategy 1: direct parse (if clean JSON)
+    if (content.startsWith('[')) return JSON.parse(content)
+
+    // Strategy 2: extract from markdown code block
+    const codeBlock = content.match(/```(?:json)?\s*([\s\S]*?)```/)
+    if (codeBlock) return JSON.parse(codeBlock[1].trim())
+
+    // Strategy 3: find JSON array in text
+    const jsonMatch = content.match(/\[\s*\{[\s\S]*?\}\s*\]/)
+    if (jsonMatch) return JSON.parse(jsonMatch[0])
+
+    // Strategy 4: extract individual objects
+    const objects = [...content.matchAll(/\{[^{}]*"name"[^{}]*\}/g)]
+    if (objects.length > 0) {
+      return objects.map(m => {
+        try { return JSON.parse(m[0]) } catch { return null }
+      }).filter(Boolean)
+    }
+  } catch (e) {
+    console.error('Failed to parse suggest response:', e, 'Content:', content.substring(0, 200))
+  }
+
+  return []
 }
 
 // ─── Claude: gera mensagens ───
