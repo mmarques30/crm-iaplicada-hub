@@ -155,9 +155,9 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
 
         <div className="flex-1" />
         {bottleneck && bottleneckPct > 30 && (
-          <div className="rounded-r-[8px] border-l-[3px] border-l-primary p-[10px_12px] mt-[14px]" style={{ background: '#191D0C' }}>
-            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Gargalo</p>
-            <p className="text-[11px] leading-[1.5]" style={{ color: '#AFC040' }}>{bottleneckPct}% dos deals parados em {bottleneck.stage_name}.</p>
+          <div className="rounded-r-[8px] border-l-[3px] border-l-primary p-[10px_12px] mt-[14px] bg-muted">
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px] text-muted-foreground">Gargalo</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#A8E63D' }}>{bottleneckPct}% dos deals parados em {bottleneck.stage_name}.</p>
           </div>
         )}
       </div>
