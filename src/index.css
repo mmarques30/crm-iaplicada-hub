@@ -6,7 +6,7 @@
   :root {
     /* ── Page / Surface ──────────────────────────────── */
     --background: 40 25% 96%;          /* #F4F0EB bege off-white */
-    --foreground: 145 60% 10%;         /* #0D2818 texto primário */
+    --foreground: 73 57% 15%;          /* #2E3710 texto primário */
 
     --card: 0 0% 100%;                 /* #FFFFFF */
     --card-foreground: 145 60% 10%;
