@@ -142,8 +142,8 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
         )}
         {activityStages.length > 0 && (
           <>
-            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Atividade</p>
-            {activityStages.map((s, i) => renderStageRow(s, '#4A9FE0', i === activityStages.length - 1))}
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px] text-muted-foreground">Atividade</p>
+            {activityStages.map((s, i) => renderStageRow(s, '#5B9CF6', i === activityStages.length - 1))}
           </>
         )}
         {conversionStages.length > 0 && (
