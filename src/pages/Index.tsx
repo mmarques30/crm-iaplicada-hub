@@ -634,8 +634,8 @@ const SalesPipelineDashboard = () => {
 
       {/* ── Tabs ───────────────────────────────────────────── */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-        <div className="border-b border-border pb-0 overflow-x-auto scrollbar-thin">
-          <TabsList className="bg-transparent gap-1 p-0 h-auto">
+        <div className="overflow-x-auto scrollbar-thin">
+          <TabsList className="bg-muted gap-1 p-1 rounded-full">
             {[
               { v: "pipeline", l: "Pipeline de Vendas" },
               { v: "leads", l: "Canais de Leads" },
@@ -643,7 +643,7 @@ const SalesPipelineDashboard = () => {
               { v: "growth", l: "Crescimento" },
             ].map(t => (
               <TabsTrigger key={t.v} value={t.v}
-                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:font-semibold transition-colors"
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-colors"
               >{t.l}</TabsTrigger>
             ))}
           </TabsList>
