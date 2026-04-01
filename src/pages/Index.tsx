@@ -195,16 +195,16 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
           <div className="py-[12px]">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Segunda metade</p>
-                <p className="text-[10px]" style={{ color: '#3D4A28' }}>{phase2Deals.length} deals</p>
+                <p className="text-[11px] text-foreground/80">Segunda metade</p>
+                <p className="text-[10px] text-muted-foreground">{phase2Deals.length} deals</p>
               </div>
               <div className="text-right">
-                <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>{formatK(phase2Amount)}</p>
-                <p className="text-[9px]" style={{ color: phase2Pct > 50 ? '#AFC040' : '#3D4A28' }}>{phase2Pct}% do total{phase2Pct > 50 ? ' ↑' : ''}</p>
+                <p className="text-[15px] font-bold" style={{ color: '#FB923C' }}>{formatK(phase2Amount)}</p>
+                <p className="text-[9px]" style={{ color: phase2Pct > 50 ? '#A8E63D' : undefined }} className={phase2Pct > 50 ? '' : 'text-muted-foreground'}>{phase2Pct}% do total{phase2Pct > 50 ? ' ↑' : ''}</p>
               </div>
             </div>
-            <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
-              <div className="h-full rounded-full" style={{ width: `${phase2Pct}%`, background: '#E8A43C' }} />
+            <div className="h-[4px] rounded-full mt-[6px] bg-muted">
+              <div className="h-full rounded-full" style={{ width: `${phase2Pct}%`, background: '#FB923C' }} />
             </div>
           </div>
         )}
