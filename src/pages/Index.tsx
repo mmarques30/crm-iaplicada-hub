@@ -24,22 +24,22 @@ import { subDays } from "date-fns";
    SEMANTIC COLORS (hex for Recharts — matches CSS vars)
    ═══════════════════════════════════════════════════════════════ */
 const C = {
-  teal: "#2CBBA6",   amber: "#E8A43C",  green: "#AFC040",
-  coral: "#E8684A",  blue: "#4A9FE0",   purple: "#9B7FE8",
-  bg: "#0A0C09",     card: "#121509",    raised: "#191E0C",
-  border: "#1E2610", borderH: "#2E3A18",
-  textP: "#E8EDD8",  textS: "#7A8460",  textM: "#4A5230",
+  teal: "#4ADE80",   amber: "#FB923C",  green: "#A8E63D",
+  coral: "#EF4444",  blue: "#5B9CF6",   purple: "#A78BFA",
+  bg: "#F4F0EB",     card: "#FFFFFF",    raised: "#F7F5F2",
+  border: "#D9E3D9", borderH: "#B8CDB8",
+  textP: "#0D2818",  textS: "#627D6A",  textM: "#94A89A",
 };
 
 const TOOLTIP_STYLE = {
-  contentStyle: { background: C.raised, border: `1px solid ${C.borderH}`, borderRadius: 8, fontSize: 12, fontFamily: "Sora" },
-  itemStyle: { color: C.textP },
-  labelStyle: { color: C.textS, marginBottom: 4 },
-  cursor: { fill: "hsl(80 28% 11% / 0.4)" },
+  contentStyle: { background: "#0E2F1A", border: `1px solid #1A4A2E`, borderRadius: 8, fontSize: 12, fontFamily: "Inter, sans-serif" },
+  itemStyle: { color: "#FFFFFF" },
+  labelStyle: { color: "#A8E63D", marginBottom: 4 },
+  cursor: { fill: "hsl(145 10% 88% / 0.4)" },
 };
 
 const GRID_PROPS = { strokeDasharray: "3 3", stroke: C.border, vertical: false };
-const AXIS_TICK = { fill: C.textS, fontSize: 11, fontFamily: "Sora" };
+const AXIS_TICK = { fill: C.textS, fontSize: 11, fontFamily: "Inter, sans-serif" };
 const CHART_MARGIN = { top: 8, right: 16, bottom: 8, left: 8 };
 
 /* ═══════════════════════════════════════════════════════════════
