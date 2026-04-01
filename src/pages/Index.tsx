@@ -200,7 +200,7 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
               </div>
               <div className="text-right">
                 <p className="text-[15px] font-bold" style={{ color: '#FB923C' }}>{formatK(phase2Amount)}</p>
-                <p className="text-[9px]" style={{ color: phase2Pct > 50 ? '#A8E63D' : undefined }} className={phase2Pct > 50 ? '' : 'text-muted-foreground'}>{phase2Pct}% do total{phase2Pct > 50 ? ' ↑' : ''}</p>
+                <p className={`text-[9px] ${phase2Pct > 50 ? '' : 'text-muted-foreground'}`} style={{ color: phase2Pct > 50 ? '#A8E63D' : undefined }}>{phase2Pct}% do total{phase2Pct > 50 ? ' ↑' : ''}</p>
               </div>
             </div>
             <div className="h-[4px] rounded-full mt-[6px] bg-muted">
