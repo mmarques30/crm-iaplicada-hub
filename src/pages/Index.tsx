@@ -130,9 +130,9 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
   return (
     <div className="grid items-stretch gap-[12px]" style={{ gridTemplateColumns: '1.35fr 1fr 0.9fr' }}>
       {/* CARD 1 — Velocidade do Pipeline */}
-      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+      <div className="flex flex-col rounded-xl border border-border bg-card p-[18px]">
         <p className="text-[13px] font-bold text-foreground mb-[3px]">Velocidade do Pipeline</p>
-        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>{activeStages.length} estágios com deals ativos</p>
+        <p className="text-[11px] mb-[14px] text-muted-foreground">{activeStages.length} estágios com deals ativos</p>
 
         {entryStages.length > 0 && (
           <>
