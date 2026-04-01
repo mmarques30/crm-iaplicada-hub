@@ -92,10 +92,10 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
   const totalDealsCount = filteredDeals.length;
 
   const donutSegments = [
-    { name: "Perdidos", value: lost, color: "#E8684A" },
-    { name: "Em progresso", value: inProgress, color: "#4A9FE0" },
-    { name: "Em risco", value: atRisk, color: "#E8A43C" },
-    { name: "Ganhos", value: won, color: "#AFC040" },
+    { name: "Perdidos", value: lost, color: "#EF4444" },
+    { name: "Em progresso", value: inProgress, color: "#5B9CF6" },
+    { name: "Em risco", value: atRisk, color: "#FB923C" },
+    { name: "Ganhos", value: won, color: "#A8E63D" },
   ].filter(d => d.value > 0);
 
   const totalDonut = donutSegments.reduce((s, d) => s + d.value, 0);
