@@ -29,6 +29,9 @@ import EmailTemplateEditor from "./pages/EmailTemplateEditor";
 import EmailCampaigns from "./pages/EmailCampaigns";
 import EmailWorkflows from "./pages/EmailWorkflows";
 import ContactLists from "./pages/ContactLists";
+import ConteudoCalendario from "./pages/ConteudoCalendario";
+import ConteudoVideos from "./pages/ConteudoVideos";
+import ConteudoCriativos from "./pages/ConteudoCriativos";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -60,6 +63,10 @@ const App = () => (
               <Route path="/analytics/instagram" element={<InstagramAnalytics />} />
               <Route path="/analytics/facebook-ads" element={<FacebookAdsPage />} />
               <Route path="/analytics/crm" element={<CrmAnalytics />} />
+              <Route path="/conteudo" element={<Navigate to="/conteudo/calendario" replace />} />
+              <Route path="/conteudo/calendario" element={<ConteudoCalendario />} />
+              <Route path="/conteudo/videos" element={<ConteudoVideos />} />
+              <Route path="/conteudo/criativos" element={<ConteudoCriativos />} />
               <Route path="/comercial/vendas" element={<GestaoVendas />} />
               <Route path="/financeiro" element={<FinanceiroPainel />} />
               <Route path="/financeiro/painel" element={<FinanceiroPainel />} />

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers, Mail, Send, Workflow, ShoppingCart, Receipt, Wallet, ShieldCheck } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers, Mail, Send, Workflow, ShoppingCart, Receipt, Wallet, ShieldCheck, PenTool, Calendar, Video, Image, Lightbulb } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -33,6 +33,12 @@ const analyticsItems = [
   { title: "Funil de Vendas", url: "/analytics/crm", icon: TrendingUp },
 ];
 
+const conteudoItems = [
+  { title: "Calendário", url: "/conteudo/calendario", icon: Calendar },
+  { title: "Vídeos", url: "/conteudo/videos", icon: Video },
+  { title: "Criativos", url: "/conteudo/criativos", icon: Image },
+];
+
 const comercialItems = [
   { title: "Vendas & Fiscal", url: "/comercial/vendas", icon: ShoppingCart },
 ];
@@ -50,11 +56,13 @@ export function AppSidebar() {
   const isPipelineActive = location.pathname.startsWith("/pipeline");
   const isAnalyticsActive = location.pathname.startsWith("/painel") || location.pathname.startsWith("/analytics");
   const isEmailActive = location.pathname.startsWith("/email");
+  const isConteudoActive = location.pathname.startsWith("/conteudo");
   const isComercialActive = location.pathname.startsWith("/comercial");
   const isFinanceiroActive = location.pathname.startsWith("/financeiro");
   const [pipelineOpen, setPipelineOpen] = useState(isPipelineActive);
   const [analyticsOpen, setAnalyticsOpen] = useState(isAnalyticsActive);
   const [emailOpen, setEmailOpen] = useState(isEmailActive);
+  const [conteudoOpen, setConteudoOpen] = useState(isConteudoActive);
   const [comercialOpen, setComercialOpen] = useState(isComercialActive);
   const [financeiroOpen, setFinanceiroOpen] = useState(isFinanceiroActive);
 
@@ -167,6 +175,8 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
+
+              {hasAccess('conteudo') !== false && renderCollapsible("Conteúdo", PenTool, conteudoItems, isConteudoActive, conteudoOpen, setConteudoOpen)}
 
               {hasAccess('comercial') && renderCollapsible("Comercial", ShoppingCart, comercialItems, isComercialActive, comercialOpen, setComercialOpen)}
 
