@@ -230,7 +230,7 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
               <circle key={i} cx="55" cy="55" r="42" fill="none" stroke={arc.color} strokeWidth="14"
                 strokeDasharray={`${arc.dash} ${circumference}`} strokeDashoffset={arc.offset} strokeLinecap="butt" />
             ))}
-            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#0D2818">{totalDealsCount}</text>
+            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#2E3710">{totalDealsCount}</text>
             <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#627D6A">deals</text>
           </svg>
         </div>
