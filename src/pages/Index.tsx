@@ -112,7 +112,7 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
 
   const lostPct = totalDonut > 0 ? Math.round((lost / totalDonut) * 100) : 0;
 
-  const zoneColor = (zone: string) => zone === 'entry' ? '#2CBBA6' : zone === 'activity' ? '#4A9FE0' : '#AFC040';
+  const zoneColor = (zone: string) => zone === 'entry' ? '#4ADE80' : zone === 'activity' ? '#5B9CF6' : '#A8E63D';
 
   const renderStageRow = (stage: StageRow, color: string, isLast: boolean) => (
     <div key={stage.stage_name} className={`flex items-center gap-[10px] py-[7px] ${!isLast ? 'border-b border-[#191D0C]' : ''}`}>
