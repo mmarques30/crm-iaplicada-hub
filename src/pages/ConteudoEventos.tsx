@@ -252,7 +252,7 @@ export default function ConteudoEventos() {
       : [{ id: '1', nome: selectedEvent.comunidade || 'Comunidade Geral', plataforma: 'whatsapp' }]
 
     try {
-      const { data, error } = await supabase.functions.invoke('rapid-task', {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
         body: {
           action: 'generate',
           tool: selectedEvent.ferramenta || selectedEvent.titulo,
