@@ -211,9 +211,9 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
 
         <div className="flex-1" />
         {activeDeals.length > 0 && (
-          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#B07830' }}>
-            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Prioridade</p>
-            <p className="text-[11px] leading-[1.5]" style={{ color: '#E8A43C' }}>{activeDeals.length} deal{activeDeals.length > 1 ? 's' : ''} com {formatK(totalPotential)} em potencial.</p>
+          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px] bg-muted" style={{ borderLeftColor: '#FB923C' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px] text-muted-foreground">Prioridade</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#FB923C' }}>{activeDeals.length} deal{activeDeals.length > 1 ? 's' : ''} com {formatK(totalPotential)} em potencial.</p>
           </div>
         )}
       </div>
