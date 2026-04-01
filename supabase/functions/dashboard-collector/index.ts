@@ -86,8 +86,8 @@ async function collectFacebookAds(adsToken: string, adAccountId: string) {
     const all: any[] = []
     let nextUrl: string | null = url
     while (nextUrl) {
-      const res = await fetch(nextUrl)
-      const data = await res.json()
+      const res: Response = await fetch(nextUrl)
+      const data: any = await res.json()
       if (data.error) throw new Error(`FB Ads: ${data.error.message}`)
       all.push(...(data.data || []))
       nextUrl = data.paging?.next || null
