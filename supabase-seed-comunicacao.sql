@@ -67,5 +67,55 @@ ON CONFLICT DO NOTHING;
 
 -- ── INSERIR CAMPANHA DE LANÇAMENTO ──
 INSERT INTO launch_campaigns (nome, big_idea, inimigo_narrativo, metodo, oferta, data_inicio, data_fim, status) VALUES
-('IAplicada Recorrência', 'O mercado te cobra saber IA. Mas ninguém te diz o que fazer com ela na segunda-feira de manhã.', 'A Cobrança Sem Caminho', 'APLICA: A-Analisar seu trabalho atual, P-Priorizar onde IA gera mais impacto, L-Levantar as ferramentas certas, I-Implementar no seu fluxo real, C-Compartilhar resultados na equipe, A-Automatizar o que já funciona', 'R$147/mês — sem fidelidade', '2026-03-27', '2026-04-20', 'ativo')
+('IAplicada Recorrência', 'O mercado te cobra saber IA. Mas ninguém te diz o que fazer com ela na segunda-feira de manhã.', 'A Cobrança Sem Caminho', 'APLICA: A-Analisar seu trabalho atual, P-Priorizar onde IA gera mais impacto, L-Levantar as ferramentas certas, I-Implementar no seu fluxo real, C-Compartilhar resultados na equipe, A-Automatizar o que já funciona', 'Assinatura mensal R$147/mês — sem fidelidade. Inclui: aulas ao vivo mensais, conteúdo atualizado, comunidade ativa, metodologia APLICA aplicada no SEU trabalho.', '2026-03-27', '2026-04-20', 'ativo')
 ON CONFLICT DO NOTHING;
+
+-- ── INSERIR FASES DO LANÇAMENTO ──
+-- (campaign_id será preenchido com subquery)
+INSERT INTO launch_phases (campaign_id, nome, emocao_chave, objetivo, data_inicio, data_fim, ordem) VALUES
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência' LIMIT 1), 'Aquecimento S1', 'Indignação', 'Provocação e identificação. Nomear a cobrança do mercado sem mostrar a solução. Enquetes, caixinhas, coleta de dados.', '2026-03-27', '2026-04-02', 1),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência' LIMIT 1), 'Aquecimento S2', 'Identificação', 'Storytelling e provas. Feedbacks reais, resultados de alunos, aprofundar a dor.', '2026-03-30', '2026-04-05', 2),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência' LIMIT 1), 'Pré-Revelação', 'Esperança', 'Intensificação e countdown. Antecipação máxima, teaser do método APLICA, últimas provas.', '2026-04-06', '2026-04-12', 3),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência' LIMIT 1), 'Revelação', 'Alívio', 'Aula gratuita ao vivo 19:30 que entrega valor real + revela a Recorrência.', '2026-04-13', '2026-04-13', 4),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência' LIMIT 1), 'Abertura + Conversão', 'Pertencimento + Urgência', 'Vendas abertas. Depoimentos, quebra de objeções, urgência crescente. Deadline 20/04.', '2026-04-14', '2026-04-20', 5);
+
+-- ── INSERIR 19 MENSAGENS WHATSAPP ──
+INSERT INTO launch_messages (campaign_id, phase_id, canal, titulo, data, sort_order, done) VALUES
+-- Aquecimento S1 (3 msgs)
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S1'), 'whatsapp', 'Provocação inicial — método vs ferramenta', '2026-03-30', 1, true),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S1'), 'whatsapp', 'Dica prática — teste HOJE com IA', '2026-03-31', 2, true),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S1'), 'whatsapp', 'Follow-up — Testou?', '2026-03-31', 3, false),
+-- Aquecimento S2 (3 msgs)
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S2'), 'whatsapp', 'Storytelling — Ela não trocou de emprego', '2026-04-02', 4, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S2'), 'whatsapp', 'Reflexão — O ciclo da segunda-feira', '2026-04-04', 5, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S2'), 'whatsapp', 'Prova social — Resultados reais', '2026-04-06', 6, false),
+-- Pré-revelação (4 msgs)
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Pré-Revelação'), 'whatsapp', 'Método APLICA — Os 6 passos', '2026-04-07', 7, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Pré-Revelação'), 'whatsapp', 'Convite aula ao vivo — Segunda 13/04', '2026-04-09', 8, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Pré-Revelação'), 'whatsapp', 'Lembrete — Faltam 2 dias', '2026-04-11', 9, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Pré-Revelação'), 'whatsapp', 'Véspera — AMANHÃ', '2026-04-12', 10, false),
+-- Revelação (2 msgs)
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Revelação'), 'whatsapp', 'HOJE — manhã da aula', '2026-04-13', 11, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Revelação'), 'whatsapp', 'Pós-aula — revelação da Recorrência', '2026-04-13', 12, false),
+-- Abertura (3 msgs)
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'whatsapp', 'Abertura — detalhes + preço + link', '2026-04-14', 13, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'whatsapp', 'Depoimentos de transformação', '2026-04-15', 14, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'whatsapp', 'FAQ — Não é mais um curso', '2026-04-16', 15, false),
+-- Conversão (4 msgs)
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'whatsapp', 'Reflexão — Daqui a 6 meses', '2026-04-17', 16, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'whatsapp', 'Social proof — Profissionais entrando', '2026-04-18', 17, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'whatsapp', 'Emocional — Por que eu faço isso', '2026-04-19', 18, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'whatsapp', 'ÚLTIMO DIA — encerramento', '2026-04-20', 19, false);
+
+-- ── INSERIR 10 EMAILS ──
+INSERT INTO launch_messages (campaign_id, phase_id, canal, titulo, subject_line, data, sort_order, done) VALUES
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S1'), 'email', 'Email 1 — Provocação', 'O mercado te cobra saber IA. Mas ninguém te diz o que fazer.', '2026-04-01', 1, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S1'), 'email', 'Email 2 — Erros comuns', 'Os 3 erros que impedem profissionais de aplicar IA', '2026-04-03', 2, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S2'), 'email', 'Email 3 — Diferencial', 'O que profissionais que aplicam IA fazem diferente', '2026-04-06', 3, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Aquecimento S2'), 'email', 'Email 4 — Provas', 'Resultados reais de quem aprendeu a APLICAR', '2026-04-08', 4, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Pré-Revelação'), 'email', 'Email 5 — Antecipação', 'Essa semana muda tudo. Fica de olho.', '2026-04-10', 5, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Pré-Revelação'), 'email', 'Email 6 — Véspera', 'AMANHÃ: algo que vai mudar a forma como você aprende IA', '2026-04-12', 6, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Revelação'), 'email', 'Email 7 — Revelação', '[AO VIVO HOJE 19:30] O método que faltava', '2026-04-13', 7, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'email', 'Email 8 — Abertura', 'IAplicada Recorrência: inscrições abertas — R$147/mês', '2026-04-14', 8, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'email', 'Email 9 — Objeções', 'As 5 perguntas que todo mundo faz antes de entrar', '2026-04-17', 9, false),
+((SELECT id FROM launch_campaigns WHERE nome='IAplicada Recorrência'), (SELECT id FROM launch_phases WHERE nome='Abertura + Conversão'), 'email', 'Email 10 — Encerramento', 'ÚLTIMO DIA — condições de fundador até 23:59', '2026-04-20', 10, false);
