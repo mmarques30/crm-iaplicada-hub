@@ -111,6 +111,13 @@ export default function ConteudoEventos() {
   const [generatedMessages, setGeneratedMessages] = useState<GeneratedMessage[]>([])
   const [generating, setGenerating] = useState(false)
   const [savingMessages, setSavingMessages] = useState(false)
+  // Tool suggestions state
+  const [suggestCategory, setSuggestCategory] = useState('Produtividade')
+  const [suggestedTools, setSuggestedTools] = useState<any[]>([])
+  const [suggesting, setSuggesting] = useState(false)
+  const [researching, setResearching] = useState<string | null>(null)
+  const [toolResearch, setToolResearch] = useState<Record<string, string>>({})
+  const [createFromTool, setCreateFromTool] = useState<any | null>(null)
 
   // Queries
   const { data: events = [] } = useQuery({
@@ -367,6 +374,7 @@ export default function ConteudoEventos() {
           {[
             { v: 'calendario', l: 'Calendário' },
             { v: 'lista', l: 'Lista' },
+            { v: 'sugestoes', l: 'Sugerir Ferramentas' },
             { v: 'gerador', l: 'Gerador IA' },
           ].map(t => (
             <TabsTrigger key={t.v} value={t.v} className="data-[state=active]:bg-[#AFC040] data-[state=active]:text-[#0D0D0D] data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">
@@ -573,7 +581,136 @@ export default function ConteudoEventos() {
           </Card>
         </TabsContent>
 
-        {/* ─── Tab 3: Gerador IA ─── */}
+        {/* ─── Tab: Sugerir Ferramentas (Perplexity) ─── */}
+        <TabsContent value="sugestoes" className="mt-4 space-y-4">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-[#E8A43C]" />
+                    Sugerir Ferramentas de IA via Perplexity
+                  </CardTitle>
+                  <p className="text-xs text-muted-foreground mt-1">Busca ferramentas de nicho por categoria para usar nas próximas aulas</p>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-3 items-end">
+                <div className="space-y-1.5 flex-1">
+                  <Label>Categoria</Label>
+                  <Select value={suggestCategory} onValueChange={setSuggestCategory}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {['Produtividade', 'Texto', 'Video', 'Audio', 'Design', 'Dados', 'Automação', 'Pesquisa', 'Código', 'Apresentações'].map(c => (
+                        <SelectItem key={c} value={c}>{c}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  className="gap-1.5 bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
+                  disabled={suggesting}
+                  onClick={async () => {
+                    setSuggesting(true)
+                    setSuggestedTools([])
+                    try {
+                      const existingTools = (events || []).map((e: any) => e.ferramenta).filter(Boolean)
+                      const { data, error } = await supabase.functions.invoke('generate-content', {
+                        body: { action: 'suggest', category: suggestCategory, excludeTools: existingTools },
+                      })
+                      if (error) throw error
+                      setSuggestedTools(data?.tools || [])
+                      if ((data?.tools || []).length === 0) toast.info('Nenhuma ferramenta encontrada para essa categoria')
+                    } catch (err: any) {
+                      toast.error('Erro ao buscar sugestões: ' + (err.message || 'tente novamente'))
+                    } finally {
+                      setSuggesting(false)
+                    }
+                  }}
+                >
+                  {suggesting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  {suggesting ? 'Pesquisando...' : 'Buscar Ferramentas'}
+                </Button>
+              </div>
+
+              {/* Results */}
+              {suggestedTools.length > 0 && (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground">{suggestedTools.length} ferramentas encontradas na categoria "{suggestCategory}"</p>
+                  {suggestedTools.map((tool, i) => (
+                    <div key={i} className="p-4 rounded-lg border border-[var(--c-border)] hover:border-[var(--c-border-h)] transition-colors space-y-2">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-sm font-bold" style={{ color: '#E8EDD8' }}>{tool.name}</h3>
+                          {tool.tagline && <p className="text-xs text-muted-foreground mt-0.5">{tool.tagline}</p>}
+                        </div>
+                        <div className="flex gap-2 shrink-0">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="gap-1 text-xs"
+                            disabled={researching === tool.name}
+                            onClick={async () => {
+                              setResearching(tool.name)
+                              try {
+                                const { data, error } = await supabase.functions.invoke('generate-content', {
+                                  body: { action: 'research', tool: tool.name },
+                                })
+                                if (error) throw error
+                                setToolResearch(prev => ({ ...prev, [tool.name]: data?.research || 'Sem resultado' }))
+                              } catch {
+                                toast.error('Erro ao pesquisar')
+                              } finally {
+                                setResearching(null)
+                              }
+                            }}
+                          >
+                            {researching === tool.name ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                            Pesquisar
+                          </Button>
+                          <Button
+                            size="sm"
+                            className="gap-1 text-xs bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
+                            onClick={() => {
+                              setCreateFromTool(tool)
+                              setEventForm({
+                                ...EMPTY_EVENT_FORM,
+                                titulo: `${tool.name}: ${tool.tagline || tool.useCase || ''}`.substring(0, 100),
+                                ferramenta: tool.name,
+                                tipo: 'aula',
+                                descricao: toolResearch[tool.name] || tool.useCase || '',
+                              })
+                              setEventOpen(true)
+                            }}
+                          >
+                            <Plus className="h-3 w-3" />
+                            Criar Evento
+                          </Button>
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {tool.category && <Badge variant="secondary" className="text-[10px]">{tool.category}</Badge>}
+                        {tool.pricing && <Badge className="text-[10px] bg-[#1A1206] text-[#E8A43C]">{tool.pricing}</Badge>}
+                        {tool.wow && <Badge className="text-[10px] bg-[#141A04] text-[#AFC040]">✱ {tool.wow}</Badge>}
+                      </div>
+                      {tool.useCase && <p className="text-xs text-muted-foreground">{tool.useCase}</p>}
+
+                      {/* Expanded research */}
+                      {toolResearch[tool.name] && (
+                        <div className="mt-2 p-3 rounded-lg bg-[var(--c-raised)] text-sm whitespace-pre-wrap">
+                          {toolResearch[tool.name]}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ─── Tab: Gerador IA ─── */}
         <TabsContent value="gerador" className="mt-4 space-y-4">
           <Card>
             <CardHeader>
