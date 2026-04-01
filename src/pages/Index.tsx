@@ -32,7 +32,7 @@ const C = {
 };
 
 const TOOLTIP_STYLE = {
-  contentStyle: { background: "#0E2F1A", border: `1px solid #1A4A2E`, borderRadius: 8, fontSize: 12, fontFamily: "Inter, sans-serif" },
+  contentStyle: { background: "#738925", border: `1px solid #8BA030`, borderRadius: 8, fontSize: 12, fontFamily: "Inter, sans-serif" },
   itemStyle: { color: "#FFFFFF" },
   labelStyle: { color: "#A8E63D", marginBottom: 4 },
   cursor: { fill: "hsl(145 10% 88% / 0.4)" },
