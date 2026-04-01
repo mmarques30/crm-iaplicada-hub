@@ -654,7 +654,7 @@ export default function ConteudoEventos() {
                             onClick={async () => {
                               setResearching(tool.name)
                               try {
-                                const { data, error } = await supabase.functions.invoke('rapid-task', {
+                                const { data, error } = await supabase.functions.invoke('generate-content', {
                                   body: { action: 'research', tool: tool.name },
                                 })
                                 if (error) throw error
