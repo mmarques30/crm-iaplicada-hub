@@ -36,13 +36,13 @@
     --radius: 0.5rem;
 
     /* ── Sidebar ─────────────────────────────────────── */
-    --sidebar-background: 145 55% 10%;   /* #0D2E18 */
+    --sidebar-background: 73 57% 20%;    /* #3D4A14 oliva escuro */
     --sidebar-foreground: 0 0% 88%;      /* #E0E0E0 */
     --sidebar-primary: 80 78% 56%;       /* verde lima */
-    --sidebar-primary-foreground: 145 60% 10%;
-    --sidebar-accent: 145 50% 16%;       /* item ativo bg */
+    --sidebar-primary-foreground: 73 57% 34%;
+    --sidebar-accent: 73 50% 28%;        /* item ativo bg */
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 145 40% 20%;       /* separadores */
+    --sidebar-border: 73 40% 28%;        /* separadores */
     --sidebar-ring: 80 78% 56%;
 
     /* ── Semantic data colors ────────────────────────── */
