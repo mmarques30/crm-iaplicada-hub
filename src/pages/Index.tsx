@@ -115,10 +115,10 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
   const zoneColor = (zone: string) => zone === 'entry' ? '#4ADE80' : zone === 'activity' ? '#5B9CF6' : '#A8E63D';
 
   const renderStageRow = (stage: StageRow, color: string, isLast: boolean) => (
-    <div key={stage.stage_name} className={`flex items-center gap-[10px] py-[7px] ${!isLast ? 'border-b border-[#191D0C]' : ''}`}>
+    <div key={stage.stage_name} className={`flex items-center gap-[10px] py-[7px] ${!isLast ? 'border-b border-border' : ''}`}>
       <div className="w-[6px] h-[6px] rounded-full" style={{ background: color }} />
-      <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>{stage.stage_name}</span>
-      <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
+      <span className="text-[11px] w-[110px] text-muted-foreground">{stage.stage_name}</span>
+      <div className="flex-1 h-[5px] rounded-full bg-muted">
         <div className="h-full rounded-full" style={{ width: `${Math.max((stage.deal_count / maxCount) * 100, 2)}%`, background: color }} />
       </div>
       <span className="text-[13px] font-bold tabular-nums w-[28px] text-right" style={{ color }}>{stage.deal_count}</span>
