@@ -102,10 +102,11 @@ export default function Pipeline() {
   const [showFilters, setShowFilters] = useState(false);
 
   // HubSpot sync
-  const syncHubspot = useMutation({
+  // Sync all data sources (HubSpot + Instagram + FB Ads)
+  const syncAll = useMutation({
     mutationFn: async () => {
       const { data, error } = await supabase.functions.invoke('dashboard-collector', {
-        body: { source: 'hubspot' },
+        body: { source: 'all' },
       })
       if (error) throw error
       return data
@@ -113,7 +114,8 @@ export default function Pipeline() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['pipeline-deals'] })
       queryClient.invalidateQueries({ queryKey: ['contacts'] })
-      toast.success('HubSpot sincronizado com sucesso')
+      queryClient.invalidateQueries({ queryKey: ['dashboard_snapshot'] })
+      toast.success('Dados sincronizados (HubSpot + Instagram + Ads)')
     },
     onError: (err: any) => {
       toast.error('Erro ao sincronizar: ' + (err.message || 'Tente novamente'))
@@ -122,11 +124,11 @@ export default function Pipeline() {
 
   // Auto-sync on first load (every 10 min)
   useEffect(() => {
-    const lastSync = sessionStorage.getItem('hubspot_last_sync')
+    const lastSync = sessionStorage.getItem('data_last_sync')
     const now = Date.now()
     if (!lastSync || now - parseInt(lastSync) > 10 * 60 * 1000) {
-      sessionStorage.setItem('hubspot_last_sync', String(now))
-      syncHubspot.mutate()
+      sessionStorage.setItem('data_last_sync', String(now))
+      syncAll.mutate()
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -279,16 +281,16 @@ export default function Pipeline() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => syncHubspot.mutate()}
-            disabled={syncHubspot.isPending}
+            onClick={() => syncAll.mutate()}
+            disabled={syncAll.isPending}
             className="gap-1.5"
           >
-            {syncHubspot.isPending ? (
+            {syncAll.isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
               <RefreshCw className="h-3.5 w-3.5" />
             )}
-            {syncHubspot.isPending ? 'Sincronizando...' : 'Sync HubSpot'}
+            {syncAll.isPending ? 'Sincronizando...' : 'Atualizar Dados'}
           </Button>
           <PipelineTabs product={product} onSelect={(v) => { navigate(`/pipeline/${v}`); setFilters(emptyFilters); }} />
         </div>

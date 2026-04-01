@@ -37,6 +37,7 @@ const conteudoItems = [
   { title: "Calendário", url: "/conteudo/calendario", icon: Calendar },
   { title: "Vídeos", url: "/conteudo/videos", icon: Video },
   { title: "Criativos", url: "/conteudo/criativos", icon: Image },
+  { title: "Automações IG", url: "/instagram", icon: Instagram },
 ];
 
 const comercialItems = [
@@ -56,7 +57,7 @@ export function AppSidebar() {
   const isPipelineActive = location.pathname.startsWith("/pipeline");
   const isAnalyticsActive = location.pathname.startsWith("/painel") || location.pathname.startsWith("/analytics");
   const isEmailActive = location.pathname.startsWith("/email");
-  const isConteudoActive = location.pathname.startsWith("/conteudo");
+  const isConteudoActive = location.pathname.startsWith("/conteudo") || location.pathname === "/instagram";
   const isComercialActive = location.pathname.startsWith("/comercial");
   const isFinanceiroActive = location.pathname.startsWith("/financeiro");
   const [pipelineOpen, setPipelineOpen] = useState(isPipelineActive);
@@ -176,7 +177,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {hasAccess('conteudo') !== false && renderCollapsible("Conteúdo", PenTool, conteudoItems, isConteudoActive, conteudoOpen, setConteudoOpen)}
+              {renderCollapsible("Conteúdo", PenTool, conteudoItems, isConteudoActive, conteudoOpen, setConteudoOpen)}
 
               {hasAccess('comercial') && renderCollapsible("Comercial", ShoppingCart, comercialItems, isComercialActive, comercialOpen, setComercialOpen)}
 
@@ -240,17 +241,6 @@ export function AppSidebar() {
                     <NavLink to="/tarefas" activeClassName={ACTIVE_CLASS}>
                       <ListTodo className="h-4 w-4" />
                       {!collapsed && <span>Tarefas</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-
-              {hasAccess('instagram') && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink to="/instagram" activeClassName={ACTIVE_CLASS}>
-                      <Instagram className="h-4 w-4" />
-                      {!collapsed && <span>Automações IG</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
