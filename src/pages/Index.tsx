@@ -35,7 +35,7 @@ const TOOLTIP_STYLE = {
   contentStyle: { background: "#738925", border: `1px solid #8BA030`, borderRadius: 8, fontSize: 12, fontFamily: "Inter, sans-serif" },
   itemStyle: { color: "#FFFFFF" },
   labelStyle: { color: "#A8E63D", marginBottom: 4 },
-  cursor: { fill: "hsl(145 10% 88% / 0.4)" },
+  cursor: { fill: "hsl(73 10% 88% / 0.4)" },
 };
 
 const GRID_PROPS = { strokeDasharray: "3 3", stroke: C.border, vertical: false };
