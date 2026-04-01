@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Rocket, MessageSquare, Mail, Camera, Plus, Trash2, Copy, Loader2, Layers, ChevronDown, ChevronUp } from 'lucide-react'
+import { Rocket, MessageSquare, Mail, Camera, Plus, Trash2, Copy, Loader2, Layers, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/format'
 
@@ -54,6 +54,8 @@ export default function ConteudoLancamentos() {
   const [messageOpen, setMessageOpen] = useState(false)
   const [filterPhase, setFilterPhase] = useState('todas')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [generatingEmailId, setGeneratingEmailId] = useState<string | null>(null)
+  const [generatingAllEmails, setGeneratingAllEmails] = useState(false)
 
   const [campaignForm, setCampaignForm] = useState({
     nome: '', big_idea: '', inimigo: '', metodo: '', oferta: '',
@@ -218,6 +220,76 @@ export default function ConteudoLancamentos() {
     onError: (e: any) => toast.error(e.message),
   })
 
+  // Generate email copy with Claude
+  const generateEmailCopy = async (msgId: string, titulo: string, subjectLine: string, phase: any) => {
+    setGeneratingEmailId(msgId)
+    try {
+      const campaign = campaigns[0]
+      const prompt = `Você é copywriter da IAplicada. Gere o corpo de um EMAIL de lançamento.
+
+CAMPANHA: ${campaign?.nome || 'IAplicada Recorrência'}
+BIG IDEA: ${campaign?.big_idea || ''}
+INIMIGO: ${campaign?.inimigo_narrativo || ''}
+MÉTODO: ${campaign?.metodo || 'APLICA'}
+OFERTA: ${campaign?.oferta || 'R$147/mês'}
+
+FASE: ${phase?.nome || ''} — Emoção: ${phase?.emocao_chave || ''}
+OBJETIVO DA FASE: ${phase?.objetivo || ''}
+
+TÍTULO DO EMAIL: ${titulo}
+SUBJECT LINE: ${subjectLine}
+
+REGRAS:
+- Escreva em português brasileiro
+- Tom pessoal, como se fosse da Mariana (fundadora)
+- Parágrafos curtos (2-3 linhas máx)
+- Use storytelling quando fizer sentido
+- Inclua CTA claro no final
+- Não use "Sem dúvida", "Com certeza", "Excelente"
+- Emojis: apenas 🤓 e ✱, com moderação
+- O email deve ser coerente com a emoção da fase (${phase?.emocao_chave || ''})
+- Entre 200-400 palavras
+
+Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".`
+
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: { action: 'generate_cadence_message', prompt },
+      })
+      if (error || !data?.message) throw new Error('Falha na geração')
+
+      // Update the message with generated copy
+      const { error: updateErr } = await (supabase as any)
+        .from('launch_messages')
+        .update({ copy_text: data.message })
+        .eq('id', msgId)
+      if (updateErr) throw updateErr
+
+      queryClient.invalidateQueries({ queryKey: ['launch_messages'] })
+      toast.success('Email gerado com sucesso!')
+    } catch (err: any) {
+      toast.error('Erro ao gerar: ' + (err.message || 'tente novamente'))
+    } finally {
+      setGeneratingEmailId(null)
+    }
+  }
+
+  // Generate ALL emails without copy
+  const generateAllEmails = async () => {
+    const emailsWithoutCopy = allMessages.filter((m: any) => m.canal === 'email' && !m.copy_text)
+    if (emailsWithoutCopy.length === 0) { toast.info('Todos os emails já têm conteúdo'); return }
+    setGeneratingAllEmails(true)
+    let generated = 0
+    for (const msg of emailsWithoutCopy) {
+      const phase = phases.find((p: any) => p.id === msg.phase_id)
+      try {
+        await generateEmailCopy(msg.id, msg.titulo, msg.subject_line || '', phase)
+        generated++
+      } catch { /* continue to next */ }
+    }
+    setGeneratingAllEmails(false)
+    toast.success(`${generated} de ${emailsWithoutCopy.length} emails gerados`)
+  }
+
   /* ─── Derived ─── */
   const kpiFases = phases.length
   const kpiTotal = allMessages.length
@@ -329,6 +401,23 @@ export default function ConteudoLancamentos() {
             </Button>
           </div>
         </div>
+
+        {/* Generate email with AI if no copy */}
+        {canal === 'email' && !msg.copy_text && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs w-full"
+            disabled={generatingEmailId === msg.id}
+            onClick={() => {
+              const phase = phaseMap[msg.phase_id]
+              generateEmailCopy(msg.id, msg.titulo, msg.subject_line || '', phase)
+            }}
+          >
+            {generatingEmailId === msg.id ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3 text-[#E8A43C]" />}
+            {generatingEmailId === msg.id ? 'Gerando com Claude...' : 'Gerar Conteúdo do Email com IA'}
+          </Button>
+        )}
 
         {/* Copy text / Roteiro */}
         {(msg.copy_text || msg.roteiro) && (
@@ -594,7 +683,7 @@ export default function ConteudoLancamentos() {
 
             {/* ─── Tab: Email ─── */}
             <TabsContent value="email" className="mt-4 space-y-4">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-3">
                 <Select value={filterPhase} onValueChange={setFilterPhase}>
                   <SelectTrigger className="w-[180px]"><SelectValue placeholder="Filtrar fase" /></SelectTrigger>
                   <SelectContent>
@@ -602,6 +691,15 @@ export default function ConteudoLancamentos() {
                     {phases.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.nome}</SelectItem>)}
                   </SelectContent>
                 </Select>
+                <Button
+                  className="gap-1.5 bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
+                  size="sm"
+                  disabled={generatingAllEmails}
+                  onClick={generateAllEmails}
+                >
+                  {generatingAllEmails ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+                  {generatingAllEmails ? 'Gerando...' : 'Gerar Todos os Emails com IA'}
+                </Button>
               </div>
               {renderCanalTab('email')}
             </TabsContent>
