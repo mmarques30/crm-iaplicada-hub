@@ -219,27 +219,27 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
       </div>
 
       {/* CARD 3 — Status dos Deals */}
-      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+      <div className="flex flex-col rounded-xl border border-border bg-card p-[18px]">
         <p className="text-[13px] font-bold text-foreground mb-[3px]">Status dos Deals</p>
-        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>{totalDealsCount} deals no total</p>
+        <p className="text-[11px] mb-[14px] text-muted-foreground">{totalDealsCount} deals no total</p>
 
         <div className="flex justify-center py-[12px] pb-[16px]">
           <svg viewBox="0 0 110 110" width="110" height="110">
-            <circle cx="55" cy="55" r="42" fill="none" stroke="#1A1F0D" strokeWidth="14" />
+            <circle cx="55" cy="55" r="42" fill="none" stroke="hsl(145 10% 88%)" strokeWidth="14" />
             {arcs.map((arc, i) => (
               <circle key={i} cx="55" cy="55" r="42" fill="none" stroke={arc.color} strokeWidth="14"
                 strokeDasharray={`${arc.dash} ${circumference}`} strokeDashoffset={arc.offset} strokeLinecap="butt" />
             ))}
-            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#E8EDD8" style={{ fontFamily: 'Sora, sans-serif' }}>{totalDealsCount}</text>
-            <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#4A5230" style={{ fontFamily: 'Sora, sans-serif' }}>deals</text>
+            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#0D2818">{totalDealsCount}</text>
+            <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#627D6A">deals</text>
           </svg>
         </div>
 
         {donutSegments.map((item, i) => (
-          <div key={item.name} className={`flex items-center justify-between py-[8px] ${i < donutSegments.length - 1 ? 'border-b border-[#191D0C]' : ''}`}>
+          <div key={item.name} className={`flex items-center justify-between py-[8px] ${i < donutSegments.length - 1 ? 'border-b border-border' : ''}`}>
             <div className="flex items-center gap-[6px]">
               <div className="w-[8px] h-[8px] rounded-full" style={{ background: item.color }} />
-              <span className="text-[11px]" style={{ color: '#C8D4A8' }}>{item.name}</span>
+              <span className="text-[11px] text-muted-foreground">{item.name}</span>
             </div>
             <span className="text-[13px] font-bold tabular-nums" style={{ color: item.color }}>{item.value}</span>
           </div>
@@ -247,9 +247,9 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
 
         <div className="flex-1" />
         {lostPct > 30 && (
-          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#C94A2F' }}>
-            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Atenção</p>
-            <p className="text-[11px] leading-[1.5]" style={{ color: '#E8684A' }}>{lostPct}% dos deals foram perdidos.</p>
+          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px] bg-muted" style={{ borderLeftColor: '#EF4444' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px] text-muted-foreground">Atenção</p>
+            <p className="text-[11px] leading-[1.5] text-destructive">{lostPct}% dos deals foram perdidos.</p>
           </div>
         )}
       </div>
