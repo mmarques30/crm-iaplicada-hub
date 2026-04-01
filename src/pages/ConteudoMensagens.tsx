@@ -118,7 +118,7 @@ export default function ConteudoMensagens() {
     if (!event) return
     setGeneratingMsgs(true)
     try {
-      const { data, error } = await supabase.functions.invoke('generate-content', {
+      const { data, error } = await supabase.functions.invoke('rapid-task', {
         body: {
           action: 'generate',
           tool: event.ferramenta || event.titulo,

@@ -128,7 +128,7 @@ REGRAS:
 - Apenas a mensagem, sem explicações`
 
       // Call Claude API via generate-content Edge Function
-      const { data, error } = await supabase.functions.invoke('generate-content', {
+      const { data, error } = await supabase.functions.invoke('rapid-task', {
         body: {
           action: 'generate_cadence_message',
           prompt,
