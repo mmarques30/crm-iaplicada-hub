@@ -8,7 +8,7 @@ import { KPICard } from '@/components/dashboard/KPICard'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { MessageSquare, Send, Clock, Camera, ChevronLeft, ChevronRight, Copy, Trash2, ExternalLink } from 'lucide-react'
+import { MessageSquare, Send, Clock, Camera, ChevronLeft, ChevronRight, Copy, Trash2, ExternalLink, Sparkles, Loader2, Plus } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/format'
 
@@ -75,6 +75,8 @@ export default function ConteudoMensagens() {
   const [filterCanal, setFilterCanal] = useState('todos')
   const [weekBase, setWeekBase] = useState(new Date())
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [genEventId, setGenEventId] = useState<string>('')
+  const [generatingMsgs, setGeneratingMsgs] = useState(false)
 
   const { monday, friday } = useMemo(() => getWeekRange(weekBase), [weekBase])
 
@@ -90,6 +92,67 @@ export default function ConteudoMensagens() {
       return (data || []) as any[]
     },
   })
+
+  // Events for AI generation
+  const { data: events = [] } = useQuery({
+    queryKey: ['events_for_msgs'],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from('events').select('id, titulo, ferramenta, tipo, data, comunidade').order('data', { ascending: true })
+      return (data || []) as any[]
+    },
+  })
+
+  // Communities for AI generation
+  const { data: communities = [] } = useQuery({
+    queryKey: ['communities_for_msgs'],
+    queryFn: async () => {
+      const { data } = await (supabase as any).from('communities').select('*').eq('ativo', true)
+      return (data || []) as any[]
+    },
+  })
+
+  // Generate messages with AI for a selected event
+  const generateForEvent = async () => {
+    if (!genEventId) { toast.error('Selecione um evento'); return }
+    const event = events.find((e: any) => e.id === genEventId)
+    if (!event) return
+    setGeneratingMsgs(true)
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
+        body: {
+          action: 'generate',
+          tool: event.ferramenta || event.titulo,
+          date: event.data,
+          eventType: event.tipo || 'aula',
+          communities: communities.map((c: any) => ({
+            slug: c.slug, nome: c.nome, tom_de_voz: c.tom_de_voz, objetivo: c.objetivo,
+          })),
+        },
+      })
+      if (error) throw error
+      const generated = data?.messages || []
+      if (generated.length === 0) { toast.info('Nenhuma mensagem gerada. Verifique se a Edge Function está deployada.'); return }
+      // Insert generated messages into routine_messages
+      const toInsert = generated.map((m: any) => ({
+        event_id: event.id,
+        titulo: m.titulo || `${event.ferramenta} — ${m.horario} ${m.comunidade}`,
+        copy_text: m.copy_text,
+        comunidade: m.comunidade || 'gratuita',
+        canal: 'whatsapp',
+        data: event.data,
+        horario: m.horario || '08:00',
+        status: 'rascunho',
+      }))
+      const { error: insertErr } = await (supabase as any).from('routine_messages').insert(toInsert)
+      if (insertErr) throw insertErr
+      queryClient.invalidateQueries({ queryKey: ['routine_messages'] })
+      toast.success(`${toInsert.length} mensagens geradas e salvas para "${event.ferramenta}"`)
+    } catch (err: any) {
+      toast.error('Erro: ' + (err.message || 'Edge Function não deployada?'))
+    } finally {
+      setGeneratingMsgs(false)
+    }
+  }
 
   /* ─── Mutations ─── */
   const deleteMutation = useMutation({
@@ -158,10 +221,40 @@ export default function ConteudoMensagens() {
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold">Mensagens & Comunicacao</h1>
-        <p className="text-sm text-muted-foreground mt-1">Planejamento semanal de mensagens para comunidades</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold">Mensagens & Comunicação</h1>
+          <p className="text-sm text-muted-foreground mt-1">Planejamento semanal de mensagens para comunidades</p>
+        </div>
       </div>
+
+      {/* AI Generate Messages */}
+      <Card>
+        <CardContent className="p-4">
+          <div className="flex flex-wrap gap-3 items-end">
+            <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+              <Sparkles className="h-4 w-4 text-[#E8A43C] shrink-0" />
+              <Select value={genEventId} onValueChange={setGenEventId}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Selecione um evento para gerar mensagens..." /></SelectTrigger>
+                <SelectContent>
+                  {events.filter((e: any) => e.data >= new Date().toISOString().split('T')[0]).map((e: any) => (
+                    <SelectItem key={e.id} value={e.id}>{e.data} — {e.ferramenta || e.titulo}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              className="gap-1.5 bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
+              disabled={!genEventId || generatingMsgs}
+              onClick={generateForEvent}
+            >
+              {generatingMsgs ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Sparkles className="h-3.5 w-3.5" />}
+              {generatingMsgs ? 'Gerando com Claude...' : 'Gerar Mensagens com IA'}
+            </Button>
+          </div>
+          <p className="text-[10px] text-muted-foreground mt-2">Gera 6 mensagens WhatsApp (3 horários x 2 comunidades) + stories via Perplexity + Claude</p>
+        </CardContent>
+      </Card>
 
       {/* KPIs */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
