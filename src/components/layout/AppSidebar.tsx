@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers, Mail, Send, Workflow, ShoppingCart, Receipt, Wallet, ShieldCheck, PenTool, Calendar, Video, Image, Lightbulb } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers, Mail, Send, Workflow, ShoppingCart, Receipt, Wallet, ShieldCheck, PenTool, Calendar, Video, Image, Lightbulb, CalendarDays, MessageSquare, Rocket } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -37,6 +37,9 @@ const conteudoItems = [
   { title: "Calendário", url: "/conteudo/calendario", icon: Calendar },
   { title: "Vídeos", url: "/conteudo/videos", icon: Video },
   { title: "Criativos", url: "/conteudo/criativos", icon: Image },
+  { title: "Eventos & Aulas", url: "/conteudo/eventos", icon: CalendarDays },
+  { title: "Mensagens", url: "/conteudo/mensagens", icon: MessageSquare },
+  { title: "Lançamentos", url: "/conteudo/lancamentos", icon: Rocket },
   { title: "Automações IG", url: "/instagram", icon: Instagram },
 ];
 

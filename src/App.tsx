@@ -32,6 +32,9 @@ import ContactLists from "./pages/ContactLists";
 import ConteudoCalendario from "./pages/ConteudoCalendario";
 import ConteudoVideos from "./pages/ConteudoVideos";
 import ConteudoCriativos from "./pages/ConteudoCriativos";
+import ConteudoEventos from "./pages/ConteudoEventos";
+import ConteudoMensagens from "./pages/ConteudoMensagens";
+import ConteudoLancamentos from "./pages/ConteudoLancamentos";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -67,6 +70,9 @@ const App = () => (
               <Route path="/conteudo/calendario" element={<ConteudoCalendario />} />
               <Route path="/conteudo/videos" element={<ConteudoVideos />} />
               <Route path="/conteudo/criativos" element={<ConteudoCriativos />} />
+              <Route path="/conteudo/eventos" element={<ConteudoEventos />} />
+              <Route path="/conteudo/mensagens" element={<ConteudoMensagens />} />
+              <Route path="/conteudo/lancamentos" element={<ConteudoLancamentos />} />
               <Route path="/comercial/vendas" element={<GestaoVendas />} />
               <Route path="/financeiro" element={<FinanceiroPainel />} />
               <Route path="/financeiro/painel" element={<FinanceiroPainel />} />
