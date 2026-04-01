@@ -28,14 +28,14 @@ const C = {
   coral: "#EF4444",  blue: "#5B9CF6",   purple: "#A78BFA",
   bg: "#F4F0EB",     card: "#FFFFFF",    raised: "#F7F5F2",
   border: "#D9E3D9", borderH: "#B8CDB8",
-  textP: "#0D2818",  textS: "#627D6A",  textM: "#94A89A",
+  textP: "#2E3710",  textS: "#627D6A",  textM: "#94A89A",
 };
 
 const TOOLTIP_STYLE = {
-  contentStyle: { background: "#0E2F1A", border: `1px solid #1A4A2E`, borderRadius: 8, fontSize: 12, fontFamily: "Inter, sans-serif" },
+  contentStyle: { background: "#738925", border: `1px solid #8BA030`, borderRadius: 8, fontSize: 12, fontFamily: "Inter, sans-serif" },
   itemStyle: { color: "#FFFFFF" },
   labelStyle: { color: "#A8E63D", marginBottom: 4 },
-  cursor: { fill: "hsl(145 10% 88% / 0.4)" },
+  cursor: { fill: "hsl(73 10% 88% / 0.4)" },
 };
 
 const GRID_PROPS = { strokeDasharray: "3 3", stroke: C.border, vertical: false };
@@ -230,7 +230,7 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
               <circle key={i} cx="55" cy="55" r="42" fill="none" stroke={arc.color} strokeWidth="14"
                 strokeDasharray={`${arc.dash} ${circumference}`} strokeDashoffset={arc.offset} strokeLinecap="butt" />
             ))}
-            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#0D2818">{totalDealsCount}</text>
+            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#2E3710">{totalDealsCount}</text>
             <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#627D6A">deals</text>
           </svg>
         </div>

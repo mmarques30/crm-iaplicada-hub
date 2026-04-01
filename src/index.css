@@ -6,43 +6,43 @@
   :root {
     /* ── Page / Surface ──────────────────────────────── */
     --background: 40 25% 96%;          /* #F4F0EB bege off-white */
-    --foreground: 145 60% 10%;         /* #0D2818 texto primário */
+    --foreground: 73 57% 15%;          /* #2E3710 texto primário */
 
     --card: 0 0% 100%;                 /* #FFFFFF */
-    --card-foreground: 145 60% 10%;
+    --card-foreground: 73 57% 15%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 145 60% 10%;
+    --popover-foreground: 73 57% 15%;
 
-    --primary: 145 60% 11%;            /* #0E2F1A verde escuro */
+    --primary: 73 57% 34%;             /* #738925 verde oliva */
     --primary-foreground: 0 0% 100%;
 
     --secondary: 145 10% 94%;          /* #EDF2ED */
-    --secondary-foreground: 145 60% 10%;
+    --secondary-foreground: 73 57% 15%;
 
     --muted: 145 10% 92%;
     --muted-foreground: 145 15% 45%;   /* #627D6A */
 
     --accent: 80 78% 56%;              /* #A8E63D verde lima */
-    --accent-foreground: 145 60% 10%;
+    --accent-foreground: 73 57% 15%;
 
     --destructive: 0 84% 60%;          /* #EF4444 */
     --destructive-foreground: 0 0% 100%;
 
     --border: 145 10% 88%;             /* #D9E3D9 */
     --input: 145 10% 82%;
-    --ring: 145 60% 11%;
+    --ring: 73 57% 34%;
 
     --radius: 0.5rem;
 
     /* ── Sidebar ─────────────────────────────────────── */
-    --sidebar-background: 145 55% 10%;   /* #0D2E18 */
+    --sidebar-background: 73 57% 20%;    /* #3D4A14 oliva escuro */
     --sidebar-foreground: 0 0% 88%;      /* #E0E0E0 */
     --sidebar-primary: 80 78% 56%;       /* verde lima */
-    --sidebar-primary-foreground: 145 60% 10%;
-    --sidebar-accent: 145 50% 16%;       /* item ativo bg */
+    --sidebar-primary-foreground: 73 57% 34%;
+    --sidebar-accent: 73 50% 28%;        /* item ativo bg */
     --sidebar-accent-foreground: 0 0% 100%;
-    --sidebar-border: 145 40% 20%;       /* separadores */
+    --sidebar-border: 73 40% 28%;        /* separadores */
     --sidebar-ring: 80 78% 56%;
 
     /* ── Semantic data colors ────────────────────────── */
@@ -71,7 +71,7 @@
     --c-raised: #F7F5F2;
     --c-border: #D9E3D9;
     --c-border-h: #B8CDB8;
-    --c-text-p: #0D2818;
+    --c-text-p: #2E3710;
     --c-text-s: #627D6A;
     --c-text-m: #94A89A;
   }
