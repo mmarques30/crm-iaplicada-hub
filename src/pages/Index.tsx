@@ -174,19 +174,19 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
         </div>
 
         {phase1Deals.length > 0 && (
-          <div className="py-[12px] border-b border-[#191D0C]">
+          <div className="py-[12px] border-b border-border">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Primeira metade</p>
-                <p className="text-[10px]" style={{ color: '#3D4A28' }}>{phase1Deals.length} deals</p>
+                <p className="text-[11px] text-foreground/80">Primeira metade</p>
+                <p className="text-[10px] text-muted-foreground">{phase1Deals.length} deals</p>
               </div>
               <div className="text-right">
-                <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>{formatK(phase1Amount)}</p>
-                <p className="text-[9px]" style={{ color: '#3D4A28' }}>{phase1Pct}% do total</p>
+                <p className="text-[15px] font-bold" style={{ color: '#FB923C' }}>{formatK(phase1Amount)}</p>
+                <p className="text-[9px] text-muted-foreground">{phase1Pct}% do total</p>
               </div>
             </div>
-            <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
-              <div className="h-full rounded-full" style={{ width: `${phase1Pct}%`, background: '#E8A43C', opacity: 0.6 }} />
+            <div className="h-[4px] rounded-full mt-[6px] bg-muted">
+              <div className="h-full rounded-full" style={{ width: `${phase1Pct}%`, background: '#FB923C', opacity: 0.6 }} />
             </div>
           </div>
         )}
