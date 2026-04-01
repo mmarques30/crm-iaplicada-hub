@@ -227,16 +227,16 @@ export default function ConteudoVideos() {
 
         {/* ─── Tab: Pipeline ─── */}
         <TabsContent value="pipeline" className="mt-4">
-          <div className="flex gap-3 overflow-x-auto pb-4">
+          <div className="flex gap-3 overflow-x-auto pb-2" style={{ scrollbarColor: '#2E3A18 transparent', scrollbarWidth: 'thin' }}>
             {PIPELINE_STATUSES.map(status => {
               const col = byStatus[status] || []
               return (
-                <div key={status} className="min-w-[260px] max-w-[300px] flex-shrink-0">
+                <div key={status} className="min-w-[260px] w-[280px] flex-shrink-0 flex flex-col" style={{ minHeight: 'calc(100vh - 320px)' }}>
                   <div className="bg-[var(--c-raised)] rounded-t-lg px-3 py-2 flex items-center justify-between">
                     <span className="text-sm font-semibold">{STATUS_LABELS[status]}</span>
                     <Badge variant="secondary" className="text-xs">{col.length}</Badge>
                   </div>
-                  <div className="space-y-2 mt-2 max-h-[65vh] overflow-y-auto pr-1">
+                  <div className="flex-1 space-y-2 mt-1 overflow-y-auto pr-1 pb-2 border border-[var(--c-border)] border-t-0 rounded-b-lg p-2" style={{ scrollbarColor: '#2E3A18 transparent', scrollbarWidth: 'thin' }}>
                     {col.length === 0 && (
                       <p className="text-xs text-muted-foreground text-center py-4">Nenhum item</p>
                     )}
