@@ -24,13 +24,28 @@ Deno.serve(async (req) => {
   )
 
   try {
-    // Buscar token do Instagram
+    // Buscar token do Instagram (tenta múltiplas fontes)
     let accessToken = Deno.env.get('INSTAGRAM_ACCESS_TOKEN') || null
     try {
       const { data, error } = await supabase.rpc('get_secret', { secret_name: 'INSTAGRAM_ACCESS_TOKEN_V3' })
       if (!error && data) accessToken = data
     } catch (err) {
       console.warn('Failed to get token from vault, using env var:', err)
+    }
+    if (!accessToken) {
+      try {
+        const { data } = await supabase.rpc('get_secret', { secret_name: 'INSTAGRAM_ACCESS_TOKEN' })
+        if (data) accessToken = data
+      } catch {}
+    }
+
+    // Get IG Account ID for DM endpoint
+    let igAccountId = Deno.env.get('META_IG_ACCOUNT_ID') || null
+    if (!igAccountId) {
+      try {
+        const { data } = await supabase.rpc('get_secret', { secret_name: 'META_IG_ACCOUNT_ID' })
+        if (data) igAccountId = data
+      } catch {}
     }
 
     if (!accessToken) {
@@ -135,8 +150,13 @@ Deno.serve(async (req) => {
               dmText += `\n\n${auto.dm_link}`
             }
 
+            // Use IG Account ID for Instagram DM endpoint
+            const dmEndpoint = igAccountId
+              ? `https://graph.instagram.com/v21.0/${igAccountId}/messages`
+              : `https://graph.instagram.com/v21.0/me/messages`
+
             const dmResp = await fetch(
-              `https://graph.instagram.com/v21.0/me/messages`,
+              dmEndpoint,
               {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
