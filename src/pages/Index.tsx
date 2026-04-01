@@ -28,7 +28,7 @@ const C = {
   coral: "#EF4444",  blue: "#5B9CF6",   purple: "#A78BFA",
   bg: "#F4F0EB",     card: "#FFFFFF",    raised: "#F7F5F2",
   border: "#D9E3D9", borderH: "#B8CDB8",
-  textP: "#0D2818",  textS: "#627D6A",  textM: "#94A89A",
+  textP: "#2E3710",  textS: "#627D6A",  textM: "#94A89A",
 };
 
 const TOOLTIP_STYLE = {
