@@ -563,7 +563,7 @@ const SalesPipelineDashboard = () => {
           <Button variant="ghost" size="sm" className="text-muted-foreground relative" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="h-4 w-4 mr-2" />Filtros
             {activeFilterCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[#AFC040] text-[#0D0D0D] text-[10px] font-bold flex items-center justify-center">{activeFilterCount}</span>
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-accent text-foreground text-[10px] font-bold flex items-center justify-center">{activeFilterCount}</span>
             )}
           </Button>
           <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
