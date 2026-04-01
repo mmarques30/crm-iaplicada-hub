@@ -245,13 +245,18 @@ export default function ConteudoEventos() {
       : [{ id: '1', nome: selectedEvent.comunidade || 'Comunidade Geral', plataforma: 'whatsapp' }]
 
     try {
-      const { data, error } = await supabase.functions.invoke('generate-insights', {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
         body: {
-          context: 'event_messages',
-          data: {
-            event: selectedEvent,
-            communities: eventCommunities,
-          },
+          action: 'generate',
+          tool: selectedEvent.ferramenta || selectedEvent.titulo,
+          date: selectedEvent.data,
+          eventType: selectedEvent.tipo || 'aula',
+          communities: communities.map((c: any) => ({
+            slug: c.slug || c.nome?.toLowerCase(),
+            nome: c.nome,
+            tom_de_voz: c.tom_de_voz || 'Acessível e prático',
+            objetivo: c.objetivo || 'Engajar participantes',
+          })),
         },
       })
 
