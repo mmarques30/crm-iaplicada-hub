@@ -616,7 +616,7 @@ export default function ConteudoEventos() {
                     setSuggestedTools([])
                     try {
                       const existingTools = (events || []).map((e: any) => e.ferramenta).filter(Boolean)
-                      const { data, error } = await supabase.functions.invoke('rapid-task', {
+                      const { data, error } = await supabase.functions.invoke('generate-content', {
                         body: { action: 'suggest', category: suggestCategory, excludeTools: existingTools },
                       })
                       if (error) throw error
