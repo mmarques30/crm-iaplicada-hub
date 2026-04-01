@@ -163,14 +163,14 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
       </div>
 
       {/* CARD 2 — Receita em Aberto */}
-      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+      <div className="flex flex-col rounded-xl border border-border bg-card p-[18px]">
         <p className="text-[13px] font-bold text-foreground mb-[3px]">Receita em Aberto</p>
-        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>Potencial dos {activeDeals.length} deals ativos</p>
+        <p className="text-[11px] mb-[14px] text-muted-foreground">Potencial dos {activeDeals.length} deals ativos</p>
 
-        <div className="text-center py-[20px] pb-[18px] border-b border-[#191D0C]">
-          <p className="text-[9px] uppercase mb-[8px]" style={{ color: '#3D4A28' }}>Total potencial</p>
-          <p className="text-[32px] font-bold leading-none" style={{ color: '#E8A43C' }}>{formatK(totalPotential)}</p>
-          <p className="text-[10px] mt-[6px]" style={{ color: '#3D4A28' }}>se todos os deals fecharem</p>
+        <div className="text-center py-[20px] pb-[18px] border-b border-border">
+          <p className="text-[9px] uppercase mb-[8px] text-muted-foreground">Total potencial</p>
+          <p className="text-[32px] font-bold leading-none" style={{ color: '#FB923C' }}>{formatK(totalPotential)}</p>
+          <p className="text-[10px] mt-[6px] text-muted-foreground">se todos os deals fecharem</p>
         </div>
 
         {phase1Deals.length > 0 && (
