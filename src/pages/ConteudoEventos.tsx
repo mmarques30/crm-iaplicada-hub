@@ -252,7 +252,7 @@ export default function ConteudoEventos() {
       : [{ id: '1', nome: selectedEvent.comunidade || 'Comunidade Geral', plataforma: 'whatsapp' }]
 
     try {
-      const { data, error } = await supabase.functions.invoke('rapid-task', {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
         body: {
           action: 'generate',
           tool: selectedEvent.ferramenta || selectedEvent.titulo,
@@ -616,7 +616,7 @@ export default function ConteudoEventos() {
                     setSuggestedTools([])
                     try {
                       const existingTools = (events || []).map((e: any) => e.ferramenta).filter(Boolean)
-                      const { data, error } = await supabase.functions.invoke('rapid-task', {
+                      const { data, error } = await supabase.functions.invoke('generate-content', {
                         body: { action: 'suggest', category: suggestCategory, excludeTools: existingTools },
                       })
                       if (error) throw error
@@ -654,7 +654,7 @@ export default function ConteudoEventos() {
                             onClick={async () => {
                               setResearching(tool.name)
                               try {
-                                const { data, error } = await supabase.functions.invoke('rapid-task', {
+                                const { data, error } = await supabase.functions.invoke('generate-content', {
                                   body: { action: 'research', tool: tool.name },
                                 })
                                 if (error) throw error

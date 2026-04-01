@@ -252,7 +252,7 @@ REGRAS:
 
 Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".`
 
-      const { data, error } = await supabase.functions.invoke('rapid-task', {
+      const { data, error } = await supabase.functions.invoke('generate-content', {
         body: { action: 'generate_cadence_message', prompt },
       })
       if (error || !data?.message) throw new Error('Falha na geração')
