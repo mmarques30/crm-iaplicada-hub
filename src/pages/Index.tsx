@@ -24,22 +24,22 @@ import { subDays } from "date-fns";
    SEMANTIC COLORS (hex for Recharts — matches CSS vars)
    ═══════════════════════════════════════════════════════════════ */
 const C = {
-  teal: "#2CBBA6",   amber: "#E8A43C",  green: "#AFC040",
-  coral: "#E8684A",  blue: "#4A9FE0",   purple: "#9B7FE8",
-  bg: "#0A0C09",     card: "#121509",    raised: "#191E0C",
-  border: "#1E2610", borderH: "#2E3A18",
-  textP: "#E8EDD8",  textS: "#7A8460",  textM: "#4A5230",
+  teal: "#4ADE80",   amber: "#FB923C",  green: "#A8E63D",
+  coral: "#EF4444",  blue: "#5B9CF6",   purple: "#A78BFA",
+  bg: "#F4F0EB",     card: "#FFFFFF",    raised: "#F7F5F2",
+  border: "#D9E3D9", borderH: "#B8CDB8",
+  textP: "#0D2818",  textS: "#627D6A",  textM: "#94A89A",
 };
 
 const TOOLTIP_STYLE = {
-  contentStyle: { background: C.raised, border: `1px solid ${C.borderH}`, borderRadius: 8, fontSize: 12, fontFamily: "Sora" },
-  itemStyle: { color: C.textP },
-  labelStyle: { color: C.textS, marginBottom: 4 },
-  cursor: { fill: "hsl(80 28% 11% / 0.4)" },
+  contentStyle: { background: "#0E2F1A", border: `1px solid #1A4A2E`, borderRadius: 8, fontSize: 12, fontFamily: "Inter, sans-serif" },
+  itemStyle: { color: "#FFFFFF" },
+  labelStyle: { color: "#A8E63D", marginBottom: 4 },
+  cursor: { fill: "hsl(145 10% 88% / 0.4)" },
 };
 
 const GRID_PROPS = { strokeDasharray: "3 3", stroke: C.border, vertical: false };
-const AXIS_TICK = { fill: C.textS, fontSize: 11, fontFamily: "Sora" };
+const AXIS_TICK = { fill: C.textS, fontSize: 11, fontFamily: "Inter, sans-serif" };
 const CHART_MARGIN = { top: 8, right: 16, bottom: 8, left: 8 };
 
 /* ═══════════════════════════════════════════════════════════════
@@ -92,10 +92,10 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
   const totalDealsCount = filteredDeals.length;
 
   const donutSegments = [
-    { name: "Perdidos", value: lost, color: "#E8684A" },
-    { name: "Em progresso", value: inProgress, color: "#4A9FE0" },
-    { name: "Em risco", value: atRisk, color: "#E8A43C" },
-    { name: "Ganhos", value: won, color: "#AFC040" },
+    { name: "Perdidos", value: lost, color: "#EF4444" },
+    { name: "Em progresso", value: inProgress, color: "#5B9CF6" },
+    { name: "Em risco", value: atRisk, color: "#FB923C" },
+    { name: "Ganhos", value: won, color: "#A8E63D" },
   ].filter(d => d.value > 0);
 
   const totalDonut = donutSegments.reduce((s, d) => s + d.value, 0);
@@ -112,13 +112,13 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
 
   const lostPct = totalDonut > 0 ? Math.round((lost / totalDonut) * 100) : 0;
 
-  const zoneColor = (zone: string) => zone === 'entry' ? '#2CBBA6' : zone === 'activity' ? '#4A9FE0' : '#AFC040';
+  const zoneColor = (zone: string) => zone === 'entry' ? '#4ADE80' : zone === 'activity' ? '#5B9CF6' : '#A8E63D';
 
   const renderStageRow = (stage: StageRow, color: string, isLast: boolean) => (
-    <div key={stage.stage_name} className={`flex items-center gap-[10px] py-[7px] ${!isLast ? 'border-b border-[#191D0C]' : ''}`}>
+    <div key={stage.stage_name} className={`flex items-center gap-[10px] py-[7px] ${!isLast ? 'border-b border-border' : ''}`}>
       <div className="w-[6px] h-[6px] rounded-full" style={{ background: color }} />
-      <span className="text-[11px] w-[110px]" style={{ color: '#C8D4A8' }}>{stage.stage_name}</span>
-      <div className="flex-1 h-[5px] rounded-full" style={{ background: '#1A1F0D' }}>
+      <span className="text-[11px] w-[110px] text-muted-foreground">{stage.stage_name}</span>
+      <div className="flex-1 h-[5px] rounded-full bg-muted">
         <div className="h-full rounded-full" style={{ width: `${Math.max((stage.deal_count / maxCount) * 100, 2)}%`, background: color }} />
       </div>
       <span className="text-[13px] font-bold tabular-nums w-[28px] text-right" style={{ color }}>{stage.deal_count}</span>
@@ -130,63 +130,63 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
   return (
     <div className="grid items-stretch gap-[12px]" style={{ gridTemplateColumns: '1.35fr 1fr 0.9fr' }}>
       {/* CARD 1 — Velocidade do Pipeline */}
-      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+      <div className="flex flex-col rounded-xl border border-border bg-card p-[18px]">
         <p className="text-[13px] font-bold text-foreground mb-[3px]">Velocidade do Pipeline</p>
-        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>{activeStages.length} estágios com deals ativos</p>
+        <p className="text-[11px] mb-[14px] text-muted-foreground">{activeStages.length} estágios com deals ativos</p>
 
         {entryStages.length > 0 && (
           <>
-            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Entrada</p>
-            {entryStages.map((s, i) => renderStageRow(s, '#2CBBA6', i === entryStages.length - 1))}
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px] text-muted-foreground">Entrada</p>
+            {entryStages.map((s, i) => renderStageRow(s, '#4ADE80', i === entryStages.length - 1))}
           </>
         )}
         {activityStages.length > 0 && (
           <>
-            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Atividade</p>
-            {activityStages.map((s, i) => renderStageRow(s, '#4A9FE0', i === activityStages.length - 1))}
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px] text-muted-foreground">Atividade</p>
+            {activityStages.map((s, i) => renderStageRow(s, '#5B9CF6', i === activityStages.length - 1))}
           </>
         )}
         {conversionStages.length > 0 && (
           <>
-            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px]" style={{ color: '#3D4A28' }}>Conversão</p>
-            {conversionStages.map((s, i) => renderStageRow(s, '#AFC040', i === conversionStages.length - 1))}
+            <p className="text-[9px] font-bold uppercase tracking-[.07em] py-[8px] pb-[5px] text-muted-foreground">Conversão</p>
+            {conversionStages.map((s, i) => renderStageRow(s, '#A8E63D', i === conversionStages.length - 1))}
           </>
         )}
 
         <div className="flex-1" />
         {bottleneck && bottleneckPct > 30 && (
-          <div className="rounded-r-[8px] border-l-[3px] border-l-primary p-[10px_12px] mt-[14px]" style={{ background: '#191D0C' }}>
-            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Gargalo</p>
-            <p className="text-[11px] leading-[1.5]" style={{ color: '#AFC040' }}>{bottleneckPct}% dos deals parados em {bottleneck.stage_name}.</p>
+          <div className="rounded-r-[8px] border-l-[3px] border-l-primary p-[10px_12px] mt-[14px] bg-muted">
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px] text-muted-foreground">Gargalo</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#A8E63D' }}>{bottleneckPct}% dos deals parados em {bottleneck.stage_name}.</p>
           </div>
         )}
       </div>
 
       {/* CARD 2 — Receita em Aberto */}
-      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+      <div className="flex flex-col rounded-xl border border-border bg-card p-[18px]">
         <p className="text-[13px] font-bold text-foreground mb-[3px]">Receita em Aberto</p>
-        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>Potencial dos {activeDeals.length} deals ativos</p>
+        <p className="text-[11px] mb-[14px] text-muted-foreground">Potencial dos {activeDeals.length} deals ativos</p>
 
-        <div className="text-center py-[20px] pb-[18px] border-b border-[#191D0C]">
-          <p className="text-[9px] uppercase mb-[8px]" style={{ color: '#3D4A28' }}>Total potencial</p>
-          <p className="text-[32px] font-bold leading-none" style={{ color: '#E8A43C' }}>{formatK(totalPotential)}</p>
-          <p className="text-[10px] mt-[6px]" style={{ color: '#3D4A28' }}>se todos os deals fecharem</p>
+        <div className="text-center py-[20px] pb-[18px] border-b border-border">
+          <p className="text-[9px] uppercase mb-[8px] text-muted-foreground">Total potencial</p>
+          <p className="text-[32px] font-bold leading-none" style={{ color: '#FB923C' }}>{formatK(totalPotential)}</p>
+          <p className="text-[10px] mt-[6px] text-muted-foreground">se todos os deals fecharem</p>
         </div>
 
         {phase1Deals.length > 0 && (
-          <div className="py-[12px] border-b border-[#191D0C]">
+          <div className="py-[12px] border-b border-border">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Primeira metade</p>
-                <p className="text-[10px]" style={{ color: '#3D4A28' }}>{phase1Deals.length} deals</p>
+                <p className="text-[11px] text-foreground/80">Primeira metade</p>
+                <p className="text-[10px] text-muted-foreground">{phase1Deals.length} deals</p>
               </div>
               <div className="text-right">
-                <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>{formatK(phase1Amount)}</p>
-                <p className="text-[9px]" style={{ color: '#3D4A28' }}>{phase1Pct}% do total</p>
+                <p className="text-[15px] font-bold" style={{ color: '#FB923C' }}>{formatK(phase1Amount)}</p>
+                <p className="text-[9px] text-muted-foreground">{phase1Pct}% do total</p>
               </div>
             </div>
-            <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
-              <div className="h-full rounded-full" style={{ width: `${phase1Pct}%`, background: '#E8A43C', opacity: 0.6 }} />
+            <div className="h-[4px] rounded-full mt-[6px] bg-muted">
+              <div className="h-full rounded-full" style={{ width: `${phase1Pct}%`, background: '#FB923C', opacity: 0.6 }} />
             </div>
           </div>
         )}
@@ -195,51 +195,51 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
           <div className="py-[12px]">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-[11px]" style={{ color: '#C8D4A8' }}>Segunda metade</p>
-                <p className="text-[10px]" style={{ color: '#3D4A28' }}>{phase2Deals.length} deals</p>
+                <p className="text-[11px] text-foreground/80">Segunda metade</p>
+                <p className="text-[10px] text-muted-foreground">{phase2Deals.length} deals</p>
               </div>
               <div className="text-right">
-                <p className="text-[15px] font-bold" style={{ color: '#E8A43C' }}>{formatK(phase2Amount)}</p>
-                <p className="text-[9px]" style={{ color: phase2Pct > 50 ? '#AFC040' : '#3D4A28' }}>{phase2Pct}% do total{phase2Pct > 50 ? ' ↑' : ''}</p>
+                <p className="text-[15px] font-bold" style={{ color: '#FB923C' }}>{formatK(phase2Amount)}</p>
+                <p className={`text-[9px] ${phase2Pct > 50 ? '' : 'text-muted-foreground'}`} style={{ color: phase2Pct > 50 ? '#A8E63D' : undefined }}>{phase2Pct}% do total{phase2Pct > 50 ? ' ↑' : ''}</p>
               </div>
             </div>
-            <div className="h-[4px] rounded-full mt-[6px]" style={{ background: '#1A1F0D' }}>
-              <div className="h-full rounded-full" style={{ width: `${phase2Pct}%`, background: '#E8A43C' }} />
+            <div className="h-[4px] rounded-full mt-[6px] bg-muted">
+              <div className="h-full rounded-full" style={{ width: `${phase2Pct}%`, background: '#FB923C' }} />
             </div>
           </div>
         )}
 
         <div className="flex-1" />
         {activeDeals.length > 0 && (
-          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#B07830' }}>
-            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Prioridade</p>
-            <p className="text-[11px] leading-[1.5]" style={{ color: '#E8A43C' }}>{activeDeals.length} deal{activeDeals.length > 1 ? 's' : ''} com {formatK(totalPotential)} em potencial.</p>
+          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px] bg-muted" style={{ borderLeftColor: '#FB923C' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px] text-muted-foreground">Prioridade</p>
+            <p className="text-[11px] leading-[1.5]" style={{ color: '#FB923C' }}>{activeDeals.length} deal{activeDeals.length > 1 ? 's' : ''} com {formatK(totalPotential)} em potencial.</p>
           </div>
         )}
       </div>
 
       {/* CARD 3 — Status dos Deals */}
-      <div className="flex flex-col rounded-[12px] border border-border bg-[#131608] p-[18px]" style={{ fontFamily: 'Sora, sans-serif' }}>
+      <div className="flex flex-col rounded-xl border border-border bg-card p-[18px]">
         <p className="text-[13px] font-bold text-foreground mb-[3px]">Status dos Deals</p>
-        <p className="text-[11px] mb-[14px]" style={{ color: '#3D4A28' }}>{totalDealsCount} deals no total</p>
+        <p className="text-[11px] mb-[14px] text-muted-foreground">{totalDealsCount} deals no total</p>
 
         <div className="flex justify-center py-[12px] pb-[16px]">
           <svg viewBox="0 0 110 110" width="110" height="110">
-            <circle cx="55" cy="55" r="42" fill="none" stroke="#1A1F0D" strokeWidth="14" />
+            <circle cx="55" cy="55" r="42" fill="none" stroke="hsl(145 10% 88%)" strokeWidth="14" />
             {arcs.map((arc, i) => (
               <circle key={i} cx="55" cy="55" r="42" fill="none" stroke={arc.color} strokeWidth="14"
                 strokeDasharray={`${arc.dash} ${circumference}`} strokeDashoffset={arc.offset} strokeLinecap="butt" />
             ))}
-            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#E8EDD8" style={{ fontFamily: 'Sora, sans-serif' }}>{totalDealsCount}</text>
-            <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#4A5230" style={{ fontFamily: 'Sora, sans-serif' }}>deals</text>
+            <text x="55" y="50" textAnchor="middle" dominantBaseline="central" fontSize="20" fontWeight="700" fill="#0D2818">{totalDealsCount}</text>
+            <text x="55" y="65" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="#627D6A">deals</text>
           </svg>
         </div>
 
         {donutSegments.map((item, i) => (
-          <div key={item.name} className={`flex items-center justify-between py-[8px] ${i < donutSegments.length - 1 ? 'border-b border-[#191D0C]' : ''}`}>
+          <div key={item.name} className={`flex items-center justify-between py-[8px] ${i < donutSegments.length - 1 ? 'border-b border-border' : ''}`}>
             <div className="flex items-center gap-[6px]">
               <div className="w-[8px] h-[8px] rounded-full" style={{ background: item.color }} />
-              <span className="text-[11px]" style={{ color: '#C8D4A8' }}>{item.name}</span>
+              <span className="text-[11px] text-muted-foreground">{item.name}</span>
             </div>
             <span className="text-[13px] font-bold tabular-nums" style={{ color: item.color }}>{item.value}</span>
           </div>
@@ -247,9 +247,9 @@ function BottomCards({ pipelineStages, filteredDeals, C }: { pipelineStages: Sta
 
         <div className="flex-1" />
         {lostPct > 30 && (
-          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px]" style={{ background: '#191D0C', borderLeftColor: '#C94A2F' }}>
-            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px]" style={{ color: '#3D4A28' }}>Atenção</p>
-            <p className="text-[11px] leading-[1.5]" style={{ color: '#E8684A' }}>{lostPct}% dos deals foram perdidos.</p>
+          <div className="rounded-r-[8px] border-l-[3px] p-[10px_12px] mt-[14px] bg-muted" style={{ borderLeftColor: '#EF4444' }}>
+            <p className="text-[9px] uppercase tracking-[.06em] mb-[3px] text-muted-foreground">Atenção</p>
+            <p className="text-[11px] leading-[1.5] text-destructive">{lostPct}% dos deals foram perdidos.</p>
           </div>
         )}
       </div>
@@ -563,7 +563,7 @@ const SalesPipelineDashboard = () => {
           <Button variant="ghost" size="sm" className="text-muted-foreground relative" onClick={() => setShowFilters(!showFilters)}>
             <Filter className="h-4 w-4 mr-2" />Filtros
             {activeFilterCount > 0 && (
-              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-[#AFC040] text-[#0D0D0D] text-[10px] font-bold flex items-center justify-center">{activeFilterCount}</span>
+              <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-accent text-foreground text-[10px] font-bold flex items-center justify-center">{activeFilterCount}</span>
             )}
           </Button>
           <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 font-semibold">
@@ -634,8 +634,8 @@ const SalesPipelineDashboard = () => {
 
       {/* ── Tabs ───────────────────────────────────────────── */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-5">
-        <div className="border-b border-border pb-0 overflow-x-auto scrollbar-thin">
-          <TabsList className="bg-transparent gap-1 p-0 h-auto">
+        <div className="overflow-x-auto scrollbar-thin">
+          <TabsList className="bg-muted gap-1 p-1 rounded-full">
             {[
               { v: "pipeline", l: "Pipeline de Vendas" },
               { v: "leads", l: "Canais de Leads" },
@@ -643,7 +643,7 @@ const SalesPipelineDashboard = () => {
               { v: "growth", l: "Crescimento" },
             ].map(t => (
               <TabsTrigger key={t.v} value={t.v}
-                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground data-[state=active]:bg-accent data-[state=active]:text-accent-foreground data-[state=active]:font-semibold transition-colors"
+                className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:font-semibold transition-colors"
               >{t.l}</TabsTrigger>
             ))}
           </TabsList>

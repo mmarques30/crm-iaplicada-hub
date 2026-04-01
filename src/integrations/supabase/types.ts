@@ -82,6 +82,42 @@ export type Database = {
           },
         ]
       }
+      communities: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          descricao: string | null
+          emoji_padrao: string | null
+          id: string
+          nome: string
+          objetivo: string | null
+          slug: string
+          tom_de_voz: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          emoji_padrao?: string | null
+          id?: string
+          nome: string
+          objetivo?: string | null
+          slug: string
+          tom_de_voz?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          emoji_padrao?: string | null
+          id?: string
+          nome?: string
+          objetivo?: string | null
+          slug?: string
+          tom_de_voz?: string | null
+        }
+        Relationships: []
+      }
       contact_list_memberships: {
         Row: {
           added_at: string | null
@@ -841,6 +877,63 @@ export type Database = {
         }
         Relationships: []
       }
+      events: {
+        Row: {
+          comunidade: string | null
+          created_at: string | null
+          data: string
+          descricao: string | null
+          ferramenta: string | null
+          ferramenta_descricao: string | null
+          horario: string | null
+          id: string
+          plataforma: string | null
+          produto: string | null
+          status: string
+          stories_teaser: string | null
+          tags: string[] | null
+          tipo: string
+          titulo: string
+          updated_at: string | null
+        }
+        Insert: {
+          comunidade?: string | null
+          created_at?: string | null
+          data: string
+          descricao?: string | null
+          ferramenta?: string | null
+          ferramenta_descricao?: string | null
+          horario?: string | null
+          id?: string
+          plataforma?: string | null
+          produto?: string | null
+          status?: string
+          stories_teaser?: string | null
+          tags?: string[] | null
+          tipo?: string
+          titulo: string
+          updated_at?: string | null
+        }
+        Update: {
+          comunidade?: string | null
+          created_at?: string | null
+          data?: string
+          descricao?: string | null
+          ferramenta?: string | null
+          ferramenta_descricao?: string | null
+          horario?: string | null
+          id?: string
+          plataforma?: string | null
+          produto?: string | null
+          status?: string
+          stories_teaser?: string | null
+          tags?: string[] | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       form_fields: {
         Row: {
           created_at: string | null
@@ -1167,6 +1260,152 @@ export type Database = {
           },
         ]
       }
+      launch_campaigns: {
+        Row: {
+          big_idea: string | null
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          id: string
+          inimigo_narrativo: string | null
+          metodo: string | null
+          nome: string
+          oferta: string | null
+          status: string
+        }
+        Insert: {
+          big_idea?: string | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          inimigo_narrativo?: string | null
+          metodo?: string | null
+          nome: string
+          oferta?: string | null
+          status?: string
+        }
+        Update: {
+          big_idea?: string | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          id?: string
+          inimigo_narrativo?: string | null
+          metodo?: string | null
+          nome?: string
+          oferta?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
+      launch_messages: {
+        Row: {
+          campaign_id: string
+          canal: string
+          copy_text: string | null
+          created_at: string | null
+          data: string | null
+          done: boolean | null
+          id: string
+          phase_id: string | null
+          roteiro: string | null
+          sort_order: number | null
+          story_type: string | null
+          subject_line: string | null
+          titulo: string
+        }
+        Insert: {
+          campaign_id: string
+          canal?: string
+          copy_text?: string | null
+          created_at?: string | null
+          data?: string | null
+          done?: boolean | null
+          id?: string
+          phase_id?: string | null
+          roteiro?: string | null
+          sort_order?: number | null
+          story_type?: string | null
+          subject_line?: string | null
+          titulo: string
+        }
+        Update: {
+          campaign_id?: string
+          canal?: string
+          copy_text?: string | null
+          created_at?: string | null
+          data?: string | null
+          done?: boolean | null
+          id?: string
+          phase_id?: string | null
+          roteiro?: string | null
+          sort_order?: number | null
+          story_type?: string | null
+          subject_line?: string | null
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_messages_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "launch_campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "launch_messages_phase_id_fkey"
+            columns: ["phase_id"]
+            isOneToOne: false
+            referencedRelation: "launch_phases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      launch_phases: {
+        Row: {
+          campaign_id: string
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          emocao_chave: string | null
+          id: string
+          nome: string
+          objetivo: string | null
+          ordem: number | null
+        }
+        Insert: {
+          campaign_id: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          emocao_chave?: string | null
+          id?: string
+          nome: string
+          objetivo?: string | null
+          ordem?: number | null
+        }
+        Update: {
+          campaign_id?: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          emocao_chave?: string | null
+          id?: string
+          nome?: string
+          objetivo?: string | null
+          ordem?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "launch_phases_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "launch_campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       metas: {
         Row: {
           ano: number
@@ -1486,6 +1725,53 @@ export type Database = {
             columns: ["venda_id"]
             isOneToOne: false
             referencedRelation: "vendas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      routine_messages: {
+        Row: {
+          canal: string
+          comunidade: string
+          copy_text: string
+          created_at: string | null
+          data: string
+          event_id: string | null
+          horario: string | null
+          id: string
+          status: string
+          titulo: string
+        }
+        Insert: {
+          canal?: string
+          comunidade?: string
+          copy_text: string
+          created_at?: string | null
+          data: string
+          event_id?: string | null
+          horario?: string | null
+          id?: string
+          status?: string
+          titulo: string
+        }
+        Update: {
+          canal?: string
+          comunidade?: string
+          copy_text?: string
+          created_at?: string | null
+          data?: string
+          event_id?: string | null
+          horario?: string | null
+          id?: string
+          status?: string
+          titulo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "routine_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
             referencedColumns: ["id"]
           },
         ]

@@ -24,7 +24,28 @@ const PIPELINE_ICONS: Record<string, typeof Briefcase> = {
 };
 const DEFAULT_PIPELINE_ICON = Layers;
 
-const ACTIVE_CLASS = "bg-[#141A04] text-[#AFC040] font-semibold";
+const ACTIVE_CLASS = "bg-sidebar-accent text-white font-semibold border-l-[3px] border-l-[#A8E63D]";
+
+/* Dot colors per module */
+const DOT_COLORS: Record<string, string> = {
+  dashboard: "#A8E63D",
+  pipeline: "#5B9CF6",
+  contacts: "#5B9CF6",
+  conteudo: "#A78BFA",
+  comercial: "#FB923C",
+  financeiro: "#4ADE80",
+  analytics: "#A78BFA",
+  email: "#5B9CF6",
+  forms: "#FB923C",
+  tasks: "#4ADE80",
+  settings: "#FB923C",
+  admin: "#EF4444",
+};
+
+function DotIndicator({ module }: { module: string }) {
+  const color = DOT_COLORS[module] || "#A8E63D";
+  return <span className="w-[5px] h-[5px] rounded-[2px] flex-shrink-0" style={{ background: color }} />;
+}
 
 const analyticsItems = [
   { title: "Visão Geral", url: "/painel", icon: BarChart3 },
@@ -95,7 +116,8 @@ export function AppSidebar() {
     items: Array<{ title: string; url: string; icon: typeof BarChart3 }>,
     isActive: boolean,
     open: boolean,
-    setOpen: (v: boolean) => void
+    setOpen: (v: boolean) => void,
+    module: string
   ) => {
     const Icon = icon;
     return (
@@ -103,6 +125,7 @@ export function AppSidebar() {
         <Collapsible open={open || isActive} onOpenChange={setOpen}>
           <CollapsibleTrigger asChild>
             <SidebarMenuButton className={`w-full ${isActive ? ACTIVE_CLASS : ''}`}>
+              {!collapsed && <DotIndicator module={module} />}
               <Icon className="h-4 w-4" />
               {!collapsed && (
                 <>
@@ -114,13 +137,13 @@ export function AppSidebar() {
           </CollapsibleTrigger>
           {!collapsed && (
             <CollapsibleContent>
-              <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
+              <div className="ml-6 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
                 {items.map((item) => (
                   <NavLink
                     key={item.url}
                     to={item.url}
                     end
-                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors"
+                    className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors"
                     activeClassName={ACTIVE_CLASS}
                   >
                     <item.icon className="h-3.5 w-3.5" />
@@ -160,6 +183,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/" end activeClassName={ACTIVE_CLASS}>
+                      {!collapsed && <DotIndicator module="dashboard" />}
                       <LayoutDashboard className="h-4 w-4" />
                       {!collapsed && <span>Dashboard</span>}
                     </NavLink>
@@ -167,12 +191,13 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {hasAccess('pipeline') && renderCollapsible("Pipeline", Kanban, pipelineItems, isPipelineActive, pipelineOpen, setPipelineOpen)}
+              {hasAccess('pipeline') && renderCollapsible("Pipeline", Kanban, pipelineItems, isPipelineActive, pipelineOpen, setPipelineOpen, "pipeline")}
 
               {hasAccess('contacts') && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/contacts" activeClassName={ACTIVE_CLASS}>
+                      {!collapsed && <DotIndicator module="contacts" />}
                       <Users className="h-4 w-4" />
                       {!collapsed && <span>Contatos</span>}
                     </NavLink>
@@ -180,19 +205,20 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {renderCollapsible("Conteúdo", PenTool, conteudoItems, isConteudoActive, conteudoOpen, setConteudoOpen)}
+              {renderCollapsible("Conteúdo", PenTool, conteudoItems, isConteudoActive, conteudoOpen, setConteudoOpen, "conteudo")}
 
-              {hasAccess('comercial') && renderCollapsible("Comercial", ShoppingCart, comercialItems, isComercialActive, comercialOpen, setComercialOpen)}
+              {hasAccess('comercial') && renderCollapsible("Comercial", ShoppingCart, comercialItems, isComercialActive, comercialOpen, setComercialOpen, "comercial")}
 
-              {hasAccess('financeiro') && renderCollapsible("Financeiro", Wallet, financeiroItems, isFinanceiroActive, financeiroOpen, setFinanceiroOpen)}
+              {hasAccess('financeiro') && renderCollapsible("Financeiro", Wallet, financeiroItems, isFinanceiroActive, financeiroOpen, setFinanceiroOpen, "financeiro")}
 
-              {hasAccess('analytics') && renderCollapsible("Analytics", BarChart3, analyticsItems, isAnalyticsActive, analyticsOpen, setAnalyticsOpen)}
+              {hasAccess('analytics') && renderCollapsible("Analytics", BarChart3, analyticsItems, isAnalyticsActive, analyticsOpen, setAnalyticsOpen, "analytics")}
 
               {hasAccess('email') && (
                 <SidebarMenuItem>
                   <Collapsible open={emailOpen || isEmailActive} onOpenChange={setEmailOpen}>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton className={`w-full ${isEmailActive ? ACTIVE_CLASS : ''}`}>
+                        {!collapsed && <DotIndicator module="email" />}
                         <Mail className="h-4 w-4" />
                         {!collapsed && (
                           <>
@@ -204,20 +230,20 @@ export function AppSidebar() {
                     </CollapsibleTrigger>
                     {!collapsed && (
                       <CollapsibleContent>
-                        <div className="ml-4 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
-                          <NavLink to="/email" end className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                        <div className="ml-6 mt-1 space-y-0.5 border-l border-sidebar-border pl-3">
+                          <NavLink to="/email" end className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                             <BarChart3 className="h-3.5 w-3.5" /><span>Visão Geral</span>
                           </NavLink>
-                          <NavLink to="/email/templates" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                          <NavLink to="/email/templates" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                             <FileText className="h-3.5 w-3.5" /><span>Templates</span>
                           </NavLink>
-                          <NavLink to="/email/campaigns" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                          <NavLink to="/email/campaigns" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                             <Send className="h-3.5 w-3.5" /><span>Campanhas</span>
                           </NavLink>
-                          <NavLink to="/email/workflows" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                          <NavLink to="/email/workflows" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                             <Workflow className="h-3.5 w-3.5" /><span>Automações</span>
                           </NavLink>
-                          <NavLink to="/email/lists" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
+                          <NavLink to="/email/lists" className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors" activeClassName={ACTIVE_CLASS}>
                             <Users className="h-3.5 w-3.5" /><span>Listas</span>
                           </NavLink>
                         </div>
@@ -231,6 +257,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/formularios" activeClassName={ACTIVE_CLASS}>
+                      {!collapsed && <DotIndicator module="forms" />}
                       <FileText className="h-4 w-4" />
                       {!collapsed && <span>Formulários</span>}
                     </NavLink>
@@ -242,6 +269,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/tarefas" activeClassName={ACTIVE_CLASS}>
+                      {!collapsed && <DotIndicator module="tasks" />}
                       <ListTodo className="h-4 w-4" />
                       {!collapsed && <span>Tarefas</span>}
                     </NavLink>
@@ -253,6 +281,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/settings" activeClassName={ACTIVE_CLASS}>
+                      {!collapsed && <DotIndicator module="settings" />}
                       <Settings className="h-4 w-4" />
                       {!collapsed && <span>Configurações</span>}
                     </NavLink>
@@ -264,6 +293,7 @@ export function AppSidebar() {
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild>
                     <NavLink to="/admin" activeClassName={ACTIVE_CLASS}>
+                      {!collapsed && <DotIndicator module="admin" />}
                       <ShieldCheck className="h-4 w-4" />
                       {!collapsed && <span>Admin</span>}
                     </NavLink>

@@ -36,7 +36,7 @@ export function AppLayout() {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
-          <header className="sticky top-0 z-30 h-14 flex items-center justify-between px-3 sm:px-4 bg-background/80 backdrop-blur-xl border-b border-white/[0.06] shrink-0">
+          <header className="sticky top-0 z-30 h-14 flex items-center justify-between px-4 sm:px-6 bg-card border-b border-border shrink-0">
             <div className="flex items-center gap-2 sm:gap-3">
               <SidebarTrigger />
               <form onSubmit={handleSearch} className="hidden sm:block">
@@ -46,7 +46,7 @@ export function AppLayout() {
                     placeholder="Buscar contatos, deals..."
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="pl-9 w-48 md:w-72 h-9 rounded-full bg-white/[0.06] border-white/[0.06] focus:border-primary/40 focus:bg-white/[0.08] text-foreground placeholder:text-muted-foreground transition-colors"
+                    className="pl-9 w-48 md:w-72 h-9 rounded-lg bg-muted/50 border-border focus:border-primary text-foreground placeholder:text-muted-foreground transition-colors"
                   />
                 </div>
               </form>
@@ -57,7 +57,7 @@ export function AppLayout() {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <button className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-primary-foreground cursor-pointer hover:opacity-90 transition-opacity">
+                  <button className="w-8 h-8 rounded-full bg-primary flex items-center justify-center text-xs font-semibold text-primary-foreground cursor-pointer hover:ring-2 hover:ring-accent transition-all">
                     {initials}
                   </button>
                 </DropdownMenuTrigger>

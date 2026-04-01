@@ -13,26 +13,28 @@ interface KPICardProps {
 export function KPICard({ label, value, sub, accentColor, icon: Icon, trend, onClick }: KPICardProps) {
   return (
     <div
-      className={`relative bg-[var(--c-card)] border border-[var(--c-border)] rounded-xl p-3 sm:p-[18px_20px] flex flex-col gap-1 transition-colors hover:border-[var(--c-border-h)] min-w-0 ${onClick ? 'cursor-pointer' : ''}`}
-      style={{ borderLeft: `3px solid ${accentColor}` }}
+      className={`relative bg-card border border-border rounded-xl p-6 flex flex-col gap-1 transition-colors hover:border-border/80 min-w-0 ${onClick ? 'cursor-pointer' : ''}`}
       onClick={onClick}
     >
       <div className="absolute top-4 right-4">
-        <Icon className="h-4 w-4" style={{ color: accentColor }} />
+        <Icon className="h-4 w-4 text-muted-foreground" />
       </div>
-      <p className="text-xs font-medium" style={{ color: 'var(--c-text-s)' }}>{label}</p>
-      <p className="text-xl sm:text-2xl font-bold font-mono tabular-nums leading-tight overflow-hidden text-ellipsis whitespace-nowrap" style={{ color: accentColor }}>
+      <div className="flex items-center gap-2 mb-1">
+        <span className="w-[5px] h-[5px] rounded-[2px] flex-shrink-0" style={{ background: accentColor }} />
+        <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">{label}</p>
+      </div>
+      <p className="text-3xl sm:text-4xl font-bold tabular-nums leading-tight overflow-hidden text-ellipsis whitespace-nowrap text-foreground">
         {typeof value === 'number' ? value.toLocaleString('pt-BR') : value}
       </p>
-      {sub && <p className="text-[11px]" style={{ color: 'var(--c-text-m)' }}>{sub}</p>}
+      {sub && <p className="text-[13px] text-muted-foreground mt-1">{sub}</p>}
       {trend && (
         <div className="flex items-center gap-1 mt-1">
           {trend.positive ? (
-            <TrendingUp className="h-3 w-3" style={{ color: 'var(--c-green)' }} />
+            <TrendingUp className="h-3 w-3 text-green-500" />
           ) : (
-            <TrendingDown className="h-3 w-3" style={{ color: 'var(--c-coral)' }} />
+            <TrendingDown className="h-3 w-3 text-destructive" />
           )}
-          <span className="text-[11px] font-medium" style={{ color: trend.positive ? 'var(--c-green)' : 'var(--c-coral)' }}>
+          <span className={`text-[11px] font-medium ${trend.positive ? 'text-green-500' : 'text-destructive'}`}>
             {trend.value}
           </span>
         </div>
