@@ -127,24 +127,21 @@ REGRAS:
 - Se pós-call: agradeça e envie resumo
 - Apenas a mensagem, sem explicações`
 
-      // Call Claude API via Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('generate-insights', {
+      // Call Claude API via generate-content Edge Function
+      const { data, error } = await supabase.functions.invoke('generate-content', {
         body: {
-          context: 'cadence_message',
-          data: { prompt, step: stepId, leadContext },
+          action: 'generate_cadence_message',
+          prompt,
+          step: stepId,
+          leadContext,
         },
       })
 
-      if (error) {
-        // Fallback: generate locally based on templates
-        return generateLocalMessage(stepId, contact, deal, product)
+      if (!error && data?.message) {
+        return data.message
       }
 
-      // If the edge function returns insights format, extract the text
-      if (data?.insights?.[0]?.description) {
-        return data.insights[0].description
-      }
-
+      // Fallback: generate locally based on templates
       return generateLocalMessage(stepId, contact, deal, product)
     },
     onSuccess: (msg, stepId) => {

@@ -196,8 +196,45 @@ Deno.serve(async (req) => {
         break
       }
 
+      case 'generate_cadence_message': {
+        // Gera UMA mensagem personalizada para cadência de vendas via Claude
+        const { prompt } = body
+        if (!prompt) throw new Error('prompt is required')
+
+        if (!CLAUDE_KEY) {
+          result = { success: false, message: null, error: 'CLAUDE_API_KEY not configured' }
+          break
+        }
+
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method: 'POST',
+          headers: {
+            'x-api-key': CLAUDE_KEY,
+            'anthropic-version': '2023-06-01',
+            'content-type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'claude-sonnet-4-20250514',
+            max_tokens: 1000,
+            messages: [{ role: 'user', content: prompt }],
+          }),
+        })
+
+        if (!res.ok) {
+          const errText = await res.text()
+          console.error('Claude API error:', res.status, errText)
+          result = { success: false, message: null }
+          break
+        }
+
+        const claudeData = await res.json()
+        const messageText = claudeData.content?.[0]?.text || null
+        result = { success: true, message: messageText }
+        break
+      }
+
       default:
-        throw new Error(`Unknown action: ${action}. Use: research, suggest, generate`)
+        throw new Error(`Unknown action: ${action}. Use: research, suggest, generate, generate_cadence_message`)
     }
 
     return new Response(
