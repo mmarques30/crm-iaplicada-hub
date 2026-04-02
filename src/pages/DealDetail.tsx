@@ -16,6 +16,7 @@ import {
   ArrowLeft, Mail, Phone, Building2, FileText, MessageSquare, Video,
   StickyNote, ArrowRightLeft, Clock, FileX, Instagram, Edit2, Save, Loader2,
   Briefcase, Globe, GraduationCap, Target, MapPin, HelpCircle,
+  Link2, ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +33,8 @@ export default function DealDetail() {
   const { id } = useParams<{ id: string }>();
   const queryClient = useQueryClient();
   const [editOpen, setEditOpen] = useState(false);
+  const [proposalLink, setProposalLink] = useState('');
+  const [savingProposal, setSavingProposal] = useState(false);
 
   const { data: deal, isLoading, isError } = useQuery({
     queryKey: ["deal", id],
@@ -228,6 +231,46 @@ export default function DealDetail() {
                 </div>
               </>
             )}
+            <Separator />
+            {/* Proposta / Link */}
+            <div>
+              <p className="text-xs text-muted-foreground mb-1">Proposta</p>
+              {(deal as any).proposal_link ? (
+                <a href={(deal as any).proposal_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-[#4A9FE0] hover:underline">
+                  <ExternalLink className="h-3.5 w-3.5" />
+                  Ver proposta
+                </a>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Cole link da proposta (URL ou HTML)"
+                    value={proposalLink}
+                    onChange={e => setProposalLink(e.target.value)}
+                    className="h-8 text-xs flex-1"
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 text-xs gap-1"
+                    disabled={!proposalLink || savingProposal}
+                    onClick={async () => {
+                      setSavingProposal(true)
+                      try {
+                        const { error } = await supabase.from("deals").update({ proposal_link: proposalLink } as any).eq("id", id!)
+                        if (error) throw error
+                        queryClient.invalidateQueries({ queryKey: ["deal", id] })
+                        toast.success("Proposta vinculada!")
+                        setProposalLink('')
+                      } catch (e: any) { toast.error(e.message) }
+                      finally { setSavingProposal(false) }
+                    }}
+                  >
+                    <Link2 className="h-3 w-3" />
+                    Salvar
+                  </Button>
+                </div>
+              )}
+            </div>
             <Separator />
             <div>
               <p className="text-xs text-muted-foreground">Criado em</p>

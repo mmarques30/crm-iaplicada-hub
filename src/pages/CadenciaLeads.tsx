@@ -221,6 +221,36 @@ export default function CadenciaLeads() {
         <KPICard label="Sem Mensagem" value={noMessageCount} icon={MessageSquare} accentColor="#4A9FE0" sub={`${totalActive} leads ativos`} onClick={() => setFilterPriority(filterPriority === 'sem_msg' ? 'todos' : 'sem_msg')} />
       </div>
 
+      {/* Daily summary */}
+      <Card>
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Resumo do Dia — {new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: 'long' })}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div className="p-2 rounded-lg bg-[var(--c-raised)]">
+              <p className="text-2xl font-bold font-mono" style={{ color: '#E8684A' }}>{overdue}</p>
+              <p className="text-[10px] text-muted-foreground">leads atrasados pra abordar</p>
+            </div>
+            <div className="p-2 rounded-lg bg-[var(--c-raised)]">
+              <p className="text-2xl font-bold font-mono" style={{ color: '#E8A43C' }}>{todayCount}</p>
+              <p className="text-[10px] text-muted-foreground">mensagens pra enviar hoje</p>
+            </div>
+            <div className="p-2 rounded-lg bg-[var(--c-raised)]">
+              <p className="text-2xl font-bold font-mono" style={{ color: '#AFC040' }}>{tasks.filter(t => t.lastMessageDate && new Date(t.lastMessageDate).toDateString() === new Date().toDateString()).length}</p>
+              <p className="text-[10px] text-muted-foreground">mensagens enviadas hoje</p>
+            </div>
+            <div className="p-2 rounded-lg bg-[var(--c-raised)]">
+              <p className="text-2xl font-bold font-mono" style={{ color: '#4A9FE0' }}>{noMessageCount}</p>
+              <p className="text-[10px] text-muted-foreground">leads sem nenhum contato</p>
+            </div>
+          </div>
+          {overdue > 0 && (
+            <p className="text-xs text-[#E8684A] mt-2">⚠ {overdue} lead{overdue > 1 ? 's' : ''} precisa{overdue > 1 ? 'm' : ''} de atenção imediata — cada dia de atraso reduz a taxa de conversão.</p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Conversion research banner */}
       <Card className="border-[#E8A43C]/30">
         <CardContent className="p-3">
