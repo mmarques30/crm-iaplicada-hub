@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { CalendarDays, Video, Radio, HelpCircle, Plus, ChevronLeft, ChevronRight, Loader2, Trash2, Sparkles, Save, RefreshCw } from 'lucide-react'
+import { CalendarDays, Video, Radio, HelpCircle, Plus, ChevronLeft, ChevronRight, Loader2, Trash2, Sparkles, Save, RefreshCw, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/format'
 
@@ -107,6 +107,7 @@ export default function ConteudoEventos() {
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterComunidade, setFilterComunidade] = useState('all')
   const [filterMes, setFilterMes] = useState('all')
+  const [editId, setEditId] = useState<string | null>(null)
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null)
   const [generatedMessages, setGeneratedMessages] = useState<GeneratedMessage[]>([])
   const [generating, setGenerating] = useState(false)
@@ -205,14 +206,20 @@ export default function ConteudoEventos() {
       if (!payload.comunidade) delete payload.comunidade
       if (!payload.descricao) delete payload.descricao
       if (!payload.data) delete payload.data
-      const { error } = await (supabase as any).from('events').insert(payload)
-      if (error) throw error
+      if (editId) {
+        const { error } = await (supabase as any).from('events').update(payload).eq('id', editId)
+        if (error) throw error
+      } else {
+        const { error } = await (supabase as any).from('events').insert(payload)
+        if (error) throw error
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['events'] })
       setEventOpen(false)
       setEventForm({ ...EMPTY_EVENT_FORM })
-      toast.success('Evento criado com sucesso!')
+      setEditId(null)
+      toast.success(editId ? 'Evento atualizado com sucesso!' : 'Evento criado com sucesso!')
     },
     onError: (e: any) => toast.error(e.message),
   })
@@ -562,14 +569,40 @@ export default function ConteudoEventos() {
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">{ev.produto || '—'}</TableCell>
                           <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
-                              onClick={() => { if (window.confirm('Remover este evento?')) deleteEvent.mutate(ev.id) }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditId(ev.id);
+                                  setEventForm({
+                                    titulo: ev.titulo || '',
+                                    tipo: ev.tipo || 'aula',
+                                    ferramenta: ev.ferramenta || '',
+                                    data: ev.data || '',
+                                    horario: ev.horario || '',
+                                    plataforma: ev.plataforma || '',
+                                    comunidade: ev.comunidade || '',
+                                    status: ev.status || 'pendente',
+                                    produto: ev.produto || 'academy',
+                                    descricao: ev.descricao || '',
+                                  });
+                                  setEventOpen(true);
+                                }}
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
+                                onClick={() => { if (window.confirm('Remover este evento?')) deleteEvent.mutate(ev.id) }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       ))
@@ -826,11 +859,11 @@ export default function ConteudoEventos() {
       </Tabs>
 
       {/* ─── New Event Dialog ─── */}
-      <Dialog open={eventOpen} onOpenChange={setEventOpen}>
+      <Dialog open={eventOpen} onOpenChange={(open) => { setEventOpen(open); if (!open) { setEditId(null); setEventForm({ ...EMPTY_EVENT_FORM }); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Novo Evento</DialogTitle>
-            <DialogDescription>Cadastrar aula, live ou sessão de Q&A</DialogDescription>
+            <DialogTitle>{editId ? 'Editar Evento' : 'Novo Evento'}</DialogTitle>
+            <DialogDescription>{editId ? 'Editar aula, live ou sessão de Q&A' : 'Cadastrar aula, live ou sessão de Q&A'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
@@ -923,7 +956,7 @@ export default function ConteudoEventos() {
               disabled={!eventForm.titulo || createEvent.isPending}
               onClick={() => createEvent.mutate()}
             >
-              {createEvent.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Evento'}
+              {createEvent.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : editId ? 'Salvar Evento' : 'Criar Evento'}
             </Button>
           </DialogFooter>
         </DialogContent>

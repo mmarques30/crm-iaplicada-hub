@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Video, Film, CheckCircle, Send, Plus, Trash2 } from 'lucide-react'
+import { Video, Film, CheckCircle, Send, Plus, Trash2, Edit2 } from 'lucide-react'
 
 /* ─── Constants ─── */
 
@@ -97,6 +97,7 @@ export default function ConteudoVideos() {
   const [filterStatus, setFilterStatus] = useState('todos')
   const [filterPlataforma, setFilterPlataforma] = useState('todos')
   const [filterProduto, setFilterProduto] = useState('todos')
+  const [editId, setEditId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState({
     titulo: '',
@@ -129,7 +130,7 @@ export default function ConteudoVideos() {
   /* ─── Mutations ─── */
   const createMutation = useMutation({
     mutationFn: async (f: typeof form) => {
-      const { error } = await (supabase as any).from('content_items').insert({
+      const data = {
         titulo: f.titulo,
         descricao: f.descricao || null,
         tipo_video: f.tipo_video,
@@ -137,15 +138,21 @@ export default function ConteudoVideos() {
         prioridade: f.prioridade,
         deadline: f.deadline || null,
         produto: f.produto,
-        status: 'backlog',
-      })
-      if (error) throw error
+      }
+      if (editId) {
+        const { error } = await (supabase as any).from('content_items').update(data).eq('id', editId)
+        if (error) throw error
+      } else {
+        const { error } = await (supabase as any).from('content_items').insert({ ...data, status: 'backlog' })
+        if (error) throw error
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['content-items'] })
       setDialogOpen(false)
       resetForm()
-      toast.success('Vídeo criado com sucesso!')
+      setEditId(null)
+      toast.success(editId ? 'Vídeo atualizado com sucesso!' : 'Vídeo criado com sucesso!')
     },
     onError: (err: any) => toast.error(`Erro: ${err.message}`),
   })
@@ -328,7 +335,7 @@ export default function ConteudoVideos() {
               </SelectContent>
             </Select>
             <div className="ml-auto">
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditId(null); resetForm(); } }}>
                 <DialogTrigger asChild>
                   <Button className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold">
                     <Plus className="h-4 w-4 mr-1" /> Novo Vídeo
@@ -336,8 +343,8 @@ export default function ConteudoVideos() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle>Novo Vídeo</DialogTitle>
-                    <DialogDescription>Adicione um novo vídeo ao pipeline de produção.</DialogDescription>
+                    <DialogTitle>{editId ? 'Editar Vídeo' : 'Novo Vídeo'}</DialogTitle>
+                    <DialogDescription>{editId ? 'Edite os dados do vídeo.' : 'Adicione um novo vídeo ao pipeline de produção.'}</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-2">
                     <div>
@@ -400,7 +407,7 @@ export default function ConteudoVideos() {
                       disabled={!form.titulo.trim() || createMutation.isPending}
                       onClick={() => createMutation.mutate(form)}
                     >
-                      {createMutation.isPending ? 'Criando...' : 'Criar Vídeo'}
+                      {createMutation.isPending ? (editId ? 'Salvando...' : 'Criando...') : editId ? 'Salvar Vídeo' : 'Criar Vídeo'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -457,14 +464,37 @@ export default function ConteudoVideos() {
                           ) : '—'}
                         </td>
                         <td className="py-2 px-3 text-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
-                            onClick={() => deleteMutation.mutate(item.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditId(item.id);
+                                setForm({
+                                  titulo: item.titulo || '',
+                                  descricao: item.descricao || '',
+                                  tipo_video: item.tipo_video || 'video',
+                                  plataforma: item.plataforma || 'youtube',
+                                  prioridade: item.prioridade || 'media',
+                                  deadline: item.deadline || '',
+                                  produto: item.produto || 'academy',
+                                });
+                                setDialogOpen(true);
+                              }}
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
+                              onClick={() => deleteMutation.mutate(item.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}
