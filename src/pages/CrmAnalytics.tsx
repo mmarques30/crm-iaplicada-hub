@@ -28,17 +28,17 @@ import {
 } from 'recharts'
 import { useNavigate } from 'react-router-dom'
 
-const PRODUCT_COLORS: Record<string, string> = { business: '#AFC040', academy: '#4A9FE0' }
-const SOURCE_COLORS = ['#2CBBA6', '#4A9FE0', '#AFC040', '#E8A43C', '#E8684A', '#7A8460']
-const TOOLTIP_STYLE = { background: '#191D0C', border: '1px solid #2E3A18', borderRadius: 8, fontFamily: 'Sora', fontSize: 12, color: '#E8EDD8' }
-const AXIS_TICK = { fontSize: 11, fill: '#7A8460' }
-const GRID_STROKE = '#1E2610'
+const PRODUCT_COLORS: Record<string, string> = { business: '#6B8C22', academy: '#3A7BBF' }
+const SOURCE_COLORS = ['#1A8A6E', '#3A7BBF', '#6B8C22', '#B87D2A', '#C0392B', '#7A8460']
+const TOOLTIP_STYLE = { background: '#FFFFFF', border: '1px solid #D9E3D9', borderRadius: 8, fontFamily: 'Inter', fontSize: 12, color: '#2E3710' }
+const AXIS_TICK = { fontSize: 11, fill: '#627D6A' }
+const GRID_STROKE = '#E8EDE8'
 
-const FREQ_COLORS = ['#7A8460', '#4A9FE0', '#E8A43C', '#E8684A', '#AFC040']
+const FREQ_COLORS = ['#94A89A', '#3A7BBF', '#B87D2A', '#C0392B', '#6B8C22']
 const LIFECYCLE_COLORS: Record<string, string> = {
-  lead: '#7A8460',
-  mql: '#E8A43C',
-  sql: '#2CBBA6',
+  lead: '#627D6A',
+  mql: '#B87D2A',
+  sql: '#1A8A6E',
 }
 
 const INITIAL_ROWS = 10
@@ -178,23 +178,23 @@ export default function CrmAnalytics() {
       <div>
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-2xl sm:text-3xl font-bold">Funil de Vendas</h1>
-          <Badge className="bg-[#141A04] text-[#AFC040]">{totals.activeDeals} Deals Ativos</Badge>
+          <Badge className="bg-[#EFF5E0] text-[#4A6B14] border border-[#6B8C22]/20">{totals.activeDeals} Deals Ativos</Badge>
           <Badge variant="secondary">{contactCount} Contatos</Badge>
         </div>
         <p className="text-sm text-muted-foreground mt-1">Análise do pipeline de vendas interno</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <KPICard label="Total Contatos" value={contactCount || 0} icon={Users} accentColor="#2CBBA6" />
-        <KPICard label="Deals Ativos" value={totals.activeDeals} icon={Briefcase} accentColor="#4A9FE0" />
-        <KPICard label="Deals Ganhos" value={totals.wonDeals} icon={Trophy} accentColor="#AFC040" />
-        <KPICard label="Deals Perdidos" value={totals.lostDeals} icon={XCircle} accentColor="#E8684A" />
+        <KPICard label="Total Contatos" value={contactCount || 0} icon={Users} accentColor="#1A8A6E" />
+        <KPICard label="Deals Ativos" value={totals.activeDeals} icon={Briefcase} accentColor="#3A7BBF" />
+        <KPICard label="Deals Ganhos" value={totals.wonDeals} icon={Trophy} accentColor="#6B8C22" />
+        <KPICard label="Deals Perdidos" value={totals.lostDeals} icon={XCircle} accentColor="#C0392B" />
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <KPICard label="Pipeline" value={formatCurrency(totals.pipelineValue)} icon={BarChart3} accentColor="#E8A43C" />
-        <KPICard label="Win Rate" value={`${winRate.toFixed(1)}%`} icon={Percent} accentColor="#AFC040" />
-        <KPICard label="Ticket Médio" value={formatCurrency(avgDeal)} icon={TrendingUp} accentColor="#E8A43C" />
-        <KPICard label="Total Fechados" value={totalClosed} icon={Target} accentColor="#2CBBA6" />
+        <KPICard label="Pipeline" value={formatCurrency(totals.pipelineValue)} icon={BarChart3} accentColor="#B87D2A" />
+        <KPICard label="Win Rate" value={`${winRate.toFixed(1)}%`} icon={Percent} accentColor="#6B8C22" />
+        <KPICard label="Ticket Médio" value={formatCurrency(avgDeal)} icon={TrendingUp} accentColor="#B87D2A" />
+        <KPICard label="Total Fechados" value={totalClosed} icon={Target} accentColor="#1A8A6E" />
       </div>
 
       <Tabs defaultValue="funnel">
@@ -208,7 +208,7 @@ export default function CrmAnalytics() {
             { v: 'leads-visitantes', l: 'Leads Visitantes' },
             { v: 'insights', l: 'Insights' },
           ].map(t => (
-            <TabsTrigger key={t.v} value={t.v} className="data-[state=active]:bg-[#AFC040] data-[state=active]:text-[#0D0D0D] data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">{t.l}</TabsTrigger>
+            <TabsTrigger key={t.v} value={t.v} className="data-[state=active]:bg-[#6B8C22] data-[state=active]:text-white data-[state=active]:font-bold rounded-full px-4 py-1.5 text-sm">{t.l}</TabsTrigger>
           ))}
         </TabsList>
 
@@ -268,7 +268,7 @@ export default function CrmAnalytics() {
                             <XAxis type="number" tick={AXIS_TICK} axisLine={false} tickLine={false} />
                             <YAxis dataKey="name" type="category" width={130} tick={AXIS_TICK} axisLine={false} tickLine={false} />
                             <Tooltip contentStyle={TOOLTIP_STYLE} />
-                            <Bar dataKey="value" name="Deals" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#E8EDD8', fontSize: 11 }}>
+                            <Bar dataKey="value" name="Deals" radius={[0, 4, 4, 0]} label={{ position: 'right', fill: '#2E3710', fontSize: 11 }}>
                               {sourceEntries.slice(0, 8).map((_, i) => (<Cell key={i} fill={SOURCE_COLORS[i % SOURCE_COLORS.length]} />))}
                             </Bar>
                           </BarChart>
@@ -291,8 +291,8 @@ export default function CrmAnalytics() {
                             <YAxis dataKey="name" type="category" width={130} tick={AXIS_TICK} axisLine={false} tickLine={false} />
                             <Tooltip contentStyle={TOOLTIP_STYLE} formatter={(v: number) => `${v}%`} />
                             <Legend />
-                            <Bar dataKey="Lead→Opp" name="Lead→Opp" fill="#4A9FE0" radius={[0, 4, 4, 0]} barSize={12} />
-                            <Bar dataKey="Opp→Won" name="Opp→Won" fill="#AFC040" radius={[0, 4, 4, 0]} barSize={12} />
+                            <Bar dataKey="Lead→Opp" name="Lead→Opp" fill="#3A7BBF" radius={[0, 4, 4, 0]} barSize={12} />
+                            <Bar dataKey="Opp→Won" name="Opp→Won" fill="#6B8C22" radius={[0, 4, 4, 0]} barSize={12} />
                           </BarChart>
                         </ResponsiveContainer>
                       ) : <p className="text-center text-muted-foreground py-8">Sem dados</p>}
@@ -378,10 +378,10 @@ export default function CrmAnalytics() {
             <>
               {/* 4 KPI Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label="Total Participantes" value={leadsAula.totalUnique} icon={GraduationCap} accentColor="#4A9FE0" />
-                <KPICard label="Leads Quentes (3+)" value={leadsAula.leadsQuentes.length} icon={Flame} accentColor="#E8A43C" />
-                <KPICard label="No CRM" value={leadsAula.inCrmCount} icon={UserCheck} accentColor="#2CBBA6" />
-                <KPICard label="Sem CRM (cadastrar)" value={leadsAula.notInCrmCount} icon={UserX} accentColor="#E8684A" />
+                <KPICard label="Total Participantes" value={leadsAula.totalUnique} icon={GraduationCap} accentColor="#3A7BBF" />
+                <KPICard label="Leads Quentes (3+)" value={leadsAula.leadsQuentes.length} icon={Flame} accentColor="#B87D2A" />
+                <KPICard label="No CRM" value={leadsAula.inCrmCount} icon={UserCheck} accentColor="#1A8A6E" />
+                <KPICard label="Sem CRM (cadastrar)" value={leadsAula.notInCrmCount} icon={UserX} accentColor="#C0392B" />
               </div>
 
               {/* Charts */}
@@ -462,8 +462,8 @@ export default function CrmAnalytics() {
                         <YAxis yAxisId="right" orientation="right" tick={AXIS_TICK} axisLine={false} tickLine={false} domain={[0, 100]} unit="%" />
                         <Tooltip contentStyle={TOOLTIP_STYLE} />
                         <Legend />
-                        <Bar yAxisId="left" dataKey="participantes" name="Participantes" fill="#4A9FE0" radius={[4, 4, 0, 0]} />
-                        <Line yAxisId="right" type="monotone" dataKey="retencao" name="Retenção %" stroke="#AFC040" strokeWidth={2} dot={{ r: 3, fill: '#AFC040' }} connectNulls />
+                        <Bar yAxisId="left" dataKey="participantes" name="Participantes" fill="#3A7BBF" radius={[4, 4, 0, 0]} />
+                        <Line yAxisId="right" type="monotone" dataKey="retencao" name="Retenção %" stroke="#6B8C22" strokeWidth={2} dot={{ r: 3, fill: '#6B8C22' }} connectNulls />
                       </ComposedChart>
                     </ResponsiveContainer>
                   </CardContent>
@@ -518,9 +518,9 @@ export default function CrmAnalytics() {
                                   <TableCell className="text-center">
                                     <span className="font-mono font-bold">{lead.totalAulas}</span>
                                     <Badge variant="secondary" className={`ml-1 text-[10px] ${
-                                      lead.totalAulas >= 10 ? 'bg-[#1A0604] text-[#E8684A]' :
-                                      lead.totalAulas >= 5 ? 'bg-[#1A0E04] text-[#E8A43C]' :
-                                      'bg-[#141A04] text-[#AFC040]'
+                                      lead.totalAulas >= 10 ? 'bg-red-50 text-[#C0392B]' :
+                                      lead.totalAulas >= 5 ? 'bg-orange-50 text-[#B87D2A]' :
+                                      'bg-[#EFF5E0] text-[#4A6B14]'
                                     }`}>
                                       {lead.frequenciaLabel}
                                     </Badge>
@@ -528,9 +528,9 @@ export default function CrmAnalytics() {
                                   <TableCell className="font-mono font-bold">{lead.score}</TableCell>
                                   <TableCell>
                                     {lead.inCrm ? (
-                                      <Badge className="text-[10px] bg-[#031411] text-[#2CBBA6]">No CRM</Badge>
+                                      <Badge className="text-[10px] bg-emerald-50 text-[#1A8A6E]">No CRM</Badge>
                                     ) : (
-                                      <Badge className="text-[10px] bg-[#1A0604] text-[#E8684A]">Falta</Badge>
+                                      <Badge className="text-[10px] bg-red-50 text-[#C0392B]">Falta</Badge>
                                     )}
                                   </TableCell>
                                   <TableCell>
@@ -549,7 +549,7 @@ export default function CrmAnalytics() {
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-7 gap-1 text-[11px] text-[#2CBBA6] hover:text-[#2CBBA6] hover:bg-[#031411]"
+                                      className="h-7 gap-1 text-[11px] text-[#1A8A6E] hover:text-[#1A8A6E] hover:bg-emerald-50"
                                       onClick={(e) => { e.stopPropagation(); setExpandedMsg(isExpanded ? null : msgKey) }}
                                     >
                                       <MessageSquare className="h-3 w-3" />
@@ -562,11 +562,11 @@ export default function CrmAnalytics() {
                                     <TableCell colSpan={8} className="bg-[var(--c-raised)] p-3">
                                       <div className="space-y-2">
                                         <div className="flex items-center justify-between">
-                                          <span className="text-xs font-semibold text-[#AFC040]">Mensagem de Conversão — {lead.name}</span>
+                                          <span className="text-xs font-semibold text-[#4A6B14]">Mensagem de Conversão — {lead.name}</span>
                                           <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-6 gap-1 text-[10px] text-[#4A9FE0]"
+                                            className="h-6 gap-1 text-[10px] text-[#2A6BA0]"
                                             disabled={generatingMsg === msgKey}
                                             onClick={() => generateAIMsg(msgKey, `Gere uma mensagem curta de WhatsApp para converter o lead "${lead.name}" que participou de ${lead.totalAulas} aulas da IA Prática. Produto: IAplicada Academy (R$147/mês). Ton: profissional mas próximo. Máximo 4 linhas. Sem emojis excessivos. Primeira pessoa singular. Mencione a participação dele nas aulas como prova de interesse.`)}
                                           >
@@ -652,10 +652,10 @@ export default function CrmAnalytics() {
             <>
               {/* 4 KPI Cards */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <KPICard label="Total Acessos" value={leadsVisitantes.resumo.totalAcessos} icon={Eye} accentColor="#4A9FE0" />
-                <KPICard label="Visitantes Únicos" value={leadsVisitantes.resumo.uniqueUsers} icon={Users} accentColor="#AFC040" />
-                <KPICard label="Últimos 7 Dias" value={leadsVisitantes.resumo.accessesLast7Days} icon={TrendingUp} accentColor="#2CBBA6" />
-                <KPICard label="Também no CRM" value={leadsVisitantes.inCrmCount} icon={UserCheck} accentColor="#E8A43C" />
+                <KPICard label="Total Acessos" value={leadsVisitantes.resumo.totalAcessos} icon={Eye} accentColor="#3A7BBF" />
+                <KPICard label="Visitantes Únicos" value={leadsVisitantes.resumo.uniqueUsers} icon={Users} accentColor="#6B8C22" />
+                <KPICard label="Últimos 7 Dias" value={leadsVisitantes.resumo.accessesLast7Days} icon={TrendingUp} accentColor="#1A8A6E" />
+                <KPICard label="Também no CRM" value={leadsVisitantes.inCrmCount} icon={UserCheck} accentColor="#B87D2A" />
               </div>
 
               {/* Top Conteúdos */}
@@ -747,7 +747,7 @@ export default function CrmAnalytics() {
                                   <TableCell className="text-muted-foreground text-xs max-w-[200px] truncate">{lead.email}</TableCell>
                                   <TableCell className="text-center">
                                     <span className="font-mono font-bold" style={{
-                                      color: lead.score >= 70 ? '#2CBBA6' : lead.score >= 40 ? '#E8A43C' : '#7A8460'
+                                      color: lead.score >= 70 ? '#1A8A6E' : lead.score >= 40 ? '#B87D2A' : '#627D6A'
                                     }}>
                                       {lead.score}
                                     </span>
@@ -760,16 +760,16 @@ export default function CrmAnalytics() {
                                   </TableCell>
                                   <TableCell>
                                     {lead.inCrm ? (
-                                      <Badge className="text-[10px] bg-[#031411] text-[#2CBBA6]">No CRM</Badge>
+                                      <Badge className="text-[10px] bg-emerald-50 text-[#1A8A6E]">No CRM</Badge>
                                     ) : (
-                                      <Badge className="text-[10px] bg-[#1A0604] text-[#E8684A]">Falta</Badge>
+                                      <Badge className="text-[10px] bg-red-50 text-[#C0392B]">Falta</Badge>
                                     )}
                                   </TableCell>
                                   <TableCell className="text-center">
                                     <Button
                                       variant="ghost"
                                       size="sm"
-                                      className="h-7 gap-1 text-[11px] text-[#2CBBA6] hover:text-[#2CBBA6] hover:bg-[#031411]"
+                                      className="h-7 gap-1 text-[11px] text-[#1A8A6E] hover:text-[#1A8A6E] hover:bg-emerald-50"
                                       onClick={(e) => { e.stopPropagation(); setExpandedMsg(isExpanded ? null : msgKey) }}
                                     >
                                       <MessageSquare className="h-3 w-3" />
@@ -782,11 +782,11 @@ export default function CrmAnalytics() {
                                     <TableCell colSpan={9} className="bg-[var(--c-raised)] p-3">
                                       <div className="space-y-2">
                                         <div className="flex items-center justify-between">
-                                          <span className="text-xs font-semibold text-[#AFC040]">Mensagem de Conversão — {lead.name}</span>
+                                          <span className="text-xs font-semibold text-[#4A6B14]">Mensagem de Conversão — {lead.name}</span>
                                           <Button
                                             variant="ghost"
                                             size="sm"
-                                            className="h-6 gap-1 text-[10px] text-[#4A9FE0]"
+                                            className="h-6 gap-1 text-[10px] text-[#2A6BA0]"
                                             disabled={generatingMsg === msgKey}
                                             onClick={() => generateAIMsg(msgKey, `Gere uma mensagem curta de WhatsApp para converter o lead "${lead.name}" que acessou ${lead.videoCount} vídeos e ${lead.materialCount} materiais na plataforma IAplicada. Produto: IAplicada Academy (R$147/mês). Tom: profissional mas próximo. Máximo 4 linhas. Sem emojis excessivos. Primeira pessoa singular. Mencione o engajamento dele com os conteúdos como prova de interesse.`)}
                                           >
