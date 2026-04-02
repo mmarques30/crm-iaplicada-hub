@@ -67,13 +67,16 @@ export function MessageCadence({ contact, deal, product }: CadenceProps) {
   const [editingMsg, setEditingMsg] = useState<Record<string, string>>({})
   const [copiedStep, setCopiedStep] = useState<string | null>(null)
 
+  const [showAllSteps, setShowAllSteps] = useState(false)
+
   // Determine which steps to show based on deal stage
   const relevantSteps = useMemo(() => {
+    if (showAllSteps) return CADENCE_STEPS
     if (deal?.stage_name && STAGE_TO_STEPS[deal.stage_name]) {
       return CADENCE_STEPS.filter(s => STAGE_TO_STEPS[deal.stage_name!]?.includes(s.id))
     }
-    return CADENCE_STEPS.slice(0, 4) // Default: first 4 steps
-  }, [deal?.stage_name])
+    return CADENCE_STEPS.slice(0, 4)
+  }, [deal?.stage_name, showAllSteps])
 
   // Fetch sent messages for this contact
   const { data: sentMessages } = useQuery({
@@ -345,20 +348,14 @@ REGRAS:
         })}
 
         {/* Show all steps toggle */}
-        {relevantSteps.length < CADENCE_STEPS.length && (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full text-xs text-muted-foreground"
-            onClick={() => {
-              // Toggle showing all steps
-              const el = document.getElementById('all-cadence-steps')
-              if (el) el.classList.toggle('hidden')
-            }}
-          >
-            Ver todos os {CADENCE_STEPS.length} passos da cadência
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full text-xs text-muted-foreground"
+          onClick={() => setShowAllSteps(!showAllSteps)}
+        >
+          {showAllSteps ? 'Mostrar apenas passos do estágio' : `Ver todos os ${CADENCE_STEPS.length} passos da cadência`}
+        </Button>
       </CardContent>
     </Card>
   )
