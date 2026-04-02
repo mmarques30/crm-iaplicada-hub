@@ -10,28 +10,39 @@ import { MessageSquare, Copy, ExternalLink, Loader2, Sparkles, Check, Send, Chev
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/format'
 
+// ─── BUSINESS CADENCE: objetivo = agendar call → fechar proposta ───
+// ─── ACADEMY CADENCE: objetivo = converter direto no WhatsApp ───
+
 const CADENCE_STEPS = [
-  { id: 'msg1_abertura', label: 'Msg 1 — Abertura', desc: 'Primeira abordagem com gancho do Mapa Estratégico', day: 0 },
-  { id: 'msg2_followup', label: 'Msg 2 — Follow-up', desc: 'Reforço de valor + pergunta de qualificação', day: 1 },
-  { id: 'msg3_qualificacao', label: 'Msg 3 — Qualificação', desc: 'Perguntas de triagem (equipe, motivo IA)', day: 2 },
-  { id: 'msg4_agendamento', label: 'Msg 4 — Agendamento', desc: 'CTA direto com 2 opções de horário', day: 3 },
-  { id: 'msg5_confirmacao', label: 'Msg 5 — Confirmação', desc: 'Confirmar reunião + link Meet', day: 4 },
-  { id: 'msg6_lembrete', label: 'Msg 6 — Lembrete', desc: 'Lembrete 24h antes da reunião', day: -1 },
-  { id: 'msg7_pos_call', label: 'Msg 7 — Pós-Call', desc: 'Agradecer + próximos passos', day: 0 },
-  { id: 'msg8_proposta', label: 'Msg 8 — Proposta', desc: 'Envio do resumo da proposta', day: 1 },
-  { id: 'msg9_followup_proposta', label: 'Msg 9 — Follow-up Proposta', desc: 'Verificar se viu a proposta', day: 3 },
-  { id: 'msg10_fechamento', label: 'Msg 10 — Fechamento', desc: 'Pergunta de decisão + urgência', day: 5 },
+  // FASE 1: ABERTURA (Lead novo, nunca falou)
+  { id: 'msg1_abertura', label: 'Msg 1 — Abertura', desc: 'Vi sua inscrição + propor conversa', day: 0, phase: 'abertura' },
+  { id: 'msg2_followup', label: 'Msg 2 — Follow-up', desc: 'Reforço de valor, perguntar se viu', day: 2, phase: 'abertura' },
+  { id: 'msg3_qualificacao', label: 'Msg 3 — Qualificação', desc: 'Perguntas de triagem', day: 4, phase: 'abertura' },
+  // FASE 2: AGENDAMENTO (Lead respondeu, qualificado)
+  { id: 'msg4_agendamento', label: 'Msg 4 — Agendamento', desc: 'Propor 2 horários para call', day: 0, phase: 'agendamento' },
+  { id: 'msg5_confirmacao', label: 'Msg 5 — Confirmação', desc: 'Confirmar data + link Meet', day: 0, phase: 'agendamento' },
+  { id: 'msg6_lembrete', label: 'Msg 6 — Lembrete', desc: 'Lembrete 24h antes', day: 0, phase: 'agendamento' },
+  // FASE 3: PÓS-REUNIÃO (Call realizada, enviar proposta)
+  { id: 'msg7_pos_call', label: 'Msg 7 — Pós-Reunião', desc: 'Agradecer + resumo do que discutiu', day: 0, phase: 'pos_reuniao' },
+  { id: 'msg8_proposta', label: 'Msg 8 — Proposta Enviada', desc: 'Avisar que enviou proposta por email', day: 2, phase: 'pos_reuniao' },
+  // FASE 4: FECHAMENTO (Proposta enviada, decisão pendente)
+  { id: 'msg9_followup_proposta', label: 'Msg 9 — Follow-up Proposta', desc: 'Perguntar se analisou a proposta', day: 3, phase: 'fechamento' },
+  { id: 'msg10_fechamento', label: 'Msg 10 — Decisão Final', desc: 'Urgência + facilitar decisão', day: 5, phase: 'fechamento' },
 ]
 
 const STAGE_TO_STEPS: Record<string, string[]> = {
-  'Lead Capturado': ['msg1_abertura', 'msg2_followup'],
+  // Leads novos → fase abertura
+  'Lead Capturado': ['msg1_abertura', 'msg2_followup', 'msg3_qualificacao'],
   'MQL': ['msg1_abertura', 'msg2_followup', 'msg3_qualificacao'],
+  // Lead respondeu → fase agendamento
   'Contato Iniciado': ['msg3_qualificacao', 'msg4_agendamento'],
-  'Conectado': ['msg4_agendamento', 'msg5_confirmacao'],
+  'Conectado': ['msg4_agendamento', 'msg5_confirmacao', 'msg6_lembrete'],
   'SQL': ['msg4_agendamento', 'msg5_confirmacao', 'msg6_lembrete'],
   'Reunião Agendada': ['msg5_confirmacao', 'msg6_lembrete'],
+  // Pós-reunião → proposta
   'Reunião Realizada': ['msg7_pos_call', 'msg8_proposta'],
   'Inscrito': ['msg7_pos_call', 'msg8_proposta'],
+  // Fechamento → decisão
   'Negociação': ['msg8_proposta', 'msg9_followup_proposta', 'msg10_fechamento'],
   'Contrato Enviado': ['msg9_followup_proposta', 'msg10_fechamento'],
 }
@@ -374,151 +385,159 @@ function generateLocalMessage(
   const isBusiness = (product || deal?.product || 'business') === 'business'
 
   if (isBusiness) {
-    // ─── BUSINESS: objetivo é agendar call / Diagnóstico Estratégico ───
+    // ─── BUSINESS: Abertura → Agendamento → Pós-Reunião → Fechamento ───
     switch (stepId) {
+      // FASE ABERTURA: Lead nunca falou. Objetivo: iniciar conversa + propor call.
       case 'msg1_abertura':
         return `Oi, ${nome}! Aqui é a Mariana, da IAplicada 🤓
 
-Tava olhando os cadastros e vi sua inscrição.${motivo ? ` Vi que você mencionou: "${motivo.substring(0, 80)}". Isso é bem específico e faz total sentido pra gente conversar.` : ''}
+Tava olhando os cadastros e vi sua inscrição.${motivo ? ` Vi que você mencionou: "${motivo.substring(0, 80)}". Isso faz total sentido pra gente conversar.` : ''}
 
-Eu monto um Mapa Estratégico de Implementação de IA pro cenário de cada empresa. É um plano prático que mostra onde ${empresa} pode ganhar tempo e resultado com IA em 30 dias.
+Eu faço um Diagnóstico Estratégico de IA pro cenário de cada empresa. É uma call de 45 min onde monto um Mapa de Implementação específico pra ${empresa}.
 
-Queria te propor uma call rápida de 45 min pra te mostrar como isso funcionaria pra ${empresa}. Tenho horário amanhã às 09h ou quinta às 15h. Qual funciona melhor?`
+Consigo encaixar essa semana. Amanhã às 09h ou quinta às 15h, qual funciona?`
 
       case 'msg2_followup':
         return `${nome}, tudo certo? 🤓
 
-Passando aqui pra reforçar sobre aquela call. Na reunião eu monto o Mapa direcionado pro cenário de ${empresa}.
+Vi que ainda não conseguimos marcar. Sem pressa, mas queria garantir que você viu minha mensagem.
 
-Não é curso nem consultoria genérica. É diagnóstico + plano prático.
+A call é rápida (45 min) e eu já chego com sugestões práticas pro cenário de ${empresa}. Sem compromisso.
 
-Consegue um horário essa semana? Me fala que eu encaixo.`
+Qual dia funciona melhor pra você essa semana?`
 
       case 'msg3_qualificacao':
-        return `${nome}, pra eu já chegar na call com o Mapa mais direcionado pro seu caso, me tira duas dúvidas?
+        return `${nome}, pra eu já chegar na call com o Mapa direcionado, me tira duas dúvidas?
 
 • Hoje você tem equipe rodando os processos ou depende 100% de você?
 
-• O que te fez buscar IA agora? Teve algum momento específico?`
+• O que te fez buscar IA agora? Teve algum gatilho específico?`
 
+      // FASE AGENDAMENTO: Lead respondeu e quer marcar. Objetivo: confirmar horário.
       case 'msg4_agendamento':
-        return `${nome}, com base no que você me contou, faz muito sentido a gente conversar.
+        return `${nome}, vamos marcar então 🤓
 
-Na reunião eu vou te apresentar o Mapa Estratégico de IA, já direcionado pro cenário de ${empresa}.
+Tenho horário amanhã às 09h ou quinta às 15h.
 
-Tenho horário amanhã às 09h ou quinta às 15h. Qual funciona melhor?`
+Na call eu vou te apresentar o Mapa Estratégico já direcionado pra ${empresa}. Você sai com um plano claro de por onde começar.
+
+Qual horário funciona?`
 
       case 'msg5_confirmacao':
         return `Fechado, ${nome}! ✱
 
-Reunião confirmada. Vou te mandar o link do Meet aqui.
+Reunião confirmada. Vou te mandar o link do Meet.
 
-Dura em torno de 45 minutos. Vou te mostrar o Mapa com as prioridades de implementação pra ${empresa}.
+Dura 45 minutos. Vou te mostrar o Mapa com as prioridades de IA pra ${empresa}.
 
-Qualquer coisa antes, é só me chamar.`
+Se precisar remarcar, é só avisar aqui.`
 
       case 'msg6_lembrete':
-        return `Oi, ${nome}! Só passando pra lembrar da nossa reunião amanhã 🤓
+        return `${nome}, só lembrando da nossa reunião amanhã 🤓
 
-Vou te apresentar o Mapa Estratégico com as prioridades de IA pra ${empresa}.
+Tô preparando o Mapa com base no que você me contou. Vai ser bem prático.
 
 Nos vemos lá!`
 
+      // FASE PÓS-REUNIÃO: Call já aconteceu. Objetivo: enviar proposta e acompanhar.
       case 'msg7_pos_call':
-        return `${nome}, obrigada pela conversa! Foi muito boa 🤓
+        return `${nome}, obrigada pela conversa de hoje! 🤓
 
-Vou organizar tudo que discutimos e te mando o resumo com a proposta nos próximos dias.
+Foi muito boa. Gostei do que discutimos sobre ${empresa}.
 
-Se surgir qualquer dúvida antes, pode me chamar.`
+Vou organizar tudo num documento e te mando a proposta nos próximos 2 dias. Com módulos, cronograma e investimento.
+
+Se lembrar de alguma dúvida, manda aqui.`
 
       case 'msg8_proposta':
-        return `${nome}, tudo certo?
+        return `${nome}, tudo certo? 🤓
 
-Organizei a proposta com base no nosso diagnóstico. Mandei por email.
+Acabei de enviar a proposta por email. Dá uma olhada quando puder.
 
-Os pontos principais:
-• Módulos que fazem sentido pro cenário de ${empresa}
-• Cronograma de implementação em 30 dias
+Organizei com base no que conversamos:
+• Os módulos que fazem sentido pra ${empresa}
+• Cronograma de 30 dias
 • Investimento e condições
 
-Dá uma olhada e me fala o que achou.`
+Me fala o que achou quando ver.`
 
+      // FASE FECHAMENTO: Proposta enviada. Objetivo: facilitar decisão.
       case 'msg9_followup_proposta':
-        return `${nome}, conseguiu olhar a proposta?
+        return `${nome}, conseguiu analisar a proposta? 🤓
 
-Tem alguma dúvida ou ponto que precisa ajustar?
+Tem algum ponto que quer ajustar ou alguma dúvida?
 
-Tô aqui pra isso.`
+Tô aqui pra facilitar.`
 
       case 'msg10_fechamento':
-        return `${nome}, passando aqui pra entender como está a decisão.
+        return `${nome}, passando aqui pra entender como está a análise da proposta.
 
-Tem algo que eu possa esclarecer pra facilitar?
+Se tiver algum ponto que precisa revisar ou uma dúvida sobre o investimento, me fala que a gente resolve.
 
-Lembra que a implementação leva 30 dias — quanto antes começarmos, antes ${empresa} vai estar rodando com IA.`
+Quanto antes fecharmos, antes ${empresa} começa a ver resultado — a implementação leva 30 dias a partir da assinatura.`
 
       default:
         return `Oi, ${nome}! Aqui é a Mariana, da IAplicada 🤓`
     }
   } else {
-    // ─── ACADEMY: objetivo é converter direto no WhatsApp, sem call ───
+    // ─── ACADEMY: Converter direto no WhatsApp, sem call ───
     switch (stepId) {
+      // FASE ABERTURA: Lead se inscreveu nas aulas. Objetivo: engajar.
       case 'msg1_abertura':
         return `Oi, ${nome}! Aqui é a Mariana, da IAplicada 🤓
 
-Vi que você se inscreveu pras aulas de IA.${motivo ? ` Você mencionou que quer "${motivo.substring(0, 80)}" — adorei, é exatamente o que a gente trabalha.` : ''}
+Vi que você se inscreveu pras aulas de IA.${motivo ? ` Você mencionou que quer "${motivo.substring(0, 80)}" — é exatamente isso que a gente faz na prática.` : ''}
 
-Toda semana tem aula ao vivo sobre uma ferramenta de IA diferente. Prática pura, sem enrolação.
+Toda semana tem aula ao vivo sobre uma ferramenta diferente. Zero teoria, só prática.
 
-Já assistiu alguma? Me conta o que mais te interessa que eu te direciono.`
+Já assistiu alguma? Me conta o que mais te interessa.`
 
       case 'msg2_followup':
         return `${nome}, tudo bem? 🤓
 
-Passando pra lembrar: essa semana tem aula ao vivo de uma ferramenta nova de IA.
+Essa semana tem aula ao vivo de uma ferramenta nova de IA.
 
-Se você ainda não assistiu nenhuma, começa pela de ChatGPT — é a mais prática pra quem tá começando.
+Se ainda não assistiu nenhuma, começa pela próxima — é ao vivo, gratuita e bem prática.
 
-Quer que eu te mande o link direto?`
+Quer que eu te avise quando começar?`
 
       case 'msg3_qualificacao':
         return `${nome}, uma dúvida rápida 🤓
 
-Você tá usando IA no dia a dia ou ainda tá naquela fase de "quero usar mas não sei por onde começar"?
+Você já tá usando IA no dia a dia ou ainda tá na fase de "quero usar mas não sei por onde começar"?
 
-Pergunto porque dependendo da sua resposta, tenho um caminho diferente pra te sugerir.`
+Pergunto porque tenho caminhos diferentes dependendo de onde você tá.`
 
+      // FASE AGENDAMENTO (Academy = apresentar oferta)
       case 'msg4_agendamento':
-        return `${nome}, se você quer ir além das aulas gratuitas, o Academy é o caminho.
+        return `${nome}, se você quer ir além das aulas gratuitas, o Academy é o caminho 🤓
 
-R$147/mês. Sem fidelidade. Cancela quando quiser.
+R$147/mês. Sem fidelidade.
 
-O que você recebe:
-✱ 4 aulas ao vivo por mês comigo
+✱ 4 aulas ao vivo por mês
 ✱ Conteúdo novo todo dia
 ✱ Comunidade exclusiva
-✱ Método APLICA aplicado no SEU trabalho
+✱ Método APLICA no SEU trabalho
 
 Quer saber mais? Me responde aqui.`
 
       case 'msg5_confirmacao':
         return `${nome}, boa escolha! 🤓
 
-Vou te mandar o link de inscrição do Academy aqui.
+Vou te mandar o link de inscrição.
 
-R$147/mês. Na hora que você entrar, já tem acesso a tudo: aulas, comunidade, conteúdo diário.
+R$147/mês. Na hora que entrar, já acessa tudo: aulas, comunidade, conteúdo diário.
 
-Semana que vem já vai estar dentro das aulas ao vivo comigo.`
+Semana que vem já vai estar nas aulas ao vivo.`
 
       case 'msg6_lembrete':
-        return `Oi, ${nome}! 🤓
+        return `${nome}, aula ao vivo hoje às 19:30 🤓
 
-Lembrando que a aula ao vivo é hoje às 19:30.
-
-Se você tá pensando no Academy, essa aula é uma boa pra sentir como funciona na prática.
+Se tá pensando no Academy, essa aula é perfeita pra sentir como funciona.
 
 Te vejo lá!`
 
+      // FASE PÓS (Academy = pós-aula, reforçar valor)
       case 'msg7_pos_call':
         return `${nome}, o que achou da aula? 🤓
 
@@ -526,34 +545,32 @@ Se curtiu, imagina ter isso toda semana + comunidade + conteúdo diário.
 
 É o Academy. R$147/mês, sem fidelidade.
 
-Quer entrar? Me responde aqui que eu mando o link.`
+Me responde aqui que eu mando o link.`
 
       case 'msg8_proposta':
-        return `${nome}, já te mandei os detalhes do Academy.
+        return `${nome}, recapitulando o Academy:
 
-Recapitulando:
-✱ Aulas ao vivo semanais
+✱ Aulas ao vivo semanais comigo
 ✱ Método APLICA
 ✱ Comunidade de profissionais
 ✱ R$147/mês, cancela quando quiser
 
 Tem alguma dúvida? Me fala aqui.`
 
+      // FASE FECHAMENTO (Academy = urgência)
       case 'msg9_followup_proposta':
         return `${nome}, tá pensando no Academy? 🤓
 
-Se a dúvida é "será que vale pra mim?", pensa assim: você gasta 5h por semana em tarefas que IA resolve em minutos.
+Pensa assim: você gasta 5h por semana em tarefas que IA faz em minutos.
 
 R$147/mês pra economizar 20h por mês. Faz sentido, né?`
 
       case 'msg10_fechamento':
         return `${nome}, última chamada 🤓
 
-As inscrições do Academy fecham essa semana.
+Se você quer usar IA de verdade no trabalho — não só saber sobre IA — esse é o momento.
 
-Se você quer usar IA de verdade no trabalho e não só "saber sobre IA", esse é o momento.
-
-R$147/mês. Link aqui. Me responde "QUERO" que eu te mando.`
+R$147/mês. Me responde "QUERO" que eu te mando o link.`
 
       default:
         return `Oi, ${nome}! Aqui é a Mariana, da IAplicada 🤓`
