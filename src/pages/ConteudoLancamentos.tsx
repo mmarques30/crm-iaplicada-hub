@@ -419,7 +419,8 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
   /* ─── Phase timeline ─── */
   const renderTimeline = () => {
     if (phases.length === 0) return null
-    const today = new Date().toISOString().slice(0, 10)
+    const now = new Date()
+    const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
     return (
       <div className="space-y-3">
         {/* Bar */}
