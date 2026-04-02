@@ -18,10 +18,10 @@ const CADENCE_STEPS = [
   { id: 'msg1_abertura', label: 'Msg 1 — Abertura', desc: 'Vi sua inscrição + propor conversa', day: 0, phase: 'abertura' },
   { id: 'msg2_followup', label: 'Msg 2 — Follow-up', desc: 'Reforço de valor, perguntar se viu', day: 2, phase: 'abertura' },
   { id: 'msg3_qualificacao', label: 'Msg 3 — Qualificação', desc: 'Perguntas de triagem', day: 4, phase: 'abertura' },
-  // FASE 2: AGENDAMENTO (Lead respondeu, qualificado)
-  { id: 'msg4_agendamento', label: 'Msg 4 — Agendamento', desc: 'Propor 2 horários para call', day: 0, phase: 'agendamento' },
-  { id: 'msg5_confirmacao', label: 'Msg 5 — Confirmação', desc: 'Confirmar data + link Meet', day: 0, phase: 'agendamento' },
-  { id: 'msg6_lembrete', label: 'Msg 6 — Lembrete', desc: 'Lembrete 24h antes', day: 0, phase: 'agendamento' },
+  // FASE 2: AGENDAMENTO/OFERTA (Business: propor call | Academy: apresentar oferta)
+  { id: 'msg4_agendamento', label: 'Msg 4 — Oferta/Agendamento', desc: 'Business: propor call | Academy: apresentar R$147/mês', day: 0, phase: 'agendamento' },
+  { id: 'msg5_confirmacao', label: 'Msg 5 — Confirmação', desc: 'Business: confirmar call | Academy: enviar link inscrição', day: 0, phase: 'agendamento' },
+  { id: 'msg6_lembrete', label: 'Msg 6 — Lembrete/Reforço', desc: 'Business: lembrete call | Academy: lembrete aula gratuita', day: 0, phase: 'agendamento' },
   // FASE 3: PÓS-REUNIÃO (Call realizada, enviar proposta)
   { id: 'msg7_pos_call', label: 'Msg 7 — Pós-Reunião', desc: 'Agradecer + resumo do que discutiu', day: 0, phase: 'pos_reuniao' },
   { id: 'msg8_proposta', label: 'Msg 8 — Proposta Enviada', desc: 'Avisar que enviou proposta por email', day: 2, phase: 'pos_reuniao' },
@@ -224,7 +224,11 @@ REGRAS DE ESCRITA:
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['cadence_messages', contact.id] })
       queryClient.invalidateQueries({ queryKey: ['contact_activities', contact.id] })
+      queryClient.invalidateQueries({ queryKey: ['cadence_activities'] })
       toast.success('Mensagem registrada no histórico')
+    },
+    onError: (err: any) => {
+      toast.error('Erro ao registrar: ' + (err.message || 'tente novamente'))
     },
   })
 
@@ -345,10 +349,11 @@ REGRAS DE ESCRITA:
                           size="sm"
                           variant="ghost"
                           className="gap-1 text-xs"
+                          disabled={logMessage.isPending}
                           onClick={() => logMessage.mutate({ stepId: step.id, message: msg })}
                         >
-                          <Send className="h-3 w-3" />
-                          Marcar como Enviada
+                          {logMessage.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                          {logMessage.isPending ? 'Salvando...' : 'Marcar como Enviada'}
                         </Button>
                         <Button
                           size="sm"
