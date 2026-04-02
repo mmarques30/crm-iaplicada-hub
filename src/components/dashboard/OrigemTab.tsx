@@ -5,13 +5,13 @@ import { supabase } from '@/integrations/supabase/client'
 import { normalizeChannel } from '@/lib/format'
 
 const CHANNEL_COLORS: Record<string, string> = {
-  'Offline': '#7A8460',
-  'Instagram': '#E8684A',
-  'Tráfego Direto': '#AFC040',
-  'Ads': '#4A9FE0',
-  'TikTok': '#FF004F',
-  'YouTube': '#FF0000',
-  'Não rastreado': '#555',
+  'Offline': '#5A6B40',
+  'Instagram': '#C0392B',
+  'Tráfego Direto': '#6B8C22',
+  'Ads': '#2A6BA0',
+  'TikTok': '#CC003F',
+  'YouTube': '#CC0000',
+  'Não rastreado': '#666',
 }
 const CHANNEL_DESCRIPTIONS: Record<string, string> = {
   'Offline': 'Contatos captados presencialmente ou por indicação',
@@ -63,12 +63,12 @@ export function OrigemTab() {
               const pct = contacts.length > 0 ? Math.round((count / contacts.length) * 100) : 0
               const color = CHANNEL_COLORS[name] || '#7A8460'
               return (
-                <div key={name} className="rounded-lg border border-border bg-card p-4 space-y-2">
+                <div key={name} className="rounded-lg border border-border bg-card p-4 space-y-2 shadow-sm">
                   <div className="flex items-center gap-2">
-                    <span className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold" style={{ backgroundColor: `${color}18`, color }}>
+                    <span className="w-7 h-7 rounded-md flex-shrink-0 flex items-center justify-center text-xs font-bold" style={{ backgroundColor: `${color}18`, color }}>
                       {name[0]}
                     </span>
-                    <span className="text-sm font-medium text-foreground">{name}</span>
+                    <span className="text-sm font-semibold text-foreground leading-tight">{name}</span>
                   </div>
                   <p className="text-2xl font-bold font-mono text-foreground">{count}</p>
                   <div className="h-2 rounded-full bg-muted overflow-hidden">
