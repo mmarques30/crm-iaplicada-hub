@@ -35,6 +35,7 @@ import ConteudoCriativos from "./pages/ConteudoCriativos";
 import ConteudoEventos from "./pages/ConteudoEventos";
 import ConteudoMensagens from "./pages/ConteudoMensagens";
 import ConteudoLancamentos from "./pages/ConteudoLancamentos";
+import CadenciaLeads from "./pages/CadenciaLeads";
 import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/financeiro/painel" element={<FinanceiroPainel />} />
               <Route path="/financeiro/receita" element={<Financeiro />} />
               <Route path="/tarefas" element={<ReceitaTasks />} />
+              <Route path="/cadencia" element={<CadenciaLeads />} />
               <Route path="/formularios" element={<Forms />} />
               <Route path="/email" element={<EmailMarketing />} />
               <Route path="/email/templates" element={<EmailTemplates />} />
