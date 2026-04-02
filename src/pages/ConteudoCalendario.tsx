@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Textarea } from '@/components/ui/textarea'
-import { Calendar, Video, Image, Lightbulb, Plus, ChevronLeft, ChevronRight, Loader2, Send, Trash2 } from 'lucide-react'
+import { Calendar, Video, Image, Lightbulb, Plus, ChevronLeft, ChevronRight, Loader2, Send, Trash2, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/format'
 
@@ -29,6 +29,7 @@ export default function ConteudoCalendario() {
   const [ideaForm, setIdeaForm] = useState({ titulo: '', descricao: '', tipo: 'video', plataforma: 'instagram', produto: 'academy' })
   const [postOpen, setPostOpen] = useState(false)
   const [postForm, setPostForm] = useState({ titulo: '', plataforma: 'instagram', data_agendamento: '', tipo: 'post', produto: 'academy' })
+  const [editIdeaId, setEditIdeaId] = useState<string | null>(null)
 
   // Fetch all content sources
   const { data: videos } = useQuery({ queryKey: ['content_items_cal'], queryFn: async () => { const { data } = await (supabase as any).from('content_items').select('*').not('data_publicacao', 'is', null); return (data || []) as any[] } })
@@ -94,6 +95,34 @@ export default function ConteudoCalendario() {
     mutationFn: async (id: string) => { const { error } = await (supabase as any).from('content_ideas').delete().eq('id', id); if (error) throw error },
     onSuccess: () => { queryClient.invalidateQueries({ queryKey: ['content_ideas'] }); toast.success('Ideia removida') },
   })
+
+  const updateIdea = useMutation({
+    mutationFn: async () => {
+      if (!editIdeaId) return
+      const { error } = await (supabase as any).from('content_ideas').update(ideaForm).eq('id', editIdeaId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['content_ideas'] })
+      setEditIdeaId(null)
+      setIdeaOpen(false)
+      setIdeaForm({ titulo: '', descricao: '', tipo: 'video', plataforma: 'instagram', produto: 'academy' })
+      toast.success('Ideia atualizada!')
+    },
+    onError: (e: any) => toast.error(e.message),
+  })
+
+  const openEditIdea = (idea: any) => {
+    setEditIdeaId(idea.id)
+    setIdeaForm({
+      titulo: idea.titulo || '',
+      descricao: idea.descricao || '',
+      tipo: idea.tipo || 'video',
+      plataforma: idea.plataforma || 'instagram',
+      produto: idea.produto || 'academy',
+    })
+    setIdeaOpen(true)
+  }
 
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-6 max-w-[1400px] mx-auto w-full">
@@ -264,7 +293,10 @@ export default function ConteudoCalendario() {
                           <Badge className={`text-[10px] ${idea.prioridade === 'alta' ? 'bg-[#1A0604] text-[#E8684A]' : idea.prioridade === 'media' ? 'bg-[#1A1206] text-[#E8A43C]' : 'bg-muted text-muted-foreground'}`}>{idea.prioridade}</Badge>
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]" onClick={() => { if (window.confirm('Remover ideia?')) deleteIdea.mutate(idea.id) }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditIdea(idea)}><Edit2 className="h-3.5 w-3.5" /></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]" onClick={() => { if (window.confirm('Remover ideia?')) deleteIdea.mutate(idea.id) }}><Trash2 className="h-3.5 w-3.5" /></Button>
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -275,9 +307,9 @@ export default function ConteudoCalendario() {
       </Tabs>
 
       {/* New Idea Dialog */}
-      <Dialog open={ideaOpen} onOpenChange={setIdeaOpen}>
+      <Dialog open={ideaOpen} onOpenChange={(open) => { setIdeaOpen(open); if (!open) setEditIdeaId(null) }}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Nova Ideia de Conteúdo</DialogTitle><DialogDescription>Registre uma ideia para produzir depois</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{editIdeaId ? 'Editar Ideia' : 'Nova Ideia de Conteúdo'}</DialogTitle><DialogDescription>{editIdeaId ? 'Altere os dados da ideia' : 'Registre uma ideia para produzir depois'}</DialogDescription></DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5"><Label>Título *</Label><Input value={ideaForm.titulo} onChange={e => setIdeaForm(p => ({ ...p, titulo: e.target.value }))} placeholder="Título da ideia" /></div>
             <div className="space-y-1.5"><Label>Descrição</Label><Textarea value={ideaForm.descricao} onChange={e => setIdeaForm(p => ({ ...p, descricao: e.target.value }))} placeholder="Detalhes da ideia" rows={3} /></div>
@@ -288,8 +320,8 @@ export default function ConteudoCalendario() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIdeaOpen(false)}>Cancelar</Button>
-            <Button className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold" disabled={!ideaForm.titulo || createIdea.isPending} onClick={() => createIdea.mutate()}>{createIdea.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Ideia'}</Button>
+            <Button variant="outline" onClick={() => { setIdeaOpen(false); setEditIdeaId(null) }}>Cancelar</Button>
+            <Button className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold" disabled={!ideaForm.titulo || createIdea.isPending || updateIdea.isPending} onClick={() => editIdeaId ? updateIdea.mutate() : createIdea.mutate()}>{(createIdea.isPending || updateIdea.isPending) ? <Loader2 className="h-4 w-4 animate-spin" /> : editIdeaId ? 'Salvar' : 'Criar Ideia'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogTrigger } from '@/components/ui/dialog'
 import { toast } from 'sonner'
-import { Image, Megaphone, CheckCircle, Send, Plus, Trash2 } from 'lucide-react'
+import { Image, Megaphone, CheckCircle, Send, Plus, Trash2, Edit2 } from 'lucide-react'
 
 /* ─── Types ─── */
 
@@ -115,6 +115,7 @@ export default function ConteudoCriativos() {
   const [filterStatus, setFilterStatus] = useState('todos')
   const [filterTipo, setFilterTipo] = useState('todos')
   const [filterCategoria, setFilterCategoria] = useState('todos')
+  const [editId, setEditId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [form, setForm] = useState({
     titulo: '',
@@ -150,7 +151,7 @@ export default function ConteudoCriativos() {
   /* ─── Mutations ─── */
   const createMutation = useMutation({
     mutationFn: async (f: typeof form) => {
-      const { error } = await (supabase as any).from('static_content_items').insert({
+      const data = {
         titulo: f.titulo,
         descricao: f.descricao || null,
         tipo: f.tipo,
@@ -160,15 +161,21 @@ export default function ConteudoCriativos() {
         deadline: f.deadline || null,
         produto: f.produto,
         investimento: f.categoria_conteudo === 'anuncio' && f.investimento ? Number(f.investimento) : null,
-        status: 'ideia',
-      })
-      if (error) throw error
+      }
+      if (editId) {
+        const { error } = await (supabase as any).from('static_content_items').update(data).eq('id', editId)
+        if (error) throw error
+      } else {
+        const { error } = await (supabase as any).from('static_content_items').insert({ ...data, status: 'ideia' })
+        if (error) throw error
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['static-content-items'] })
       setDialogOpen(false)
       resetForm()
-      toast.success('Criativo adicionado com sucesso!')
+      setEditId(null)
+      toast.success(editId ? 'Criativo atualizado com sucesso!' : 'Criativo adicionado com sucesso!')
     },
     onError: (err: any) => toast.error(`Erro: ${err.message}`),
   })
@@ -365,7 +372,7 @@ export default function ConteudoCriativos() {
               </SelectContent>
             </Select>
             <div className="ml-auto">
-              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+              <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) { setEditId(null); resetForm(); } }}>
                 <DialogTrigger asChild>
                   <Button className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold">
                     <Plus className="h-4 w-4 mr-1" /> Novo Criativo
@@ -373,8 +380,8 @@ export default function ConteudoCriativos() {
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[500px]">
                   <DialogHeader>
-                    <DialogTitle>Novo Criativo</DialogTitle>
-                    <DialogDescription>Adicione um novo criativo ao pipeline de produção.</DialogDescription>
+                    <DialogTitle>{editId ? 'Editar Criativo' : 'Novo Criativo'}</DialogTitle>
+                    <DialogDescription>{editId ? 'Edite os dados do criativo.' : 'Adicione um novo criativo ao pipeline de produção.'}</DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4 py-2">
                     <div>
@@ -463,7 +470,7 @@ export default function ConteudoCriativos() {
                       disabled={!form.titulo.trim() || form.plataformas.length === 0 || createMutation.isPending}
                       onClick={() => createMutation.mutate(form)}
                     >
-                      {createMutation.isPending ? 'Criando...' : 'Criar Criativo'}
+                      {createMutation.isPending ? (editId ? 'Salvando...' : 'Criando...') : editId ? 'Salvar Criativo' : 'Criar Criativo'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -531,14 +538,39 @@ export default function ConteudoCriativos() {
                           {item.categoria_conteudo === 'anuncio' && item.ctr != null ? `${item.ctr.toFixed(2)}%` : '—'}
                         </td>
                         <td className="py-2 px-3 text-center">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
-                            onClick={() => deleteMutation.mutate(item.id)}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditId(item.id);
+                                setForm({
+                                  titulo: item.titulo || '',
+                                  descricao: item.descricao || '',
+                                  tipo: item.tipo || 'post',
+                                  plataformas: item.plataformas || ['instagram'],
+                                  categoria_conteudo: item.categoria_conteudo || 'organico',
+                                  prioridade: item.prioridade || 'media',
+                                  deadline: item.deadline || '',
+                                  produto: item.produto || 'academy',
+                                  investimento: item.investimento != null ? String(item.investimento) : '',
+                                });
+                                setDialogOpen(true);
+                              }}
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
+                              onClick={() => deleteMutation.mutate(item.id)}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))}

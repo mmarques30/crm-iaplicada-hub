@@ -8,7 +8,11 @@ import { KPICard } from '@/components/dashboard/KPICard'
 import { Button } from '@/components/ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
-import { MessageSquare, Send, Clock, Camera, ChevronLeft, ChevronRight, Copy, Trash2, ExternalLink, Sparkles, Loader2, Plus } from 'lucide-react'
+import { MessageSquare, Send, Clock, Camera, ChevronLeft, ChevronRight, Copy, Trash2, ExternalLink, Sparkles, Loader2, Plus, Edit2 } from 'lucide-react'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/format'
 
@@ -77,6 +81,9 @@ export default function ConteudoMensagens() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [genEventId, setGenEventId] = useState<string>('')
   const [generatingMsgs, setGeneratingMsgs] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+  const [editOpen, setEditOpen] = useState(false)
+  const [editForm, setEditForm] = useState({ titulo: '', copy_text: '', comunidade: 'gratuita', canal: 'whatsapp', data: '', horario: '08:00', status: 'rascunho' })
 
   const { monday, friday } = useMemo(() => getWeekRange(weekBase), [weekBase])
 
@@ -166,6 +173,36 @@ export default function ConteudoMensagens() {
     },
     onError: (err: any) => toast.error(`Erro: ${err.message}`),
   })
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (!editId) return
+      const { error } = await (supabase as any).from('routine_messages').update(editForm).eq('id', editId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['routine_messages'] })
+      setEditId(null)
+      setEditOpen(false)
+      setEditForm({ titulo: '', copy_text: '', comunidade: 'gratuita', canal: 'whatsapp', data: '', horario: '08:00', status: 'rascunho' })
+      toast.success('Mensagem atualizada!')
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
+  })
+
+  const openEdit = (msg: any) => {
+    setEditId(msg.id)
+    setEditForm({
+      titulo: msg.titulo || '',
+      copy_text: msg.copy_text || '',
+      comunidade: msg.comunidade || 'gratuita',
+      canal: msg.canal || 'whatsapp',
+      data: msg.data || '',
+      horario: msg.horario || '08:00',
+      status: msg.status || 'rascunho',
+    })
+    setEditOpen(true)
+  }
 
   /* ─── Filtered ─── */
   const filtered = useMemo(() => {
@@ -428,14 +465,24 @@ export default function ConteudoMensagens() {
                           {msg.events?.nome || msg.evento || '—'}
                         </TableCell>
                         <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
-                            onClick={() => { if (window.confirm('Remover mensagem?')) deleteMutation.mutate(msg.id) }}
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => openEdit(msg)}
+                            >
+                              <Edit2 className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
+                              onClick={() => { if (window.confirm('Remover mensagem?')) deleteMutation.mutate(msg.id) }}
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -547,6 +594,81 @@ export default function ConteudoMensagens() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Edit Message Dialog */}
+      <Dialog open={editOpen} onOpenChange={(open) => { setEditOpen(open); if (!open) setEditId(null) }}>
+        <DialogContent className="sm:max-w-[520px]">
+          <DialogHeader>
+            <DialogTitle>Editar Mensagem</DialogTitle>
+            <DialogDescription>Altere os dados da mensagem</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Titulo</Label>
+              <Input value={editForm.titulo} onChange={e => setEditForm(f => ({ ...f, titulo: e.target.value }))} placeholder="Titulo" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Texto / Copy</Label>
+              <Textarea value={editForm.copy_text} onChange={e => setEditForm(f => ({ ...f, copy_text: e.target.value }))} placeholder="Texto da mensagem" rows={4} />
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <div className="space-y-1.5">
+                <Label>Comunidade</Label>
+                <Select value={editForm.comunidade} onValueChange={v => setEditForm(f => ({ ...f, comunidade: v }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="gratuita">Gratuita</SelectItem>
+                    <SelectItem value="academy">Academy</SelectItem>
+                    <SelectItem value="business">Business</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Canal</Label>
+                <Select value={editForm.canal} onValueChange={v => setEditForm(f => ({ ...f, canal: v }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="whatsapp">WhatsApp</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="stories">Stories</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Status</Label>
+                <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="rascunho">Rascunho</SelectItem>
+                    <SelectItem value="aprovado">Aprovado</SelectItem>
+                    <SelectItem value="enviado">Enviado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label>Data</Label>
+                <Input type="date" value={editForm.data} onChange={e => setEditForm(f => ({ ...f, data: e.target.value }))} />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Horario</Label>
+                <Input type="time" value={editForm.horario} onChange={e => setEditForm(f => ({ ...f, horario: e.target.value }))} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setEditOpen(false); setEditId(null) }}>Cancelar</Button>
+            <Button
+              className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
+              disabled={!editForm.titulo || updateMutation.isPending}
+              onClick={() => updateMutation.mutate()}
+            >
+              {updateMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Salvar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

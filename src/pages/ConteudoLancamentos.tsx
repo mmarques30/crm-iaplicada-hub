@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Rocket, MessageSquare, Mail, Camera, Plus, Trash2, Copy, Loader2, Layers, ChevronDown, ChevronUp, Sparkles } from 'lucide-react'
+import { Rocket, MessageSquare, Mail, Camera, Plus, Trash2, Copy, Loader2, Layers, ChevronDown, ChevronUp, Sparkles, Edit2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { formatDate } from '@/lib/format'
 
@@ -56,6 +56,9 @@ export default function ConteudoLancamentos() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [generatingEmailId, setGeneratingEmailId] = useState<string | null>(null)
   const [generatingAllEmails, setGeneratingAllEmails] = useState(false)
+  const [editMessageId, setEditMessageId] = useState<string | null>(null)
+  const [editCampaignId, setEditCampaignId] = useState<string | null>(null)
+  const [editPhaseId, setEditPhaseId] = useState<string | null>(null)
 
   const [campaignForm, setCampaignForm] = useState({
     nome: '', big_idea: '', inimigo: '', metodo: '', oferta: '',
@@ -210,6 +213,98 @@ export default function ConteudoLancamentos() {
     },
     onError: (e: any) => toast.error(e.message),
   })
+
+  const updateMessage = useMutation({
+    mutationFn: async () => {
+      if (!editMessageId) return
+      const { error } = await (supabase as any).from('launch_messages').update(messageForm).eq('id', editMessageId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['launch_messages'] })
+      setEditMessageId(null)
+      setMessageOpen(false)
+      setMessageForm({ canal: 'whatsapp', titulo: '', copy_text: '', subject_line: '', roteiro: '', data: '', phase_id: '', story_type: '' })
+      toast.success('Mensagem atualizada!')
+    },
+    onError: (e: any) => toast.error(e.message),
+  })
+
+  const updateCampaign = useMutation({
+    mutationFn: async () => {
+      if (!editCampaignId) return
+      const { error } = await (supabase as any).from('launch_campaigns').update(campaignForm).eq('id', editCampaignId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['launch_campaigns'] })
+      setEditCampaignId(null)
+      setCampaignOpen(false)
+      setCampaignForm({ nome: '', big_idea: '', inimigo: '', metodo: '', oferta: '', data_inicio: '', data_fim: '', status: 'rascunho' })
+      toast.success('Campanha atualizada!')
+    },
+    onError: (e: any) => toast.error(e.message),
+  })
+
+  const updatePhase = useMutation({
+    mutationFn: async () => {
+      if (!editPhaseId) return
+      const { error } = await (supabase as any).from('launch_phases').update({ nome: phaseForm.nome, emocao_chave: phaseForm.emocao_chave, objetivo: phaseForm.objetivo, data_inicio: phaseForm.data_inicio, data_fim: phaseForm.data_fim, ordem: phaseForm.ordem }).eq('id', editPhaseId)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['launch_phases'] })
+      setEditPhaseId(null)
+      setPhaseOpen(false)
+      setPhaseForm({ nome: '', emocao_chave: '', objetivo: '', data_inicio: '', data_fim: '', ordem: phases.length + 1, campaign_id: '' })
+      toast.success('Fase atualizada!')
+    },
+    onError: (e: any) => toast.error(e.message),
+  })
+
+  const openEditMessage = (msg: any) => {
+    setEditMessageId(msg.id)
+    setMessageForm({
+      canal: msg.canal || 'whatsapp',
+      titulo: msg.titulo || '',
+      copy_text: msg.copy_text || '',
+      subject_line: msg.subject_line || '',
+      roteiro: msg.roteiro || '',
+      data: msg.data || '',
+      phase_id: msg.phase_id || '',
+      story_type: msg.story_type || '',
+    })
+    setMessageOpen(true)
+  }
+
+  const openEditCampaign = (c: any) => {
+    setEditCampaignId(c.id)
+    setCampaignForm({
+      nome: c.nome || '',
+      big_idea: c.big_idea || '',
+      inimigo: c.inimigo || '',
+      metodo: c.metodo || '',
+      oferta: c.oferta || '',
+      data_inicio: c.data_inicio || '',
+      data_fim: c.data_fim || '',
+      status: c.status || 'rascunho',
+    })
+    setCampaignOpen(true)
+  }
+
+  const openEditPhase = (p: any) => {
+    setEditPhaseId(p.id)
+    setPhaseForm({
+      nome: p.nome || '',
+      emocao_chave: p.emocao_chave || '',
+      objetivo: p.objetivo || '',
+      data_inicio: p.data_inicio || '',
+      data_fim: p.data_fim || '',
+      ordem: p.ordem || 1,
+      campaign_id: p.campaign_id || '',
+    })
+    setPhaseOpen(true)
+  }
 
   const toggleDone = useMutation({
     mutationFn: async ({ id, done }: { id: string; done: boolean }) => {
@@ -394,6 +489,14 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
             <Button
               variant="ghost"
               size="icon"
+              className="h-7 w-7"
+              onClick={() => openEditMessage(msg)}
+            >
+              <Edit2 className="h-3.5 w-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
               onClick={() => { if (window.confirm('Remover mensagem?')) deleteMessage.mutate(msg.id) }}
             >
@@ -570,6 +673,14 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
                       <Button
                         variant="ghost"
                         size="icon"
+                        className="h-8 w-8"
+                        onClick={() => openEditCampaign(activeCampaign)}
+                      >
+                        <Edit2 className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         className="h-8 w-8 text-muted-foreground hover:text-[#E8684A]"
                         onClick={() => { if (window.confirm('Remover campanha? Isso tambem removera fases e mensagens.')) deleteCampaign.mutate(activeCampaign.id) }}
                       >
@@ -639,14 +750,24 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
                                 </Badge>
                               )}
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
-                              onClick={() => { if (window.confirm('Remover fase?')) deletePhase.mutate(p.id) }}
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                            </Button>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7"
+                                onClick={() => openEditPhase(p)}
+                              >
+                                <Edit2 className="h-3.5 w-3.5" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-muted-foreground hover:text-[#E8684A]"
+                                onClick={() => { if (window.confirm('Remover fase?')) deletePhase.mutate(p.id) }}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
                           </div>
                           {p.objetivo && <p className="text-xs text-muted-foreground mt-2">{p.objetivo}</p>}
                           <div className="flex gap-3 mt-3 text-xs">
@@ -722,11 +843,11 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
       )}
 
       {/* ─── Dialog: Nova Campanha ─── */}
-      <Dialog open={campaignOpen} onOpenChange={setCampaignOpen}>
+      <Dialog open={campaignOpen} onOpenChange={(open) => { setCampaignOpen(open); if (!open) setEditCampaignId(null) }}>
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
-            <DialogTitle>Nova Campanha de Lancamento</DialogTitle>
-            <DialogDescription>Configure os elementos centrais da campanha</DialogDescription>
+            <DialogTitle>{editCampaignId ? 'Editar Campanha' : 'Nova Campanha de Lancamento'}</DialogTitle>
+            <DialogDescription>{editCampaignId ? 'Altere os dados da campanha' : 'Configure os elementos centrais da campanha'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
@@ -763,24 +884,24 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCampaignOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setCampaignOpen(false); setEditCampaignId(null) }}>Cancelar</Button>
             <Button
               className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
-              disabled={!campaignForm.nome || createCampaign.isPending}
-              onClick={() => createCampaign.mutate()}
+              disabled={!campaignForm.nome || createCampaign.isPending || updateCampaign.isPending}
+              onClick={() => editCampaignId ? updateCampaign.mutate() : createCampaign.mutate()}
             >
-              {createCampaign.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Campanha'}
+              {(createCampaign.isPending || updateCampaign.isPending) ? <Loader2 className="h-4 w-4 animate-spin" /> : editCampaignId ? 'Salvar' : 'Criar Campanha'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* ─── Dialog: Nova Fase ─── */}
-      <Dialog open={phaseOpen} onOpenChange={setPhaseOpen}>
+      <Dialog open={phaseOpen} onOpenChange={(open) => { setPhaseOpen(open); if (!open) setEditPhaseId(null) }}>
         <DialogContent className="sm:max-w-[480px]">
           <DialogHeader>
-            <DialogTitle>Nova Fase</DialogTitle>
-            <DialogDescription>Adicione uma fase a campanha {activeCampaign?.nome}</DialogDescription>
+            <DialogTitle>{editPhaseId ? 'Editar Fase' : 'Nova Fase'}</DialogTitle>
+            <DialogDescription>{editPhaseId ? 'Altere os dados da fase' : `Adicione uma fase a campanha ${activeCampaign?.nome}`}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="space-y-1.5">
@@ -813,24 +934,24 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPhaseOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setPhaseOpen(false); setEditPhaseId(null) }}>Cancelar</Button>
             <Button
               className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
-              disabled={!phaseForm.nome || createPhase.isPending}
-              onClick={() => createPhase.mutate()}
+              disabled={!phaseForm.nome || createPhase.isPending || updatePhase.isPending}
+              onClick={() => editPhaseId ? updatePhase.mutate() : createPhase.mutate()}
             >
-              {createPhase.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Fase'}
+              {(createPhase.isPending || updatePhase.isPending) ? <Loader2 className="h-4 w-4 animate-spin" /> : editPhaseId ? 'Salvar' : 'Criar Fase'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* ─── Dialog: Nova Mensagem ─── */}
-      <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
+      <Dialog open={messageOpen} onOpenChange={(open) => { setMessageOpen(open); if (!open) setEditMessageId(null) }}>
         <DialogContent className="sm:max-w-[520px]">
           <DialogHeader>
-            <DialogTitle>Nova Mensagem</DialogTitle>
-            <DialogDescription>Adicione uma mensagem a uma fase da campanha</DialogDescription>
+            <DialogTitle>{editMessageId ? 'Editar Mensagem' : 'Nova Mensagem'}</DialogTitle>
+            <DialogDescription>{editMessageId ? 'Altere os dados da mensagem' : 'Adicione uma mensagem a uma fase da campanha'}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <div className="grid grid-cols-2 gap-3">
@@ -898,13 +1019,13 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setMessageOpen(false)}>Cancelar</Button>
+            <Button variant="outline" onClick={() => { setMessageOpen(false); setEditMessageId(null) }}>Cancelar</Button>
             <Button
               className="bg-[#AFC040] text-[#0D0D0D] hover:bg-[#AFC040]/90 font-semibold"
-              disabled={!messageForm.titulo || !messageForm.phase_id || createMessage.isPending}
-              onClick={() => createMessage.mutate()}
+              disabled={!messageForm.titulo || !messageForm.phase_id || createMessage.isPending || updateMessage.isPending}
+              onClick={() => editMessageId ? updateMessage.mutate() : createMessage.mutate()}
             >
-              {createMessage.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Criar Mensagem'}
+              {(createMessage.isPending || updateMessage.isPending) ? <Loader2 className="h-4 w-4 animate-spin" /> : editMessageId ? 'Salvar' : 'Criar Mensagem'}
             </Button>
           </DialogFooter>
         </DialogContent>
