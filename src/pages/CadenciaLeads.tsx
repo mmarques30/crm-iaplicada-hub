@@ -13,13 +13,13 @@ const CADENCE_STEPS = [
   { id: 'msg1_abertura', label: 'Abertura', day: 0 },
   { id: 'msg2_followup', label: 'Follow-up', day: 1 },
   { id: 'msg3_qualificacao', label: 'Qualificação', day: 2 },
-  { id: 'msg4_agendamento', label: 'Agendamento', day: 3 },
+  { id: 'msg4_agendamento', label: 'Oferta/Agendamento', day: 3 },
   { id: 'msg5_confirmacao', label: 'Confirmação', day: 4 },
   { id: 'msg6_lembrete', label: 'Lembrete', day: 5 },
-  { id: 'msg7_pos_call', label: 'Pós-Call', day: 7 },
-  { id: 'msg8_proposta', label: 'Proposta', day: 8 },
+  { id: 'msg7_pos_call', label: 'Pós-Reunião', day: 7 },
+  { id: 'msg8_proposta', label: 'Proposta Enviada', day: 8 },
   { id: 'msg9_followup_proposta', label: 'Follow-up Proposta', day: 11 },
-  { id: 'msg10_fechamento', label: 'Fechamento', day: 14 },
+  { id: 'msg10_fechamento', label: 'Decisão Final', day: 14 },
 ]
 
 const STAGE_TO_STEP: Record<string, number> = {
@@ -113,7 +113,7 @@ export default function CadenciaLeads() {
       let lastStepIndex = -1
       let lastMessageDate: string | null = null
       for (const msg of dealMessages) {
-        const stepIndex = CADENCE_STEPS.findIndex(s => s.label === msg.subject)
+        const stepIndex = CADENCE_STEPS.findIndex(s => msg.subject && (msg.subject === s.label || msg.subject.includes(s.label)))
         if (stepIndex > lastStepIndex) {
           lastStepIndex = stepIndex
           lastMessageDate = msg.created_at
