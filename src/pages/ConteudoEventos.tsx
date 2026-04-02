@@ -642,7 +642,7 @@ export default function ConteudoEventos() {
                     <div key={i} className="p-4 rounded-lg border border-[var(--c-border)] hover:border-[var(--c-border-h)] transition-colors space-y-2">
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                          <h3 className="text-sm font-bold" style={{ color: '#E8EDD8' }}>{tool.name}</h3>
+                          <h3 className="text-base font-bold text-foreground">{tool.name}</h3>
                           {tool.tagline && <p className="text-xs text-muted-foreground mt-0.5">{tool.tagline}</p>}
                         </div>
                         <div className="flex gap-2 shrink-0">
