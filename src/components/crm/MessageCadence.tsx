@@ -208,17 +208,24 @@ REGRAS DE ESCRITA:
   })
 
   // Log message as sent
+  // Check if contact.id is a real contact (not a deal ID used as fallback)
+  const isRealContact = contact.id !== deal?.id
+
   const logMessage = useMutation({
     mutationFn: async ({ stepId, message }: { stepId: string; message: string }) => {
       const step = CADENCE_STEPS.find(s => s.id === stepId)
-      const { error } = await supabase.from('activities').insert({
-        contact_id: contact.id,
+      const insertData: any = {
         deal_id: deal?.id || null,
         type: 'whatsapp',
         direction: 'outbound',
         subject: step?.label || stepId,
         body: message,
-      } as any)
+      }
+      // Only set contact_id if it's a real contact (not a deal ID fallback)
+      if (isRealContact) {
+        insertData.contact_id = contact.id
+      }
+      const { error } = await supabase.from('activities').insert(insertData as any)
       if (error) throw error
     },
     onSuccess: () => {
