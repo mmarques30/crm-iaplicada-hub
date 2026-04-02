@@ -431,7 +431,8 @@ export default function Pipeline() {
           ) : (
             <div
               ref={scrollRef}
-              className={`flex gap-3 overflow-x-auto pb-4 flex-1 scrollbar-thin ${isDraggingScroll.current ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+              className={`flex gap-3 overflow-x-auto overflow-y-auto pb-4 flex-1 scrollbar-thin ${isDraggingScroll.current ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+              style={{ maxHeight: 'calc(100vh - 250px)' }}
               onMouseDown={onScrollMouseDown}
               onMouseMove={onScrollMouseMove}
               onMouseUp={onScrollMouseUp}
@@ -456,13 +457,20 @@ function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: 
   navigate: (path: string) => void;
   isClosed?: boolean;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem(`pipeline_col_${stage.id}`) === '1' } catch { return false }
+  });
+
+  const toggleCollapse = (val: boolean) => {
+    setCollapsed(val);
+    try { localStorage.setItem(`pipeline_col_${stage.id}`, val ? '1' : '0') } catch {}
+  };
 
   if (collapsed) {
     return (
       <div
         className="flex-shrink-0 w-12 flex flex-col items-center cursor-pointer rounded-lg border bg-muted/50 hover:bg-muted transition-colors"
-        onClick={() => setCollapsed(false)}
+        onClick={() => toggleCollapse(false)}
       >
         <div className="py-2 px-1">
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -485,7 +493,7 @@ function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: 
       <div className={`rounded-t-lg px-3 py-2 ${stage.is_won ? 'bg-brand-600/20' : stage.is_lost ? 'bg-destructive/10' : 'bg-muted'}`}>
         <div className="flex items-center justify-between">
           <button
-            onClick={() => setCollapsed(true)}
+            onClick={() => toggleCollapse(true)}
             className="flex items-center gap-1 hover:opacity-70 transition-opacity"
           >
             <X className="h-3 w-3 text-muted-foreground" />
