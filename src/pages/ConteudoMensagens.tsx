@@ -79,6 +79,8 @@ export default function ConteudoMensagens() {
   const [filterCanal, setFilterCanal] = useState('todos')
   const [weekBase, setWeekBase] = useState(new Date())
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [improveInput, setImproveInput] = useState('')
+  const [improvingId, setImprovingId] = useState<string | null>(null)
   const [genEventId, setGenEventId] = useState<string>('')
   const [generatingMsgs, setGeneratingMsgs] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -402,6 +404,65 @@ export default function ConteudoMensagens() {
                               </Button>
                             )}
                           </div>
+                          {/* Melhorar com IA */}
+                          {isExpanded && msg.copy_text && (
+                            <div className="flex gap-2 items-end pt-1 mt-1 border-t border-border/50">
+                              <Input
+                                placeholder="Instrução: 'inclui dica sobre X', 'menciona resultado', 'adiciona link'..."
+                                value={improvingId === msg.id ? improveInput : ''}
+                                onChange={e => { setImprovingId(msg.id); setImproveInput(e.target.value) }}
+                                className="h-7 text-[10px] flex-1"
+                                onFocus={() => setImprovingId(msg.id)}
+                              />
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-7 gap-1 text-[10px] shrink-0"
+                                disabled={improvingId === msg.id && !improveInput}
+                                onClick={async () => {
+                                  const instruction = improveInput || 'Melhore: mais engajamento, mais específica'
+                                  setImprovingId(msg.id)
+                                  try {
+                                    const { data, error } = await supabase.functions.invoke('generate-content', {
+                                      body: {
+                                        action: 'generate_cadence_message',
+                                        prompt: `Reescreva e melhore esta mensagem de WhatsApp da IAplicada.
+
+MENSAGEM ATUAL:
+${msg.copy_text}
+
+INSTRUÇÃO:
+${instruction}
+
+CONTEXTO:
+- Comunidade: ${msg.comunidade}
+- Horário: ${msg.horario}
+- Evento: ${msg.events?.titulo || msg.titulo || 'geral'}
+
+REGRAS:
+- Tom da Mariana (informal, WhatsApp, frases curtas)
+- Emojis: 🤓 e ✱ apenas
+- Aplique a instrução mantendo a essência
+- Retorne APENAS a mensagem melhorada`
+                                      }
+                                    })
+                                    if (error || !data?.message) throw new Error('Falha')
+                                    await (supabase as any).from('routine_messages').update({ copy_text: data.message }).eq('id', msg.id)
+                                    queryClient.invalidateQueries({ queryKey: ['routine_messages'] })
+                                    setImproveInput('')
+                                    setImprovingId(null)
+                                    toast.success('Mensagem melhorada!')
+                                  } catch (err: any) {
+                                    toast.error('Erro: ' + (err.message || 'tente novamente'))
+                                    setImprovingId(null)
+                                  }
+                                }}
+                              >
+                                {improvingId === msg.id && !improveInput ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                                Melhorar
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       )
                     })}
