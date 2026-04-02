@@ -411,7 +411,7 @@ export default function ConteudoMensagens() {
                                 placeholder="Instrução: 'inclui dica sobre X', 'menciona resultado', 'adiciona link'..."
                                 value={improvingId === msg.id ? improveInput : ''}
                                 onChange={e => { setImprovingId(msg.id); setImproveInput(e.target.value) }}
-                                className="h-7 text-[10px] flex-1"
+                                className="h-8 text-xs flex-1 text-foreground bg-background"
                                 onFocus={() => setImprovingId(msg.id)}
                               />
                               <Button

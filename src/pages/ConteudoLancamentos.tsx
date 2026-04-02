@@ -545,7 +545,7 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
                     placeholder="Instrução: ex: 'inclui dica sobre Gamma', 'menciona resultado de 50k', 'adiciona link do YouTube'..."
                     value={improvingId === msg.id ? improveInput : ''}
                     onChange={e => { setImprovingId(msg.id); setImproveInput(e.target.value) }}
-                    className="h-8 text-xs flex-1"
+                    className="h-8 text-xs flex-1 text-foreground bg-background"
                     onFocus={() => setImprovingId(msg.id)}
                   />
                   <Button
