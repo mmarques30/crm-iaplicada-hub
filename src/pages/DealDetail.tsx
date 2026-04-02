@@ -52,11 +52,21 @@ export default function DealDetail() {
 
   // Fetch full contact data for enriched view
   const { data: contactFull } = useQuery({
-    queryKey: ["deal_contact_full", deal?.contact_id],
-    enabled: !!deal?.contact_id,
+    queryKey: ["deal_contact_full", deal?.contact_id, deal?.name],
+    enabled: !!deal,
     queryFn: async () => {
-      const { data } = await supabase.from("contacts").select("*").eq("id", deal!.contact_id!).single();
-      return data as any;
+      // Try by contact_id first
+      if (deal!.contact_id) {
+        const { data } = await supabase.from("contacts").select("*").eq("id", deal!.contact_id).single();
+        if (data) return data as any;
+      }
+      // Fallback: try to find contact by deal name (first name match)
+      if (deal!.name) {
+        const firstName = deal!.name.split(' ')[0];
+        const { data } = await supabase.from("contacts").select("*").ilike("first_name", `%${firstName}%`).limit(1);
+        if (data && data.length > 0) return data[0] as any;
+      }
+      return null;
     },
   });
 
