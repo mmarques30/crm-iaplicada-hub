@@ -119,55 +119,62 @@ Nº Liderados: ${contact.numero_de_liderados || 'não informado'}
 Motivo IA: ${contact.motivo_para_aprender_ia || 'não informado'}
 Objetivo: ${contact.objetivo_com_a_comunidade || 'não informado'}
 Produto: ${product || deal?.product || 'business'}
-Estágio: ${deal?.stage_name || 'Lead'}
+Estágio atual no pipeline: ${deal?.stage_name || 'Lead'}
 Valor Deal: ${deal?.amount ? `R$ ${deal.amount}` : 'não definido'}
 `.trim()
 
+      // Build history of sent messages
+      const sentHistory = (sentMessages || [])
+        .filter((m: any) => m.subject)
+        .slice(0, 5)
+        .map((m: any) => `- ${m.subject} (${new Date(m.created_at).toLocaleDateString('pt-BR')})`)
+        .join('\n')
+
       const productType = product || deal?.product || 'business'
       const isBusiness = productType === 'business'
+      const phase = step.phase
 
-      const prompt = isBusiness
-        ? `Você é a Mariana, consultora comercial da IAplicada. Gere UMA mensagem de WhatsApp para o passo "${step.label}" (${step.desc}) da cadência de vendas do IAplicada Business.
+      // Phase-specific objective for Business
+      const phaseObjectives: Record<string, string> = {
+        abertura: 'FASE ABERTURA: O lead é NOVO, nunca falou com você. Objetivo: iniciar conversa e propor agendar o Diagnóstico Estratégico (call de 45min).',
+        agendamento: 'FASE AGENDAMENTO: O lead JÁ RESPONDEU e demonstrou interesse. A conversa já começou. Objetivo: confirmar data/horário da call. NÃO repita a abordagem inicial.',
+        pos_reuniao: 'FASE PÓS-REUNIÃO: A call de diagnóstico JÁ ACONTECEU. Você JÁ conhece o cenário da empresa. Objetivo: agradecer, organizar a proposta e enviar. NÃO proponha nova call. NÃO fale de "agendar diagnóstico".',
+        fechamento: 'FASE FECHAMENTO: A proposta JÁ FOI ENVIADA por email. A reunião JÁ ACONTECEU. O lead está analisando. Objetivo: facilitar a decisão, tirar dúvidas sobre a proposta, criar urgência sobre o prazo de implementação. NÃO mencione diagnóstico, NÃO proponha call, NÃO fale de Mapa Estratégico.',
+      }
 
-CONTEXTO DO LEAD:
-${leadContext}
+      const phaseObjectivesAcademy: Record<string, string> = {
+        abertura: 'FASE ABERTURA: O lead se inscreveu nas aulas gratuitas. Objetivo: engajar e mostrar valor das aulas.',
+        agendamento: 'FASE APRESENTAÇÃO: O lead já conhece as aulas. Objetivo: apresentar o Academy (R$147/mês) e converter direto no chat. SEM call.',
+        pos_reuniao: 'FASE PÓS-AULA: O lead assistiu aulas. Objetivo: reforçar valor e converter pro Academy.',
+        fechamento: 'FASE FECHAMENTO: O lead já sabe do Academy. Objetivo: criar urgência e fechar a venda direto no WhatsApp.',
+      }
 
-OBJETIVO DO BUSINESS: Agendar um Diagnóstico Estratégico (call de 45min). NÃO vender no chat. Vender o VALOR DA REUNIÃO.
-ENTREGA DA REUNIÃO: Mapa Estratégico de Implementação de IA feito pro cenário do lead.
+      const currentPhaseObj = isBusiness ? phaseObjectives[phase || 'abertura'] : phaseObjectivesAcademy[phase || 'abertura']
 
-REGRAS:
-- Mensagem pronta pra copiar e colar no WhatsApp
-- Tom informal mas profissional (como alguém digitando no celular)
-- Frases curtas, máximo 4-5 linhas por bloco
-- Use "pra", "vc", "tbm" naturalmente
-- Emojis permitidos: 🤓 e ✱ apenas
-- Pontuação correta (acentos obrigatórios)
-- NUNCA use: "Sem dúvida", "Com certeza", "Excelente", "Personalizado", "Próximo passo", "Estou à disposição"
-- Na msg1: diga que viu a inscrição, mencione o que o lead respondeu no formulário, fale do Mapa Estratégico e já proponha agendar
-- Nas msgs seguintes: reforce o valor da reunião/Mapa, não venda o produto
-- Se agendamento: ofereça 2 horários (manhã e tarde)
-- Se pós-call: agradeça e envie resumo
-- Apenas a mensagem, sem explicações`
-        : `Você é a Mariana, da IAplicada Academy. Gere UMA mensagem de WhatsApp para o passo "${step.label}" (${step.desc}) da cadência de conversão do IAplicada Academy.
+      const prompt = `Você é a Mariana, ${isBusiness ? 'consultora comercial da IAplicada' : 'da IAplicada Academy'}. Gere UMA mensagem de WhatsApp para o passo "${step.label}" (${step.desc}).
 
 CONTEXTO DO LEAD:
 ${leadContext}
 
-OBJETIVO DO ACADEMY: Converter o lead em assinante DIRETO no WhatsApp. R$147/mês. SEM call. A venda acontece na conversa.
-O lead já se inscreveu pra aulas gratuitas de IA. O objetivo é mostrar valor e converter pra Academy.
+${currentPhaseObj}
 
-REGRAS:
+${sentHistory ? `MENSAGENS JÁ ENVIADAS PARA ESSE LEAD (NÃO repita o conteúdo):
+${sentHistory}` : 'NENHUMA mensagem foi enviada ainda para esse lead.'}
+
+IMPORTANTE — O QUE NÃO FAZER:
+${phase === 'pos_reuniao' ? '- NÃO fale de "agendar", "diagnóstico" ou "Mapa Estratégico" — a reunião JÁ ACONTECEU\n- Fale sobre organizar e enviar a PROPOSTA' : ''}
+${phase === 'fechamento' ? '- NÃO fale de "agendar call", "diagnóstico", "Mapa Estratégico" — tudo isso JÁ ACONTECEU\n- A proposta JÁ FOI ENVIADA. Fale sobre ANALISAR a proposta e DECIDIR\n- Foque em: tirar dúvidas, ajustar pontos, prazo de implementação' : ''}
+${phase === 'abertura' ? '- É o PRIMEIRO contato. Diga que VIU A INSCRIÇÃO do lead. Mencione o que ele respondeu no formulário.' : ''}
+${phase === 'agendamento' ? '- O lead JÁ RESPONDEU. NÃO repita a abordagem de abertura. Seja direto com horários.' : ''}
+
+REGRAS DE ESCRITA:
 - Mensagem pronta pra copiar e colar no WhatsApp
-- Tom acolhedor, educacional, prático
+- Tom informal mas profissional (digitando no celular)
 - Frases curtas, máximo 4-5 linhas por bloco
 - Use "pra", "vc", "tbm" naturalmente
-- Emojis permitidos: 🤓 e ✱ apenas
+- Emojis: 🤓 e ✱ apenas
 - Pontuação correta (acentos obrigatórios)
 - NUNCA use: "Sem dúvida", "Com certeza", "Excelente", "Personalizado", "Próximo passo", "Estou à disposição"
-- Na msg1: agradeça a inscrição, mencione o que ele respondeu, mostre valor das aulas
-- Nas msgs seguintes: compartilhe resultado de alunos, dicas práticas de IA, e convide pra Academy
-- NÃO proponha call/reunião. Converta direto no chat
-- Se fechamento: ofereça o link de inscrição Academy (R$147/mês)
 - Apenas a mensagem, sem explicações`
 
       // Call Claude API via generate-content Edge Function
