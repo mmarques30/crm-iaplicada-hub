@@ -89,16 +89,22 @@ export function MessageCadence({ contact, deal, product }: CadenceProps) {
     return CADENCE_STEPS.slice(0, 4)
   }, [deal?.stage_name, showAllSteps])
 
-  // Fetch sent messages for this contact
+  // Fetch sent messages for this contact/deal
   const { data: sentMessages } = useQuery({
-    queryKey: ['cadence_messages', contact.id],
+    queryKey: ['cadence_messages', contact.id, deal?.id],
     queryFn: async () => {
-      const { data } = await supabase
+      // Query by contact_id OR deal_id to catch all related messages
+      let query = supabase
         .from('activities')
         .select('*')
-        .eq('contact_id', contact.id)
         .eq('type', 'whatsapp')
         .order('created_at', { ascending: false })
+      if (deal?.id) {
+        query = query.or(`contact_id.eq.${contact.id},deal_id.eq.${deal.id}`)
+      } else {
+        query = query.eq('contact_id', contact.id)
+      }
+      const { data } = await query
       return (data || []) as any[]
     },
   })
