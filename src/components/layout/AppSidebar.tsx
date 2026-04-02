@@ -1,4 +1,4 @@
-import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers, Mail, Send, Workflow, ShoppingCart, Receipt, Wallet, ShieldCheck, PenTool, Calendar, Video, Image, Lightbulb, CalendarDays, MessageSquare, Rocket } from "lucide-react";
+import { LayoutDashboard, Kanban, Users, Settings, ChevronDown, Briefcase, GraduationCap, Instagram, BarChart3, Facebook, DollarSign, TrendingUp, ListTodo, FileText, Layers, Mail, Send, Workflow, ShoppingCart, Receipt, Wallet, ShieldCheck, PenTool, Calendar, Video, Image, Lightbulb, CalendarDays, MessageSquare, Rocket, Bell } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -192,6 +192,15 @@ export function AppSidebar() {
               )}
 
               {hasAccess('pipeline') && renderCollapsible("Pipeline", Kanban, pipelineItems, isPipelineActive, pipelineOpen, setPipelineOpen, "pipeline")}
+
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <NavLink to="/cadencia" activeClassName={ACTIVE_CLASS}>
+                    <Bell className="h-4 w-4" />
+                    {!collapsed && <span>Cadência</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
 
               {hasAccess('contacts') && (
                 <SidebarMenuItem>
