@@ -431,8 +431,8 @@ export default function Pipeline() {
           ) : (
             <div
               ref={scrollRef}
-              className={`flex gap-3 overflow-x-auto overflow-y-auto pb-4 flex-1 scrollbar-thin ${isDraggingScroll.current ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
-              style={{ maxHeight: 'calc(100vh - 250px)' }}
+              className={`flex gap-3 overflow-x-auto pb-2 flex-1 scrollbar-thin ${isDraggingScroll.current ? 'cursor-grabbing select-none' : 'cursor-grab'}`}
+              style={{ scrollbarColor: '#2E3A18 transparent', scrollbarWidth: 'thin' }}
               onMouseDown={onScrollMouseDown}
               onMouseMove={onScrollMouseMove}
               onMouseUp={onScrollMouseUp}
@@ -489,7 +489,7 @@ function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: 
   }
 
   return (
-    <div className={`flex-shrink-0 w-72 flex flex-col`}>
+    <div className={`flex-shrink-0 w-72 flex flex-col`} style={{ maxHeight: 'calc(100vh - 260px)' }}>
       <div className={`rounded-t-lg px-3 py-2 ${stage.is_won ? 'bg-brand-600/20' : stage.is_lost ? 'bg-destructive/10' : 'bg-muted'}`}>
         <div className="flex items-center justify-between">
           <button
@@ -508,7 +508,8 @@ function KanbanColumn({ stage, deals, total, daysInStage, navigate, isClosed }: 
           <div
             ref={provided.innerRef}
             {...provided.droppableProps}
-            className={`flex-1 p-2 space-y-2 rounded-b-lg border border-t-0 min-h-[80px] transition-colors ${snapshot.isDraggingOver ? 'bg-brand-100/50' : 'bg-card'}`}
+            className={`flex-1 p-2 space-y-2 rounded-b-lg border border-t-0 min-h-[80px] overflow-y-auto transition-colors ${snapshot.isDraggingOver ? 'bg-brand-100/50' : 'bg-card'}`}
+            style={{ scrollbarColor: '#2E3A18 transparent', scrollbarWidth: 'thin' }}
           >
             {deals.length === 0 && (
               <p className="text-xs text-muted-foreground text-center py-4 opacity-50">Nenhum deal</p>
