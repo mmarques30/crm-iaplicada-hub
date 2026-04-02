@@ -1,14 +1,47 @@
 // Edge Function: Gera conteúdo para eventos usando Perplexity (pesquisa) + Claude (mensagens)
 // Pipeline: Pesquisa ferramenta → Gera mensagens por comunidade → Gera stories
 
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 }
 
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL') || ''
+const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') || ''
 const PERPLEXITY_KEY = Deno.env.get('PERPLEXITY_API_KEY') || ''
 const CLAUDE_KEY = Deno.env.get('CLAUDE_API_KEY') || ''
+
+function jsonResponse(body: unknown, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  })
+}
+
+async function validateJwt(req: Request): Promise<Response | null> {
+  const authHeader = req.headers.get('Authorization')
+
+  if (!authHeader?.startsWith('Bearer ')) {
+    return jsonResponse({ code: 401, message: 'Missing authorization header' }, 401)
+  }
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+  })
+
+  const token = authHeader.slice('Bearer '.length)
+  const { data, error } = await supabase.auth.getClaims(token)
+
+  if (error || !data?.claims?.sub) {
+    console.error('JWT validation failed:', error)
+    return jsonResponse({ code: 401, message: 'Invalid JWT' }, 401)
+  }
+
+  return null
+}
 
 // ─── Perplexity: pesquisa ferramenta ───
 async function researchTool(toolName: string): Promise<string> {
@@ -192,6 +225,9 @@ Deno.serve(async (req) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405, headers: corsHeaders })
 
   try {
+    const authError = await validateJwt(req)
+    if (authError) return authError
+
     const body = await req.json()
     const { action, tool, date, eventType, category, excludeTools, communities } = body
 
@@ -267,15 +303,9 @@ Deno.serve(async (req) => {
         throw new Error(`Unknown action: ${action}. Use: research, suggest, generate, generate_cadence_message`)
     }
 
-    return new Response(
-      JSON.stringify(result),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return jsonResponse(result)
   } catch (error) {
     console.error('generate-content error:', error)
-    return new Response(
-      JSON.stringify({ success: false, error: String(error) }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    )
+    return jsonResponse({ success: false, error: String(error) }, 500)
   }
 })
