@@ -58,7 +58,7 @@ export function OrigemTab() {
             <p className="text-sm text-muted-foreground">Distribuição de contatos por canal de aquisição — utm_source e fonte de registro</p>
             <p className="text-3xl font-bold font-mono">{contacts.length} <span className="text-base font-normal text-muted-foreground">contatos totais</span></p>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
             {channelData.map(({ name, count }) => {
               const pct = contacts.length > 0 ? Math.round((count / contacts.length) * 100) : 0
               const color = CHANNEL_COLORS[name] || '#7A8460'

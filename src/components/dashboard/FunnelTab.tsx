@@ -10,8 +10,8 @@ import { normalizeChannel, humanizeCampaignName } from '@/lib/format'
 
 
 const META_SOURCES = {
-  isInstagramOrganic: (ch: string) => ch === 'Instagram Orgânico',
-  isFacebookAds: (ch: string) => ch === 'Facebook Ads',
+  isInstagramOrganic: (ch: string) => ch === 'Instagram' || ch === 'Instagram Orgânico',
+  isFacebookAds: (ch: string) => ch === 'Ads' || ch === 'Facebook Ads',
   isMetaCampaign: (raw: string) => {
     const v = (raw || '').toLowerCase()
     return v.includes('meta') || v.includes('campanha') || v.includes('link na bio') || v.includes('aula') || v.includes('tiktok')
@@ -71,7 +71,12 @@ export function FunnelTab() {
       const ch = normalizeChannel(raw)
       if (META_SOURCES.isInstagramOrganic(ch)) igOrganic.push(c)
       else if (META_SOURCES.isFacebookAds(ch)) fbAds.push(c)
-      else if (META_SOURCES.isMetaCampaign(raw) || META_SOURCES.isMetaCampaign(c.utm_campaign || '') || META_SOURCES.isMetaCampaign(c.utm_medium || '')) metaCampaign.push(c)
+      else if (
+        META_SOURCES.isMetaCampaign(raw) ||
+        META_SOURCES.isMetaCampaign(c.utm_campaign || '') ||
+        META_SOURCES.isMetaCampaign(c.utm_medium || '') ||
+        (c.first_conversion || '').toLowerCase().includes('aula')
+      ) metaCampaign.push(c)
     }
 
     return { igOrganic, fbAds, metaCampaign }
