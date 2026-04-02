@@ -54,6 +54,8 @@ export default function ConteudoLancamentos() {
   const [messageOpen, setMessageOpen] = useState(false)
   const [filterPhase, setFilterPhase] = useState('todas')
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [improveInput, setImproveInput] = useState('')
+  const [improvingId, setImprovingId] = useState<string | null>(null)
   const [generatingEmailId, setGeneratingEmailId] = useState<string | null>(null)
   const [generatingAllEmails, setGeneratingAllEmails] = useState(false)
   const [editMessageId, setEditMessageId] = useState<string | null>(null)
@@ -533,9 +535,77 @@ Retorne APENAS o corpo do email, sem subject line, sem saudação "Olá [nome]".
               {isExpanded ? 'Recolher' : 'Ver texto'}
             </button>
             {isExpanded && (
-              <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">
-                {canal === 'stories' ? (msg.roteiro || msg.copy_text) : msg.copy_text}
-              </p>
+              <div className="space-y-2 mt-1">
+                <p className="text-xs text-muted-foreground whitespace-pre-wrap">
+                  {canal === 'stories' ? (msg.roteiro || msg.copy_text) : msg.copy_text}
+                </p>
+                {/* Improve with AI */}
+                <div className="flex gap-2 items-end pt-1 border-t border-[var(--c-border)]">
+                  <Input
+                    placeholder="Instrução: ex: 'inclui dica sobre Gamma', 'menciona resultado de 50k', 'adiciona link do YouTube'..."
+                    value={improvingId === msg.id ? improveInput : ''}
+                    onChange={e => { setImprovingId(msg.id); setImproveInput(e.target.value) }}
+                    className="h-8 text-xs flex-1"
+                    onFocus={() => setImprovingId(msg.id)}
+                  />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-8 gap-1 text-xs shrink-0"
+                    disabled={improvingId === msg.id && !improveInput}
+                    onClick={async () => {
+                      if (!improveInput && improvingId !== msg.id) return
+                      const instruction = improveInput || 'Melhore essa mensagem: mais engajamento, mais específica'
+                      setImprovingId(msg.id)
+                      const phase = phaseMap[msg.phase_id]
+                      const currentText = canal === 'stories' ? (msg.roteiro || msg.copy_text) : msg.copy_text
+
+                      try {
+                        const { data, error } = await supabase.functions.invoke('generate-content', {
+                          body: {
+                            action: 'generate_cadence_message',
+                            prompt: `Reescreva e melhore esta mensagem de WhatsApp do lançamento IAplicada Recorrência.
+
+MENSAGEM ATUAL:
+${currentText}
+
+INSTRUÇÃO DE MELHORIA:
+${instruction}
+
+CONTEXTO:
+- Campanha: ${campaigns[0]?.nome || 'IAplicada Recorrência'}
+- Fase: ${phase?.nome || ''} (Emoção: ${phase?.emocao_chave || ''})
+- Canal: ${canal}
+- Título: ${msg.titulo}
+
+REGRAS:
+- Mantenha o tom da Mariana (informal, WhatsApp)
+- Frases curtas, máx 4-5 linhas por bloco
+- Emojis: 🤓 e ✱ apenas
+- Aplique a instrução de melhoria mantendo a essência da mensagem
+- Pontuação correta
+- Retorne APENAS a mensagem melhorada, sem explicações`
+                          }
+                        })
+                        if (error || !data?.message) throw new Error('Falha na geração')
+
+                        const field = canal === 'stories' ? 'roteiro' : 'copy_text'
+                        await (supabase as any).from('launch_messages').update({ [field]: data.message }).eq('id', msg.id)
+                        queryClient.invalidateQueries({ queryKey: ['launch_messages'] })
+                        setImproveInput('')
+                        setImprovingId(null)
+                        toast.success('Mensagem melhorada!')
+                      } catch (err: any) {
+                        toast.error('Erro: ' + (err.message || 'tente novamente'))
+                        setImprovingId(null)
+                      }
+                    }}
+                  >
+                    {improvingId === msg.id && !improveInput ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    Melhorar com IA
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         )}
