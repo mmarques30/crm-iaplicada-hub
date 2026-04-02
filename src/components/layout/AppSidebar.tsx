@@ -78,7 +78,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
   const { hasAccess, isAdmin } = useAuth();
   const location = useLocation();
-  const isPipelineActive = location.pathname.startsWith("/pipeline");
+  const isPipelineActive = location.pathname.startsWith("/pipeline") || location.pathname === "/cadencia";
   const isAnalyticsActive = location.pathname.startsWith("/painel") || location.pathname.startsWith("/analytics");
   const isEmailActive = location.pathname.startsWith("/email");
   const isConteudoActive = location.pathname.startsWith("/conteudo") || location.pathname === "/instagram";
@@ -102,13 +102,16 @@ export function AppSidebar() {
     },
   });
 
-  const pipelineItems = (pipelines || [])
-    .filter((p: any) => p.product !== "skills")
-    .map((p: any) => ({
-      title: p.name,
-      url: `/pipeline/${p.product}`,
-      icon: PIPELINE_ICONS[p.product] || DEFAULT_PIPELINE_ICON,
-    }));
+  const pipelineItems = [
+    ...(pipelines || [])
+      .filter((p: any) => p.product !== "skills")
+      .map((p: any) => ({
+        title: p.name,
+        url: `/pipeline/${p.product}`,
+        icon: PIPELINE_ICONS[p.product] || DEFAULT_PIPELINE_ICON,
+      })),
+    { title: "Cadência", url: "/cadencia", icon: Bell },
+  ];
 
   const renderCollapsible = (
     label: string,
@@ -192,15 +195,6 @@ export function AppSidebar() {
               )}
 
               {hasAccess('pipeline') && renderCollapsible("Pipeline", Kanban, pipelineItems, isPipelineActive, pipelineOpen, setPipelineOpen, "pipeline")}
-
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild>
-                  <NavLink to="/cadencia" activeClassName={ACTIVE_CLASS}>
-                    <Bell className="h-4 w-4" />
-                    {!collapsed && <span>Cadência</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
 
               {hasAccess('contacts') && (
                 <SidebarMenuItem>
