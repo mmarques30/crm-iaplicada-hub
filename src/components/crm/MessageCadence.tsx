@@ -151,7 +151,11 @@ Valor Deal: ${deal?.amount ? `R$ ${deal.amount}` : 'não definido'}
 
       const currentPhaseObj = isBusiness ? phaseObjectives[phase || 'abertura'] : phaseObjectivesAcademy[phase || 'abertura']
 
+      const today = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
+
       const prompt = `Você é a Mariana, ${isBusiness ? 'consultora comercial da IAplicada' : 'da IAplicada Academy'}. Gere UMA mensagem de WhatsApp para o passo "${step.label}" (${step.desc}).
+
+DATA DE HOJE: ${today}. Use SOMENTE datas futuras a partir de hoje ao sugerir horários ou prazos.
 
 CONTEXTO DO LEAD:
 ${leadContext}
