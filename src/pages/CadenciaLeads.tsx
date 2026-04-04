@@ -107,7 +107,7 @@ export default function CadenciaLeads() {
     return deals.map((deal: any) => {
       const contactId = deal.contact_id
       const dealMessages = (sentMessages || []).filter((m: any) =>
-        m.deal_id === deal.id || m.contact_id === contactId
+        m.deal_id === deal.id || (contactId && m.contact_id === contactId)
       )
 
       let lastStepIndex = -1
@@ -118,6 +118,15 @@ export default function CadenciaLeads() {
           lastStepIndex = stepIndex
           lastMessageDate = msg.created_at
         }
+        // If message exists but subject doesn't match any step, still track the date
+        if (lastMessageDate === null && msg.created_at) {
+          lastMessageDate = msg.created_at
+        }
+      }
+      // If we have messages but none matched a step label, infer step from stage
+      if (dealMessages.length > 0 && lastStepIndex < 0) {
+        lastStepIndex = STAGE_TO_STEP[deal.stage_name] ?? 0
+        lastMessageDate = dealMessages[0].created_at
       }
 
       const stageStep = STAGE_TO_STEP[deal.stage_name] ?? 0
